@@ -62,8 +62,8 @@ namespace JACKIE_INET
 
 	/// Index of an invalid JACKIE_INET_Address
 #ifndef SWIG
-	extern const JACKIE_EXPORT JACKIE_INET_Address JACKIE_INET_Address_Null;
-	extern const JACKIE_EXPORT JACKIE_INet_GUID JACKIE_INet_GUID_Null;
+	JACKIE_EXPORT extern const  JACKIE_INET_Address JACKIE_INET_Address_Null;
+	JACKIE_EXPORT extern const  JACKIE_INet_GUID JACKIE_INet_GUID_Null;
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player

@@ -15,35 +15,34 @@
 /// Author of main code is Paul Hsieh. I just added some convenience functions
 /// Also note http://burtleburtle.net/bob/hash/doobs.html, which shows that this is 20%
 /// faster than the one on that page but has more collisions
-extern  unsigned long JACKIE_EXPORT SuperFastHash(const char * data, int length);
-extern  unsigned long JACKIE_EXPORT SuperFastHashIncremental(const char * data,
-	int len, unsigned int lastHash);
-extern  unsigned long JACKIE_EXPORT SuperFastHashFile(const char * filename);
-extern  unsigned long JACKIE_EXPORT SuperFastHashFilePtr(FILE *fp);
+JACKIE_EXPORT extern  unsigned long  SuperFastHash(const char * data, int length);
+JACKIE_EXPORT extern  unsigned long  SuperFastHashIncremental(const char * data, int len, unsigned int lastHash);
+JACKIE_EXPORT extern  unsigned long  SuperFastHashFile(const char * filename);
+JACKIE_EXPORT extern  unsigned long  SuperFastHashFilePtr(FILE *fp);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Return false if Numeric IP address. Return true if domain NonNumericHostString
-extern  bool JACKIE_EXPORT isDomainIPAddr(const char *host);
+JACKIE_EXPORT extern  bool  isDomainIPAddr(const char *host);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Fast itoa from http://www.jb.man.ac.uk/~slowe/cpp/itoa.html for Linux since it seems like
 /// Linux doesn't support this function. I modified it to remove the std dependencies.
-extern char* JACKIE_EXPORT Itoa(int value, char* result, int base);
+JACKIE_EXPORT extern char*  Itoa(int value, char* result, int base);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////// DomainNameToIP /////////////////////////////////////////
 /// Every platform except windows store 8 and native client supports Berkley sockets
 #if !defined(WINDOWS_STORE_RT)
-extern void DomainNameToIP_Berkley_IPV4And6(const char *domainName, char ip[65]);
-extern void DomainNameToIP_Berkley_IPV4(const char *domainName, char ip[65]);
+JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4And6(const char *domainName, char ip[65]);
+JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4(const char *domainName, char ip[65]);
 #else
-extern void DomainNameToIP_Non_Berkley(const char *domainName, char ip[65]);
+JACKIE_EXPORT extern void DomainNameToIP_Non_Berkley(const char *domainName, char ip[65]);
 #endif ///  !defined(WINDOWS_STORE_RT)
-inline extern void JACKIE_EXPORT DomainNameToIP(const char *domainName, char ip[65])
+JACKIE_EXPORT inline  extern void  DomainNameToIP(const char *domainName, char ip[65])
 {
 #if defined(WINDOWS_STORE_RT)
 	return DomainNameToIP_Non_Berkley(domainName, ip);
@@ -59,7 +58,7 @@ inline extern void JACKIE_EXPORT DomainNameToIP(const char *domainName, char ip[
 
 
 /////////////////////////////////////// JACKIE_Sleep /////////////////////////////////////////
-extern void JACKIE_EXPORT JACKIE_Sleep(unsigned int ms);
+JACKIE_EXPORT extern void  JACKIE_Sleep(unsigned int ms);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

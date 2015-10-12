@@ -491,6 +491,8 @@ namespace JACKIE_INET
 		RecvFromBlockingIPV4(recvFromStruct);
 #endif
 	}
+	void JISBerkley::RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct) { }
+	void JISBerkley::RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct) { }
 	void JISBerkley::BlockOnStopRecvPollingThread(void)
 	{
 		endThreads = true;

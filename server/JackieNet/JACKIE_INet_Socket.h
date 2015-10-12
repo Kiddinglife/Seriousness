@@ -432,6 +432,7 @@ namespace JACKIE_INET
 		}
 		void RecvFromBlockingIPV4(JISRecvParams *recvFromStruct);
 		void RecvFromBlockingIPV4And6(JISRecvParams *recvFromStruct);
+
 		inline void RecvFromNonBlocking(JISRecvParams *recvFromStruct)
 		{
 #if NET_SUPPORT_IPV6 ==1

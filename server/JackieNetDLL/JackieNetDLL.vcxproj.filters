@@ -15,84 +15,87 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BasicTypes.h">
+    <ClInclude Include="..\JackieNet\BasicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DefaultNetDefines.h">
+    <ClInclude Include="..\JackieNet\DefaultNetDefines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DLLExport.h">
+    <ClInclude Include="..\JackieNet\DLLExport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalFunctions.h">
+    <ClInclude Include="..\JackieNet\GlobalFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Atomic.h">
+    <ClInclude Include="..\JackieNet\JACKIE_Atomic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_INet_Socket.h">
+    <ClInclude Include="..\JackieNet\JACKIE_INet_Socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Simple_Mutex.h">
+    <ClInclude Include="..\JackieNet\JACKIE_Simple_Mutex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Thread.h">
+    <ClInclude Include="..\JackieNet\JACKIE_Thread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NetTime.h">
+    <ClInclude Include="..\JackieNet\NetTime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NetTypes.h">
+    <ClInclude Include="..\JackieNet\NetTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverrideMemory.h">
+    <ClInclude Include="..\JackieNet\OverrideMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverrideNetDefines.h">
+    <ClInclude Include="..\JackieNet\OverrideNetDefines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SocketDefines.h">
+    <ClInclude Include="..\JackieNet\SocketDefines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SockOSIncludes.h">
+    <ClInclude Include="..\JackieNet\SockOSIncludes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowsIncludes.h">
+    <ClInclude Include="..\JackieNet\WindowsIncludes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WSAStartupSingleton.h">
+    <ClInclude Include="..\JackieNet\WSAStartupSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GlobalFunctions.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\GlobalFunctions.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JACKIE_Atomic.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\JACKIE_Atomic.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JACKIE_INet_Socket.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\JACKIE_INet_Socket.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JACKIE_Simple_Mutex.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\JACKIE_Simple_Mutex.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JACKIE_Thread.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\JACKIE_Thread.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NetTypes.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\NetTime.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverrideMemory.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\NetTypes.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WSAStartupSingleton.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\JackieNet\OverrideMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\JackieNet\WSAStartupSingleton.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt">
-      <Filter>Header Files</Filter>
-    </Text>
+    <None Include="dll.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
