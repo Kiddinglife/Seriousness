@@ -10,6 +10,7 @@
 /clientAssets/*.meta
 /client/Assets/Scenes
 /server/Built
+
 # ----[ Visual Studio / MonoDevelop generated ]------- #
  
 ExportedObj/
@@ -66,5 +67,3 @@ Icon?
 ehthumbs.db
 Thumbs.db
 
-/Jackie-csharp.opensdf
-/Jackie-csharp.sdf
