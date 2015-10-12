@@ -17,13 +17,17 @@ ExportedObj/
 *.csproj
 *.pidb
 *.suo
-*.sln
 *.user
 *.opensdf
 *.sdf
 *.user
 *.unityproj
 *.booproj
+*.exp
+*.idb
+*.ilk
+*.exe
+*.pdb
 
 [Dd]ebug/
 [Rr]elease/
