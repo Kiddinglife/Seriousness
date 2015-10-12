@@ -10,7 +10,7 @@ public class StartMenueController : MonoBehaviour
 	public TweenScale registerPannelTween;
 	public TweenScale gameZonePannelTween;
 	public TweenPosition chaSelectionPannelTween;
-	public TweenPosition chaShowPannelTween; 
+	public TweenPosition chaShowPannelTween;
 
 	public UIInput userNameInputonLoginPannel;
 	public UIInput userPwdInputonLoginPannel;
@@ -36,7 +36,12 @@ public class StartMenueController : MonoBehaviour
 
 	public GameObject[] characterArray;
 	public GameObject currCharacter = null;
-	public Vector3 currVec;
+
+	public GameObject[] selectedCharacterArray;
+	public Transform currCharacterPos;
+	public UILabel name;
+	public UILabel level;
+	public UIInput nameInput;
 	// Use this for initialization
 
 	void Awake()
@@ -107,7 +112,7 @@ public class StartMenueController : MonoBehaviour
 		chaSelectionPannelTween.PlayForward();
 	}
 
-	public void OnChaSelctionPanlChaneAnotherBntGameClick() 
+	public void OnChaSelctionPanlChaneAnotherBntGameClick()
 	{
 		/// jump to  the character-show scene
 		/// 
@@ -262,7 +267,7 @@ public class StartMenueController : MonoBehaviour
 
 	public void OnCharacteronChaShowPanelClick(GameObject go)
 	{
-		if(go.tag == "man")
+		if (go.tag == "man")
 		{
 			iTween.ScaleTo(go, new Vector3(22f, 22f, 22f), 0.5f);
 		}
@@ -282,5 +287,64 @@ public class StartMenueController : MonoBehaviour
 			}
 		}
 		currCharacter = go;
+	}
+
+	// justify if  the input name has exsited in  server database 
+	//@todo
+	// if user slectes character
+	//#todo
+	public void OnChacterShowBntClicked()
+	{
+		if (nameInput.value == "") return;
+
+		// justify if  the input name has exsited in  server database 
+		//@Todo
+		// if user slectes character
+		//#todo
+
+		int index = -1;
+		for (int i = 0; i < characterArray.Length; i++)
+		{
+			if (currCharacter == characterArray[i])
+			{
+				index = i;
+				break;
+			}
+		}
+		if (index == -1)
+		{
+			return;
+		}
+		Debug.Log("hello");
+		// destroy the esisting character
+		if (currCharacterPos.childCount != 0)
+			GameObject.Destroy(currCharacterPos.GetChild(0).gameObject);
+
+		GameObject go =
+			GameObject.Instantiate(selectedCharacterArray[index], Vector3.zero,
+			Quaternion.identity) as GameObject;
+		go.transform.parent = currCharacterPos;
+		if (go.tag == "man")
+			go.transform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
+		else
+			go.transform.localScale = new Vector3(1f, 1f, 1f);
+		go.transform.localRotation = Quaternion.identity;
+		go.transform.localPosition = Vector3.zero;
+
+		// update name and level
+		name.text = nameInput.value;
+		level.text = "Lv. 0";
+		GotoCharaterSlect();
+	}
+
+	public void GotoCharaterSlect()
+	{
+		// hide current screen
+		chaShowPannelTween.PlayReverse();
+		StartCoroutine(HidePannel(chaShowPannelTween.gameObject));
+
+		// show the cha slect scene
+		ShowPannel(chaSelectionPannelTween.gameObject);
+		chaSelectionPannelTween.PlayForward();
 	}
 }
