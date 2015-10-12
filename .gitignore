@@ -7,8 +7,9 @@
 /client/Assets/Models
 /client/Assets/Fonts
 /client/Assets/NGUI
-//clientAssets/*.meta
+/clientAssets/*.meta
 /client/Assets/Scenes
+/server/Built
 # ----[ Visual Studio / MonoDevelop generated ]------- #
  
 ExportedObj/
