@@ -54,7 +54,6 @@ namespace JACKIE_INET
 		return "JISBindResult_UNKNOWN";
 	}
 
-
 	enum JACKIE_EXPORT JISType
 	{
 		JISType_WINDOWS_STORE_8 = 0,
@@ -193,49 +192,13 @@ namespace JACKIE_INET
 	};
 
 #if defined(WINDOWS_STORE_RT)
-#include "DS_List.h"
-	ref class ListenerContext;
-	class JISWINSTROE8 : public JACKIE_INet_Socket
-	{
-		public:
-		JISWINSTROE8();
-		~JISWINSTROE8();
-
-		virtual JISSendResult Send( RNS2_SendParameters *sendParameters, const char *file, UInt32 line );
-		JISBindResult Bind( Platform::String ^localServiceName );
-		// ----------- STATICS ------------
-		static void GetMyIP( SystemAddress addresses[MAXIMUM_NUMBER_OF_INTERNAL_IDS] );
-		static void DomainNameToIP( const char *domainName, char ip[65] );
-
-		static int WinRTInet_Addr(const char * cp);
-
-		static int WinRTSetSockOpt(Windows::Networking::Sockets::DatagramSocket ^s,
-			int level,
-			int optname,
-			const char * optval,
-			socklen_t optlen);
-
-		static int WinRTIOCTLSocket(Windows::Networking::Sockets::DatagramSocket ^s,
-			long cmd,
-			unsigned long *argp);
-
-		static int WinRTGetSockName(Windows::Networking::Sockets::DatagramSocket ^s,
-		struct sockaddr *name,
-			socklen_t* namelen);
-
-		static JISWINSTROE8 *GetRNS2FromDatagramSocket(Windows::Networking::Sockets::DatagramSocket^ s);
-		protected:
-		static DataStructures::List<JISWINSTROE8*> rns2List;
-		static SimpleMutex rns2ListMutex;
-
-		Windows::Networking::Sockets::DatagramSocket^ listener;
-		ListenerContext^ listenerContext;
-	};
+/// @TO-DO
 #else
 
 #if defined(_WIN32) || defined(__GNUC__)  || defined(__GCCXML__) || defined(__S3E__)
 	extern JACKIE_EXPORT JISSendResult Send_Windows_Linux_360NoVDP(
-		JISSocket rns2Socket, JISSendParams *sendParameters,
+		JISSocket rns2Socket,
+		JISSendParams *sendParameters,
 		const char *file, unsigned int line);
 #endif
 

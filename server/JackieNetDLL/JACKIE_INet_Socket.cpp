@@ -2,7 +2,11 @@
 #include "WSAStartupSingleton.h"
 
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET -1
+#define INVALID_SOCKET (-1)
+#endif
+
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR (-1)
 #endif
 
 namespace JACKIE_INET
@@ -149,6 +153,10 @@ namespace JACKIE_INET
 
 			if( sendParameters->systemAddress.address.addr4.sin_family == AF_INET )
 			{
+				/// only when sendParameters->length == 0, sendto() will return 0;
+				/// otherwise it will return > 0, or error code of -1
+				/// here we need avoid user wrong input by assert
+				JACKIE_ASSERT(sendParameters->length > 0);
 				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr4, sizeof(sockaddr_in));
 			} else
 			{
@@ -159,15 +167,14 @@ namespace JACKIE_INET
 
 			if( len < 0 )
 			{
-				JACKIE_NET_DEBUG_PRINTF("sendto failed with code %i for char %i and length %i.\n", len, sendParameters->data[0], sendParameters->length);
+				JACKIE_NET_DEBUG_PRINTF("sendto failed with errno %i for char %i and length %i.\n", len, sendParameters->data[0], sendParameters->length);
 			}
 
 			if( oldTTL != -1 )
 			{
-				setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol()
-					, IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
+				setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol(),
+					IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
 			}
-
 		} while( len == 0 );
 
 		return len;
@@ -399,15 +406,24 @@ namespace JACKIE_INET
 		//sockaddr* sockAddrPtr = (sockaddr*) &sa;
 		//const int flag = 0;
 
-		static sockaddr_in sa = { AF_INET, /*PORT=0*/0 };
+		static const sockaddr_in sa = { AF_INET, /*PORT=0*/0 };
 		static socklen_t sockLen = sizeof(sa);
 		static socklen_t* socketlenPtr = (socklen_t*) &sockLen;
 		static sockaddr* sockAddrPtr = (sockaddr*) &sa;
 		static const int flag = 0;
 
-		recvFromStruct->bytesRead = recvfrom__(GetSocket(), recvFromStruct->data,
-			MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
+		recvFromStruct->bytesRead = recvfrom__(GetSocket(),
+			recvFromStruct->data,
+			MAXIMUM_MTU_SIZE,
+			flag,
+			sockAddrPtr,
+			socketlenPtr);
 
+		/// there are only two resons for UDP recvfrom() return 0 :
+		/// 1. Socket has been soft closed by shutdown() or setting up linear attribute
+		/// 2. Receives an empty (0 size) message from remote endpoint 
+		/// However, we cannot expect temote endpoint  will never sends 0 length mesage
+		/// to us. So, this case will be noticed as kind of ERROR same to the return -1
 		if( recvFromStruct->bytesRead <= 0 )
 		{
 #if defined(_WIN32) && !defined(_XBOX) && !defined(_XBOX_720_COMPILE_AS_WINDOWS) && !defined(X360) && defined(_DEBUG) && !defined(_XBOX_720_COMPILE_AS_WINDOWS) && !defined(WINDOWS_PHONE_8)
@@ -423,16 +439,19 @@ namespace JACKIE_INET
 					NULL, dwIOError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
 					(LPTSTR) & messageBuffer, 0, NULL);
 				// something has gone wrong here...
-				JACKIE_NET_DEBUG_PRINTF("sendto failed:Error code - %d\n%s", dwIOError, messageBuffer);
+				JACKIE_NET_DEBUG_PRINTF("recvfrom__ failed:Error code - %d\n%s", dwIOError, messageBuffer);
 
 				//Free the buffer.
 				LocalFree(messageBuffer);
 			}
+#else
+			fprintf_s(stderr, "ERROR::recvfrom__ failed:: Got %i bytes from %s\n",
+				recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
 #endif
 			return;
 		}
 
-		recvFromStruct->timeRead = ::GetTimeUS();
+		recvFromStruct->timeRead = GetTimeUS();
 		recvFromStruct->systemAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->systemAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 
@@ -475,7 +494,7 @@ namespace JACKIE_INET
 			return;
 		}
 
-		recvFromStruct->timeRead = JACKIE_INET::GetTimeUS();
+		recvFromStruct->timeRead = GetTimeUS();
 
 		if( sa.ss_family == AF_INET )
 		{
@@ -493,6 +512,7 @@ namespace JACKIE_INET
 	}
 	void JISBerkley::RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct) { }
 	void JISBerkley::RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct) { }
+
 	void JISBerkley::BlockOnStopRecvPollingThread(void)
 	{
 		endThreads = true;
@@ -544,14 +564,10 @@ namespace JACKIE_INET
 	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
 		const char *file, UInt32 line)
 	{
-		if( this->jst != 0 )
-		{
-			JISSendResult len = this->jst->JackieINetSendTo(sendParameters->data,
-				sendParameters->length, sendParameters->systemAddress);
-			if( len > 0 ) return len;
-		}
-
-		return Send_Windows_Linux_360NoVDP(rns2Socket, sendParameters, file, line);
+		return jst != 0 ? jst->JackieINetSendTo(sendParameters->data,
+			sendParameters->length,
+			sendParameters->systemAddress) :
+			Send_Windows_Linux_360NoVDP(rns2Socket, sendParameters, file, line);
 	}
 
 	/* static */ void JISBerkley::GetSystemAddressIPV4(JISSocket rns2Socket,
@@ -613,7 +629,7 @@ namespace JACKIE_INET
 
 			char zero[16] = { 0 };
 			if( memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
-				sizeof(zero)) == 0)
+				sizeof(zero)) == 0 )
 				systemAddressOut->SetToLoopBack(6);
 		}
 
