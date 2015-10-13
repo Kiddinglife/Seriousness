@@ -1,109 +1,44 @@
 ﻿#include "JACKIE_INet_Socket.h"
 #include "WSAStartupSingleton.h"
-
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET (-1)
-#endif
-
-#ifndef SOCKET_ERROR
-#define SOCKET_ERROR (-1)
-#endif
+#include "SockOSIncludes.h"
 
 namespace JACKIE_INET
 {
-	////////////// Globals : GetMyIP_Wins_Linux //////////////////////
-#if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
-#if NET_SUPPORT_IPV6 ==1
-	/// reference to http://www.cnblogs.com/chinacloud/archive/2011/08/11/2135141.html
-
-	void GetMyIP_Wins_Linux_IPV4And6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	/////////////////////////////// JISAllocator starts /////////////////////////////////
+	inline JACKIE_INet_Socket*  JISAllocator::AllocJIS(void)
 	{
-		WSAStartupSingleton::AddRef();
-
-		int idx = 0;
-
-		char buf[80];
-		JACKIE_ASSERT(gethostname(buf, 80) != -1);
-
-		struct addrinfo hints;
-		memset(&hints, 0, sizeof(addrinfo)); // make sure the struct is empty
-		hints.ai_socktype = SOCK_DGRAM; // UDP sockets
-		hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
-
-		struct addrinfo *servinfo = 0,
-		struct addrinfo *aip = 0;  // will point to the results
-		getaddrinfo(buf, "", &hints, &servinfo);
-
-		for( idx = 0, aip = servinfo; aip != NULL && idx < MAX_COUNT_LOCAL_IP_ADDR;
-			aip = aip->ai_next, idx++ )
-		{
-			if( aip->ai_family == AF_INET )
-			{
-				struct sockaddr_in *ipv4 = ( struct sockaddr_in * )aip->ai_addr;
-				memcpy(&addresses[idx].address.addr4, ipv4, sizeof(sockaddr_in));
-			} else
-			{
-				struct sockaddr_in6 *ipv6 = ( struct sockaddr_in6 * )aip->ai_addr;
-				memcpy(&addresses[idx].address.addr4, ipv6, sizeof(sockaddr_in6));
-			}
-
-		}
-
-		freeaddrinfo(servinfo); // free the linked-list
-
-		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
-		{
-			addresses[idx] = JACKIE_INET_Address_Null;
-			idx++;
-		}
-
-		WSAStartupSingleton::Deref();
-	}
+		JACKIE_INet_Socket* s2;
+#if defined(WINDOWS_STORE_RT)
+		s2 = JACKIE_INET::OP_NEW<JISWINSTROE8>(TRACE_FILE_AND_LINE_);
+		s2->SetSocketType(JISType_WINDOWS_STORE_8);
+#elif defined(__native_client__)
+		s2 = JACKIE_INET::OP_NEW<JISNativeClient>(TRACE_FILE_AND_LINE_);
+		s2->SetSocketType(RNS2T_CHROME);
+#elif defined(_WIN32)
+		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
+		s2->SetSocketType(JISType_WINDOWS);
 #else
-	void GetMyIP_Wins_Linux_IPV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
-	{
-		WSAStartupSingleton::AddRef();
-
-		char buf[80];
-		JACKIE_ASSERT(gethostname(buf, 80) != -1);
-
-		struct hostent *phe = gethostbyname(buf);
-		if( phe == 0 )
-		{
-			JACKIE_ASSERT(phe != 0);
-			return;
-		}
-
-		int idx = 0;
-		for( idx = 0; idx < MAX_COUNT_LOCAL_IP_ADDR; idx++ )
-		{
-			if( phe->h_addr_list[idx] == 0 ) break;
-			memcpy(&addresses[idx].address.addr4.sin_addr, phe->h_addr_list[idx],
-				sizeof(in_addr));
-		}
-
-		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
-		{
-			addresses[idx] = JACKIE_INET_Address_Null;
-			idx++;
-		}
-		WSAStartupSingleton::Deref();
+		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
+		s2->SetSocketType(JISType_LINUX);
+#endif
+		return s2;
 	}
-#endif
-#endif
-	////////////// Globals : GetMyIP_Wins_Linux //////////////////////
+	inline void  JISAllocator::DeallocJIS(JACKIE_INet_Socket *s)
+	{
+		JACKIE_INET::OP_DELETE(s, TRACE_FILE_AND_LINE_);
+	}
+	//////////////////////////////// JISAllocator ends  ///////////////////////
 
-
-	inline void JACKIE_INet_Socket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JACKIE_INet_Socket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 #if defined(WINDOWS_STORE_RT)
 		JISWINSTROE8::GetMyIP(addresses);
 #elif defined(__native_client__)
 		RNS2_NativeClient::GetMyIP(addresses);
 #elif defined(_WIN32)
-		JISWins::GetMyIP(addresses);
-#else
-		JISLinux::GetMyIP(addresses);
+		JISBerkley::GetMyIPBerkley(addresses);
+#else /// linux-like system
+		JISBerkley::GetMyIPBerkley(addresses);
 #endif
 	}
 
@@ -238,17 +173,17 @@ namespace JACKIE_INET
 #endif
 
 		if( br != JISBindResult_SUCCESS ) return br;
-		unsigned long zero = 0;
-		JISSendParams sendParams =
-		{
-			(char*) &zero,              // char *data;
-			4,                                  // int length;
-			this->boundAddress, // JACKIE_INET_Address systemAddress;
-			0                                  // int ttl; 
-		};
 
-		JISSendResult sr = this->Send(&sendParams, TRACE_FILE_AND_LINE_);
-		if( sr < 0 ) return JISBindResult_FAILED_SEND_TEST;
+		char zero = 0;
+		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0, boundAddress, 0 };
+
+		JISSendResult sr = Send(&sendParams, TRACE_FILE_AND_LINE_);
+		JACKIE_Sleep(10); // make sure data has been delivered into us
+		JISRecvParams recvParams;
+		recvParams.socket = this;
+		JISRecvResult rr = RecvFromBlockingIPV4And6(&recvParams);
+
+		if( sr <= 0 || rr <= 0 ) return JISBindResult_FAILED_SEND_RECV_TEST;
 		memcpy(&this->binding, bindParameters, sizeof(JISBerkleyBindParams));
 		return br;
 	}
@@ -259,7 +194,7 @@ namespace JACKIE_INET
 		boundAddress.address.addr4.sin_port = htons(bindParameters->port);
 		boundAddress.address.addr4.sin_family = AF_INET;
 
-		if( ( rns2Socket = (int) socket__(bindParameters->addressFamily, bindParameters->type, bindParameters->protocol) ) == -1 )
+		if( ( rns2Socket = (int) socket__(bindParameters->addressFamily, bindParameters->type, bindParameters->protocol) ) == SOCKET_ERROR )
 		{
 			JACKIE_ASSERT(rns2Socket != -1);
 			return JISBindResult_FAILED_BIND_SOCKET;
@@ -281,7 +216,7 @@ namespace JACKIE_INET
 		}
 
 		// bind our address to the socket
-		if( bind__(rns2Socket, ( struct sockaddr * ) &boundAddress.address.addr4, sizeof(sockaddr_in)) <= -1 )
+		if( bind__(rns2Socket, ( struct sockaddr * ) &boundAddress.address.addr4, sizeof(sockaddr_in)) <= SOCKET_ERROR )
 		{
 #if defined(_WIN32)
 			closesocket__(rns2Socket);
@@ -395,18 +330,17 @@ namespace JACKIE_INET
 		WSAStartupSingleton::Deref();
 	}
 
-	void JISBerkley::RecvFromBlockingIPV4(JISRecvParams *recvFromStruct)
+	JISRecvResult JISBerkley::RecvFromBlocking(JISRecvParams *recvFromStruct)
 	{
-		//sockaddr_in sa;
-		//memset(&sa, 0, sizeof(sockaddr_in));
-		//sa.sin_family = AF_INET;
-		//sa.sin_port = 0;
-		//socklen_t sockLen = sizeof(sa);
-		//socklen_t* socketlenPtr = (socklen_t*) &sockLen;
-		//sockaddr* sockAddrPtr = (sockaddr*) &sa;
-		//const int flag = 0;
-
-		static const sockaddr_in sa = { AF_INET, /*PORT=0*/0 };
+#if NET_SUPPORT_IPV6 ==1
+		return RecvFromBlockingIPV4And6(recvFromStruct);
+#else
+		return RecvFromBlockingIPV4(recvFromStruct);
+#endif
+	}
+	JISRecvResult JISBerkley::RecvFromBlockingIPV4(JISRecvParams *recvFromStruct)
+	{
+		static  sockaddr_in sa = { AF_INET, 0 };
 		static socklen_t sockLen = sizeof(sa);
 		static socklen_t* socketlenPtr = (socklen_t*) &sockLen;
 		static sockaddr* sockAddrPtr = (sockaddr*) &sa;
@@ -431,7 +365,7 @@ namespace JACKIE_INET
 
 			if( dwIOError == WSAECONNRESET )
 			{
-				JACKIE_NET_DEBUG_PRINTF("A previous send operation resulted in an ICMP Port Unreachable message.\n");
+				JACKIE_NET_DEBUG_PRINTF("\nA previous send operation resulted in an ICMP Port Unreachable message.\n");
 			} else if( dwIOError != WSAEWOULDBLOCK && dwIOError != WSAEADDRNOTAVAIL )
 			{
 				LPVOID messageBuffer;
@@ -439,7 +373,7 @@ namespace JACKIE_INET
 					NULL, dwIOError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
 					(LPTSTR) & messageBuffer, 0, NULL);
 				// something has gone wrong here...
-				JACKIE_NET_DEBUG_PRINTF("recvfrom__ failed:Error code - %d\n%s", dwIOError, messageBuffer);
+				JACKIE_NET_DEBUG_PRINTF("\nrecvfrom() failed with error_code(%d), %s\n", dwIOError, messageBuffer);
 
 				//Free the buffer.
 				LocalFree(messageBuffer);
@@ -448,16 +382,17 @@ namespace JACKIE_INET
 			fprintf_s(stderr, "ERROR::recvfrom__ failed:: Got %i bytes from %s\n",
 				recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
 #endif
-			return;
+			return recvFromStruct->bytesRead;
 		}
 
 		recvFromStruct->timeRead = GetTimeUS();
 		recvFromStruct->systemAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->systemAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 
-		printf_s("--- Got %i bytes from %s\n", recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
+		return recvFromStruct->bytesRead;
+		//printf_s("\n--- Got %i bytes from %s\n", recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
 	}
-	void JISBerkley::RecvFromBlockingIPV4And6(JISRecvParams *recvFromStruct)
+	JISRecvResult JISBerkley::RecvFromBlockingIPV4And6(JISRecvParams *recvFromStruct)
 	{
 #if  NET_SUPPORT_IPV6==1
 
@@ -491,7 +426,7 @@ namespace JACKIE_INET
 				LocalFree(messageBuffer);
 			}
 #endif
-			return;
+			return recvFromStruct->bytesRead;
 		}
 
 		recvFromStruct->timeRead = GetTimeUS();
@@ -506,12 +441,22 @@ namespace JACKIE_INET
 			recvFromStruct->systemAddress.debugPort = ntohs(recvFromStruct->systemAddress.address.addr6.sin6_port);
 		}
 
+		return recvFromStruct->bytesRead;
 #else
-		RecvFromBlockingIPV4(recvFromStruct);
+		return RecvFromBlockingIPV4(recvFromStruct);
 #endif
 	}
-	void JISBerkley::RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct) { }
-	void JISBerkley::RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct) { }
+
+	JISRecvResult JISBerkley::RecvFromNonBlocking(JISRecvParams *recvFromStruct)
+	{
+#if NET_SUPPORT_IPV6 ==1
+		return RecvFromNonBlockingIPV4And6(recvFromStruct);
+#else
+		return RecvFromNonBlockingIPV4(recvFromStruct);
+#endif
+	}
+	JISRecvResult JISBerkley::RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct) { return 1; }
+	JISRecvResult JISBerkley::RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct) { return 1; }
 
 	void JISBerkley::BlockOnStopRecvPollingThread(void)
 	{
@@ -519,7 +464,7 @@ namespace JACKIE_INET
 
 		/// Change recvfrom to unbloking
 		unsigned int zero = 0;
-		JISSendParams sendParams = { (char*) &zero, sizeof(zero), this->boundAddress, 0 };
+		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0, this->boundAddress, 0 };
 		this->Send(&sendParams, TRACE_FILE_AND_LINE_);
 
 		::TimeMS timeout = ::GetTimeMS() + 1000;
@@ -567,10 +512,74 @@ namespace JACKIE_INET
 		return jst != 0 ? jst->JackieINetSendTo(sendParameters->data,
 			sendParameters->length,
 			sendParameters->systemAddress) :
-			Send_Windows_Linux_360NoVDP(rns2Socket, sendParameters, file, line);
+			SendWithoutVDP(rns2Socket, sendParameters, file, line);
+	}
+	JISSendResult JISBerkley::SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters,
+		const char *file, unsigned int line)
+	{
+		/// only when sendParameters->length == 0, sendto() will return 0;
+		/// otherwise it will return > 0, or error code of -1
+		/// here we need avoid user wrong input by assert
+		JACKIE_ASSERT(sendParameters->length > 0);
+
+		int len = 0;
+		int oldTTL = -1;
+		int newTTL = -1;
+		socklen_t opLen = sizeof(oldTTL);
+
+		do
+		{
+			oldTTL = -1;
+			if( sendParameters->ttl > 0 )
+			{
+				// Get the current TTL
+				if( getsockopt__(rns2Socket,
+					sendParameters->systemAddress.GetIPProtocol(),
+					IP_TTL, (char *) & oldTTL, &opLen) != -1 )
+				{
+					newTTL = sendParameters->ttl;
+					setsockopt__(rns2Socket,
+						sendParameters->systemAddress.GetIPProtocol(),
+						IP_TTL, (char *) & newTTL, sizeof(newTTL));
+				}
+			}
+
+
+			if( sendParameters->systemAddress.address.addr4.sin_family == AF_INET )
+			{
+				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr4, sizeof(sockaddr_in));
+			} else
+			{
+#if NET_SUPPORT_IPV6 ==1
+				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr6, sizeof(sockaddr_in6));
+#endif
+		}
+
+			if( len < 0 )
+			{
+				JACKIE_NET_DEBUG_PRINTF("sendto failed with errno %i for char %i and length %i.\n", len, sendParameters->data[0], sendParameters->length);
+			}
+
+			if( oldTTL != -1 )
+			{
+				setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol(),
+					IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
+			}
+	} while( len == 0 );
+
+	sendParameters->bytesWritten = len;
+	return len;
+}
+
+	/// STATICS
+	JACKIE_THREAD_DECLARATION(JISBerkley::RecvFromLoop)
+	{
+		JISBerkley* ptr = (JISBerkley*) arguments;
+		ptr->RecvFromLoopInt();
+		return 0;
 	}
 
-	/* static */ void JISBerkley::GetSystemAddressIPV4(JISSocket rns2Socket,
+	void JISBerkley::GetSystemAddressIPV4(JISSocket rns2Socket,
 		JACKIE_INET_Address *systemAddressOut)
 	{
 		sockaddr_in sa;
@@ -586,7 +595,7 @@ namespace JACKIE_INET
 			systemAddressOut->address.addr4.sin_addr.s_addr = inet_addr__("127.0.0.1");
 		}
 	}
-	/* static */ void JISBerkley::GetSystemAddressIPV4And6(JISSocket rns2Socket,
+	void JISBerkley::GetSystemAddressIPV4And6(JISSocket rns2Socket,
 		JACKIE_INET_Address *systemAddressOut)
 	{
 #if NET_SUPPORT_IPV6 ==1
@@ -638,45 +647,85 @@ namespace JACKIE_INET
 #endif
 	}
 
-
-#if defined(_WIN32) 
-	void JISWins::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JISBerkley::GetMyIPBerkley(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
-		return GetMyIP_Wins_Linux(addresses);
-	}
+		WSAStartupSingleton::AddRef();
+#if NET_SUPPORT_IPV6 ==1
+		GetMyIPBerkleyV4V6(addresses);
 #else
-	void JISLinux::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
-	{
-		return GetMyIP_Wins_Linux(addresses);
-	}
+		GetMyIPBerkleyV4(addresses);
 #endif
+		WSAStartupSingleton::Deref();
+	}
+	void JISBerkley::GetMyIPBerkleyV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	{
+		char buf[80];
+		JACKIE_ASSERT(gethostname(buf, 80) != -1);
+
+		struct hostent *phe = gethostbyname(buf);
+		if( phe == 0 )
+		{
+			JACKIE_ASSERT(phe != 0);
+			return;
+		}
+
+		int idx = 0;
+		for( idx = 0; idx < MAX_COUNT_LOCAL_IP_ADDR; idx++ )
+		{
+			if( phe->h_addr_list[idx] == 0 ) break;
+			memcpy(&addresses[idx].address.addr4.sin_addr, phe->h_addr_list[idx],
+				sizeof(in_addr));
+		}
+
+		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
+		{
+			addresses[idx] = JACKIE_INET_Address_Null;
+			idx++;
+		}
+	}
+	void JISBerkley::GetMyIPBerkleyV4V6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	{
+		int idx = 0;
+
+		char buf[80];
+		JACKIE_ASSERT(gethostname(buf, 80) != -1);
+
+		struct addrinfo hints;
+		memset(&hints, 0, sizeof(addrinfo)); // make sure the struct is empty
+		hints.ai_socktype = SOCK_DGRAM; // UDP sockets
+		hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
+
+		struct addrinfo *servinfo = 0;
+		struct addrinfo *aip = 0;  // will point to the results
+		getaddrinfo(buf, "", &hints, &servinfo);
+
+		for( idx = 0, aip = servinfo; aip != NULL && idx < MAX_COUNT_LOCAL_IP_ADDR;
+			aip = aip->ai_next, idx++ )
+		{
+			if( aip->ai_family == AF_INET )
+			{
+				struct sockaddr_in *ipv4 = ( struct sockaddr_in * )aip->ai_addr;
+				memcpy(&addresses[idx].address.addr4, ipv4, sizeof(sockaddr_in));
+			} else
+			{
+				struct sockaddr_in6 *ipv6 = ( struct sockaddr_in6 * )aip->ai_addr;
+				memcpy(&addresses[idx].address.addr4, ipv6, sizeof(sockaddr_in6));
+			}
+
+		}
+
+		freeaddrinfo(servinfo); // free the linked-list
+
+		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
+		{
+			addresses[idx] = JACKIE_INET_Address_Null;
+			idx++;
+		}
+	}
+	/// STATICS
 	////////////////////////////// JISBerkley implementations ////////////////////////////
 
 #endif
 
-	/////////////////////////////// JISAllocator starts /////////////////////////////////
-	inline JACKIE_INet_Socket*  JISAllocator::AllocJIS(void)
-	{
-		JACKIE_INet_Socket* s2;
-#if defined(WINDOWS_STORE_RT)
-		s2 = JACKIE_INET::OP_NEW<JISWINSTROE8>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_WINDOWS_STORE_8);
-#elif defined(__native_client__)
-		s2 = JACKIE_INET::OP_NEW<RNS2_NativeClient>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(RNS2T_CHROME);
-#elif defined(_WIN32)
-		s2 = JACKIE_INET::OP_NEW<JISWins>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_WINDOWS);
-#else
-		s2 = JACKIE_INET::OP_NEW<JISLinux>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_LINUX);
-#endif
-		return s2;
-	}
-	inline void  JISAllocator::DeallocJIS(JACKIE_INet_Socket *s)
-	{
-		JACKIE_INET::OP_DELETE(s, TRACE_FILE_AND_LINE_);
-	}
-	//////////////////////////////// JISAllocator ends  ///////////////////////
 
 }

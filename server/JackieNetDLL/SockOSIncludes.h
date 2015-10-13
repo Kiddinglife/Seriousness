@@ -16,9 +16,12 @@
 #endif
 
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET -1
+#define INVALID_SOCKET (-1)
 #endif
 
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR (-1)
+#endif
 #if   defined(WINDOWS_STORE_RT)
 #include <windows.h>
 #include "WinRTSockAddr.h"
@@ -43,8 +46,6 @@ typedef SOCKET __TCPSOCKET__;
 typedef int socklen_t;
 #else
 
-#define closesocket close
-
 // For CFSocket
 // https://developer.apple.com/library/mac/#documentation/CoreFOundation/Reference/CFSocketRef/Reference/reference.html
 // Reason: http://sourceforge.net/p/open-dis/discussion/683284/thread/0929d6a0
@@ -54,6 +55,10 @@ typedef int socklen_t;
 
 #if !defined(ANDROID)
 #include <ifaddrs.h>
+#endif
+
+#if (defined(__GNUC__)  || defined(__GCCXML__))
+#include <netdb.h>
 #endif
 
 #include <net/if.h>

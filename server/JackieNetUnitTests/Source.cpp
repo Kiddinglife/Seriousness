@@ -195,7 +195,7 @@ void test_GetMyIP_Wins_Linux_funcs()
 {
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
 	JACKIE_INET_Address addr[MAX_COUNT_LOCAL_IP_ADDR];
-	GetMyIP_Wins_Linux(addr);
+	JISBerkley::GetMyIPBerkley(addr);
 	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
 	{
 		printf_s("(%s)\n", addr[i].ToString());
@@ -206,6 +206,14 @@ void test_JISBerkley_All_funcs()
 	std::cout << "test_JISBerkley_All_funcs starts...\n";
 	JACKIE_INet_Socket* sock = JISAllocator::AllocJIS();
 	sock->SetUserConnectionSocketIndex(0);
+	JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR];
+
+	sock->GetMyIP(addresses);
+	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
+	{
+		if( addresses[i] == JACKIE_INET_Address_Null ) break;
+		JACKIE_NET_DEBUG_PRINTF("my avaible IP (%s)\n", addresses[i].ToString());
+	}
 
 	if( sock->IsBerkleySocket() )
 	{
@@ -224,8 +232,8 @@ void test_JISBerkley_All_funcs()
 		bbp.remotePortJackieNetWasStartedOn_PS3_PS4_PSP2 = 0;
 
 		JISBindResult br = ( (JISBerkley*) sock )->Bind(&bbp, TRACE_FILE_AND_LINE_);
-		printf_s("(%s)\n", JISBindResultToString(br));
 
+		printf_s("(%s)\n", JISBindResultToString(br));
 		switch( br )
 		{
 			case JISBindResult_FAILED_BIND_SOCKET:
@@ -233,7 +241,7 @@ void test_JISBerkley_All_funcs()
 				return;
 				break;
 
-			case JISBindResult_FAILED_SEND_TEST:
+			case JISBindResult_FAILED_SEND_RECV_TEST:
 				JISAllocator::DeallocJIS(sock);
 				return;
 				break;
@@ -400,7 +408,6 @@ int main()
 					test_JISBerkley_All_funcs();
 					break;
 				default:
-					test_GetMyIP_Wins_Linux_funcs();
 					test_JISBerkley_All_funcs();
 					break;
 			}

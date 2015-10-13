@@ -2,12 +2,12 @@
 #define JACKIE_INET_SOCKET_H_
 
 #include "DLLExport.h"
-#include "NetTypes.h"
 #include "JACKIE_Atomic.h"
-#include "NetTime.h"
-#include "OverrideMemory.h"
 #include "JACKIE_Thread.h"
+#include "NetTime.h"
+#include "NetTypes.h"
 #include "GlobalFunctions.h"
+#include "OverrideMemory.h"
 
 // #define TEST_NATIVE_CLIENT_ON_WINDOWS
 #ifdef TEST_NATIVE_CLIENT_ON_WINDOWS
@@ -24,13 +24,14 @@ namespace JACKIE_INET
 
 	typedef int JISSocket;
 	typedef int JISSendResult;
+	typedef int JISRecvResult;
 
 	enum JACKIE_EXPORT JISBindResult
 	{
 		JISBindResult_SUCCESS = 0,
 		JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED,
 		JISBindResult_FAILED_BIND_SOCKET,
-		JISBindResult_FAILED_SEND_TEST,
+		JISBindResult_FAILED_SEND_RECV_TEST,
 	};
 
 
@@ -80,36 +81,11 @@ namespace JACKIE_INET
 		"JISType_LINUX"
 	};
 
-
-	////////////////////////////////////GetMyIP_Wins_Linux //////////////////////////////////////////
-#if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
-
-#if NET_SUPPORT_IPV6 ==1
-	void GetMyIP_Wins_Linux_IPV4And6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-#else
-#if (defined(__GNUC__)  || defined(__GCCXML__)) && !defined(__WIN32__)
-#include <netdb.h>
-#endif
-	void GetMyIP_Wins_Linux_IPV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-#endif
-
-	inline extern JACKIE_EXPORT void GetMyIP_Wins_Linux(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
-	{
-#if NET_SUPPORT_IPV6 ==1
-		GetMyIP_Wins_Linux_IPV4And6(addresses);
-#else
-		GetMyIP_Wins_Linux_IPV4(addresses);
-#endif
-	}
-
-#endif
-	////////////////////////////////////GetMyIP_Wins_Linux //////////////////////////////////////////
-
-
 	struct JACKIE_EXPORT JISSendParams
 	{
 		char *data;
 		int length;
+		JISSendResult bytesWritten; // use 0 to init
 		JACKIE_INET_Address systemAddress;
 		int ttl;
 	};
@@ -117,7 +93,7 @@ namespace JACKIE_INET
 	struct JACKIE_EXPORT JISRecvParams
 	{
 		char data[MAXIMUM_MTU_SIZE];
-		int bytesRead;
+		JISRecvResult bytesRead;
 		JACKIE_INET_Address systemAddress;
 		TimeUS timeRead;
 		JACKIE_INet_Socket *socket;
@@ -191,10 +167,16 @@ namespace JACKIE_INET
 		}
 	};
 
+	///////////////////////////////////////  Macros are based on if supporting berkley implementation or not ///////////////////////////////////////////////
 #if defined(WINDOWS_STORE_RT)
-/// @TO-DO
+	// Every platform except Windows Store 8 can use the Berkley sockets interface
+	/// @TO-DO
+#elif defined(__native_client__) 	
+	/// Every platform that uses Berkley sockets,
+	///except native client, can share some common functions like bind, sendto() and recvfrom()
+	/// @TO-DO
 #else
-
+	/// linux-like and wins systen go here
 #if defined(_WIN32) || defined(__GNUC__)  || defined(__GCCXML__) || defined(__S3E__)
 	extern JACKIE_EXPORT JISSendResult Send_Windows_Linux_360NoVDP(
 		JISSocket rns2Socket,
@@ -241,12 +223,9 @@ namespace JACKIE_INET
 		virtual bool IsFork(const JACKIE_INET_Address &systemAddress) const = 0;
 	};
 
-	// Every platform except Windows Store 8 can use the Berkley sockets interface
-	// Every platform that uses Berkley sockets, except native client, can compile some common functions
 	class JACKIE_EXPORT JISBerkley : public JACKIE_INet_Socket
 	{
-		public:
-
+		protected:
 		JISSocket rns2Socket;
 		JISBerkleyBindParams binding;
 		JACKIE_ISocketTransceiver *jst;
@@ -258,14 +237,7 @@ namespace JACKIE_INET
 		CFSocketRef             _cfSocket;
 #endif
 
-		/// Constructor not called at this monment !
-		static JACKIE_THREAD_DECLARATION(RecvFromLoop)
-		{
-			JISBerkley* ptr = (JISBerkley*) arguments;
-			ptr->RecvFromLoopInt();
-			return 0;
-		}
-
+		public:
 		JISBerkley() { rns2Socket = (JISSocket) INVALID_SOCKET; jst = 0; }
 		virtual ~JISBerkley() { if( rns2Socket != INVALID_SOCKET ) closesocket__(rns2Socket); }
 
@@ -287,19 +259,11 @@ namespace JACKIE_INET
 		static bool IsPortInUse(unsigned short port, const char *hostAddress,
 			unsigned short addressFamily, int type);
 
-		JISBindResult Bind(JISBerkleyBindParams *bindParameters,
-			const char *file, UInt32 line);
+		JISBindResult Bind(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
 
-		protected:
-		JISBindResult BindShared(JISBerkleyBindParams *bindParameters,
-			const char *file, UInt32 line);
-		JISBindResult BindSharedIPV4(JISBerkleyBindParams *bindParameters,
-			const char *file, UInt32 line);
-		JISBindResult BindSharedIPV4And6(JISBerkleyBindParams *bindParameters,
-			const char *file, UInt32 line);
-
-		static void GetSystemAddressIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
-		static void GetSystemAddressIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
+		JISBindResult BindShared(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
+		JISBindResult BindSharedIPV4(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
+		JISBindResult BindSharedIPV4And6(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
 
 		/// nonblocking = 0 means blocking;  nonblocking != 0 means nonblocking; 
 		/// setsockopt() will always return 0 if succeed otherwise return < 0
@@ -360,7 +324,6 @@ namespace JACKIE_INET
 			JACKIE_ASSERT(setsockopt__(rns2Socket, SOL_SOCKET, SO_BROADCAST,
 				(char *) & broadcast, sizeof(broadcast)) == 0);
 		}
-
 		inline void SetIPHdrIncl(int ipHdrIncl)
 		{
 			//int val = setsockopt__(rns2Socket, IPPROTO_IP, IP_HDRINCL,
@@ -383,53 +346,28 @@ namespace JACKIE_INET
 #endif
 		}
 
-		/// recv
 		unsigned int RecvFromLoopInt(void);
-		inline void RecvFromBlocking(JISRecvParams *recvFromStruct)
-		{
-#if NET_SUPPORT_IPV6 ==1
-			return RecvFromBlockingIPV4And6(recvFromStruct);
-#else
-			return RecvFromBlockingIPV4(recvFromStruct);
-#endif
-		}
-		void RecvFromBlockingIPV4(JISRecvParams *recvFromStruct);
-		void RecvFromBlockingIPV4And6(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromBlocking(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromBlockingIPV4(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromBlockingIPV4And6(JISRecvParams *recvFromStruct);
 
-		inline void RecvFromNonBlocking(JISRecvParams *recvFromStruct)
-		{
-#if NET_SUPPORT_IPV6 ==1
-			return RecvFromNonBlockingIPV4(recvFromStruct);
-#else
-			return RecvFromNonBlockingIPV4And6(recvFromStruct);
-#endif
-		}
-		void RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct);
-		void RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromNonBlocking(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct);
+		JISRecvResult RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct);
 
 		// send by jst if not null, otherwise by 
 		JISSendResult Send(JISSendParams *sendParameters, const char *file, UInt32 line);
-	};
+		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters,
+			const char *file, unsigned int line);
+		/// Constructor not called at this monment !
+		static JACKIE_THREAD_DECLARATION(RecvFromLoop);
+		void GetSystemAddressIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
+		void GetSystemAddressIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
 
-#if defined(_WIN32) 
-	class JACKIE_EXPORT JISWins : public JISBerkley //, public JISWinLinux360
-	{
-		public:static void GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-
-			   //protected:
-			   //static void GetMyIPIPV4(JACKIE_INET_Address addrs[MAX_COUNT_LOCAL_IP_ADDR]);
-			   //static void GetMyIPV4AndV6(JACKIE_INET_Address addrs[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkley(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkleyV4V6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkleyV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 	};
-#else
-	class JISLinux : public JISBerkley //, public JISWinLinux360
-	{
-		public: static void GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-
-				//protected:
-				//static void GetMyIPIPV4(JACKIE_INET_Address addrs[MAX_COUNT_LOCAL_IP_ADDR]);
-				//static void GetMyIPV4AndV6(JACKIE_INET_Address addrs[MAX_COUNT_LOCAL_IP_ADDR]);
-	};
-#endif
 
 #endif
 
