@@ -1,9 +1,51 @@
 ﻿#include "JACKIE_INet_Socket.h"
 #include "WSAStartupSingleton.h"
-#include "SockOSIncludes.h"
 
 namespace JACKIE_INET
 {
+	const char* JISBindResultToString(JISBindResult reason)
+	{
+		const char*  JISBindResultStrings[4] =
+		{
+			"JISBindResult_SUCCESS",
+			"JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED",
+			"JISBindResult_FAILED_BIND_SOCKET",
+			"JISBindResult_FAILED_SEND_TEST"
+		};
+
+		unsigned int index = reason;
+
+		if( index < ( sizeof(JISBindResultStrings) / sizeof(char*) ) )
+		{
+			return JISBindResultStrings[index];
+		}
+
+		return "JISBindResult_UNKNOWN";
+	}
+	const char* JISTypeToString(JISType reason)
+	{
+		const char* const JISTypeStrings[9] =
+		{
+			"JISType_WINDOWS_STORE_8",
+			"JISType_PS3",
+			"JISType_PS4",
+			"JISType_CHROME",
+			"JISType_VITA",
+			"JISType_XBOX_360",
+			"JISType_XBOX_720",
+			"JISType_WINDOWS",
+			"JISType_LINUX"
+		};
+		unsigned int index = reason;
+
+		if( index < ( sizeof(JISTypeStrings) / sizeof(char*) ) )
+		{
+			return JISTypeStrings[index];
+		}
+
+		return "JISType_UNKNOWN";
+	}
+
 	/////////////////////////////// JISAllocator starts /////////////////////////////////
 	inline JACKIE_INet_Socket*  JISAllocator::AllocJIS(void)
 	{
@@ -29,6 +71,7 @@ namespace JACKIE_INET
 	}
 	//////////////////////////////// JISAllocator ends  ///////////////////////
 
+	/////////////////////////////// JACKIE_INet_Socket Implementations /////////////////////////////////
 	void JACKIE_INet_Socket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 #if defined(WINDOWS_STORE_RT)
@@ -41,6 +84,13 @@ namespace JACKIE_INET
 		JISBerkley::GetMyIPBerkley(addresses);
 #endif
 	}
+	void JACKIE_INet_Socket::Print(void)
+	{
+		const char* addrStr = boundAddress.ToString();
+		const char* socketTypeStr = JISTypeToString(socketType);
+		printf_s("JACKIE_INet_Socket::virtual print():: socketType(%s), userConnectionSocketIndex(%d),\n boundAddress(%s)", addrStr, socketTypeStr, userConnectionSocketIndex);
+	}
+	/////////////////////////////// JACKIE_INet_Socket Implementations /////////////////////////////////
 
 #if defined (WINDOWS_STORE_RT) 	/// We are using WINDOWS_STORE_RT plateform
 	//@TODO
@@ -553,7 +603,7 @@ namespace JACKIE_INET
 #if NET_SUPPORT_IPV6 ==1
 				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr6, sizeof(sockaddr_in6));
 #endif
-		}
+			}
 
 			if( len < 0 )
 			{
@@ -565,11 +615,11 @@ namespace JACKIE_INET
 				setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol(),
 					IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
 			}
-	} while( len == 0 );
+		} while( len == 0 );
 
-	sendParameters->bytesWritten = len;
-	return len;
-}
+		sendParameters->bytesWritten = len;
+		return len;
+	}
 
 	/// STATICS
 	JACKIE_THREAD_DECLARATION(JISBerkley::RecvFromLoop)

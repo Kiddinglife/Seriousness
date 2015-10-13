@@ -26,36 +26,16 @@ namespace JACKIE_INET
 	typedef int JISSendResult;
 	typedef int JISRecvResult;
 
-	enum JACKIE_EXPORT JISBindResult
+	enum  JISBindResult
 	{
 		JISBindResult_SUCCESS = 0,
 		JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED,
 		JISBindResult_FAILED_BIND_SOCKET,
 		JISBindResult_FAILED_SEND_RECV_TEST,
 	};
+	JACKIE_EXPORT extern const char* JISBindResultToString(JISBindResult reason);
 
-
-	inline extern const char* JISBindResultToString(JISBindResult reason)
-	{
-		const char*  JISBindResultStrings[4] =
-		{
-			"JISBindResult_SUCCESS",
-			"JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED",
-			"JISBindResult_FAILED_BIND_SOCKET",
-			"JISBindResult_FAILED_SEND_TEST"
-		};
-
-		unsigned int index = reason;
-
-		if( index < ( sizeof(JISBindResultStrings) / sizeof(char*) ) )
-		{
-			return JISBindResultStrings[index];
-		}
-
-		return "JISBindResult_UNKNOWN";
-	}
-
-	enum JACKIE_EXPORT JISType
+	enum  JISType
 	{
 		JISType_WINDOWS_STORE_8 = 0,
 		JISType_PS3,
@@ -67,19 +47,7 @@ namespace JACKIE_INET
 		JISType_WINDOWS,
 		JISType_LINUX
 	};
-
-	const char* const JISTypeStrings[9] =
-	{
-		"JISType_WINDOWS_STORE_8",
-		"JISType_PS3",
-		"JISType_PS4",
-		"JISType_CHROME",
-		"JISType_VITA",
-		"JISType_XBOX_360",
-		"JISType_XBOX_720",
-		"JISType_WINDOWS",
-		"JISType_LINUX"
-	};
+	JACKIE_EXPORT extern const char* JISTypeToString(JISType reason);
 
 	struct JACKIE_EXPORT JISSendParams
 	{
@@ -126,12 +94,7 @@ namespace JACKIE_INET
 		JISType socketType;
 
 		/// Text-print the intenal memebers in this class
-		virtual void Print(void)
-		{
-			const char* addrStr = boundAddress.ToString();
-			const char* socketTypeStr = JISTypeStrings[socketType];
-			printf_s("boundAddress(%s), socketType(%s), userConnectionSocketIndex(%d)", addrStr, socketTypeStr, userConnectionSocketIndex);
-		}
+		virtual void Print(void);
 
 		public:
 		JACKIE_INet_Socket() : eventHandler(0) { }
@@ -167,7 +130,7 @@ namespace JACKIE_INET
 		}
 	};
 
-	///////////////////////////////////////  Macros are based on if supporting berkley implementation or not ///////////////////////////////////////////////
+	/// Macros are based on if supporting berkley implementation or not 
 #if defined(WINDOWS_STORE_RT)
 	// Every platform except Windows Store 8 can use the Berkley sockets interface
 	/// @TO-DO
@@ -259,8 +222,10 @@ namespace JACKIE_INET
 		static bool IsPortInUse(unsigned short port, const char *hostAddress,
 			unsigned short addressFamily, int type);
 
-		JISBindResult Bind(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
+		void GetSystemAddressIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
+		void GetSystemAddressIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
 
+		JISBindResult Bind(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
 		JISBindResult BindShared(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
 		JISBindResult BindSharedIPV4(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
 		JISBindResult BindSharedIPV4And6(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
@@ -355,14 +320,15 @@ namespace JACKIE_INET
 		JISRecvResult RecvFromNonBlockingIPV4(JISRecvParams *recvFromStruct);
 		JISRecvResult RecvFromNonBlockingIPV4And6(JISRecvParams *recvFromStruct);
 
-		// send by jst if not null, otherwise by 
+		// send by jst if not null, otherwise by SendWithoutVDP
 		JISSendResult Send(JISSendParams *sendParameters, const char *file, UInt32 line);
 		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters,
 			const char *file, unsigned int line);
+
 		/// Constructor not called at this monment !
 		static JACKIE_THREAD_DECLARATION(RecvFromLoop);
-		void GetSystemAddressIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
-		void GetSystemAddressIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
+
+
 
 		static void GetMyIPBerkley(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 		static void GetMyIPBerkleyV4V6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
