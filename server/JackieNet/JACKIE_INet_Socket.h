@@ -6,7 +6,7 @@
 #include "JACKIE_Thread.h"
 #include "NetTime.h"
 #include "NetTypes.h"
-#include "GlobalFunctions.h"
+#include "GlobalFunctions.h" // only for JackieSleep() global function
 #include "OverrideMemory.h"
 
 // #define TEST_NATIVE_CLIENT_ON_WINDOWS
@@ -105,8 +105,6 @@ namespace JACKIE_INET
 		// some platforms this create an internal thread.
 		void SetRecvEventHandler(JISEventHandler *_eventHandler) { eventHandler = _eventHandler; }
 		JISEventHandler * GetEventHandler(void) const { return eventHandler; }
-
-		//virtual JISSendResult Send(JISSendParams *sendParameters, const char *file, UInt32 line) = 0;
 
 		JISType GetSocketType(void) const { return socketType; }
 		void SetSocketType(JISType t) { socketType = t; }
