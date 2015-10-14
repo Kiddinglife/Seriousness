@@ -54,7 +54,7 @@ namespace JACKIE_INET
 		char *data;
 		int length;
 		JISSendResult bytesWritten; // use 0 to init
-		JACKIE_INET_Address systemAddress;
+		JACKIE_INET_Address receiverINetAddress;
 		int ttl;
 	};
 
@@ -62,7 +62,7 @@ namespace JACKIE_INET
 	{
 		char data[MAXIMUM_MTU_SIZE];
 		JISRecvResult bytesRead;
-		JACKIE_INET_Address systemAddress;
+		JACKIE_INET_Address senderINetAddress;
 		TimeUS timeRead;
 		JACKIE_INet_Socket *socket;
 	};

@@ -18,8 +18,10 @@ public class CharacterShow : MonoBehaviour
 
 	public void OnPress(bool isPress)
 	{
-		
+
 		if (isPress)
+		{
 			StartMenueController.instance.OnCharacteronChaShowPanelClick(gameObject);
+		}
 	}
 }

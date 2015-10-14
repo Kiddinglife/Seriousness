@@ -360,10 +360,9 @@ namespace JACKIE_INET
 		static sockaddr* sockAddrPtr = (sockaddr*) &sa;
 		static const int flag = 0;
 
-		recvFromStruct->bytesRead = recvfrom__(this->GetSocket(),
-			recvFromStruct->data, MAXIMUM_MTU_SIZE,
-			flag, sockAddrPtr, socketlenPtr);
+		recvFromStruct->bytesRead = recvfrom__(this->GetSocket(), recvFromStruct->data, MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
 
+		//////////////////////////////////////////////////////////////////////////
 		/// there are only two resons for UDP recvfrom() return 0 :
 		/// 1. Socket has been soft closed by shutdown() or setting up linear attribute
 		/// 2. Receives an empty (0 size) message from remote endpoint 
@@ -374,6 +373,7 @@ namespace JACKIE_INET
 		//{
 		//	fprintf_s(stderr, "ERROR::JISBerkley::RecvFromBlockingIPV4()::recvfrom__()::Got %i bytes from %s\n", recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
 		//}
+		//////////////////////////////////////////////////////////////////////////
 
 		if( recvFromStruct->bytesRead < 0 )
 		{
@@ -398,11 +398,10 @@ namespace JACKIE_INET
 			return recvFromStruct->bytesRead;
 		}
 
-
 		/// fill out the remote endpoint address
 		recvFromStruct->timeRead = GetTimeUS();
-		recvFromStruct->systemAddress.SetPortNetworkOrder(sa.sin_port);
-		recvFromStruct->systemAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
+		recvFromStruct->senderINetAddress.SetPortNetworkOrder(sa.sin_port);
+		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 		return recvFromStruct->bytesRead;
 	}
 
@@ -453,12 +452,12 @@ namespace JACKIE_INET
 
 		if( sa.ss_family == AF_INET )
 		{
-			memcpy(&recvFromStruct->systemAddress.address.addr4, (sockaddr_in *) &sa, sizeof(sockaddr_in));
-			recvFromStruct->systemAddress.debugPort = ntohs(recvFromStruct->systemAddress.address.addr4.sin_port);
+			memcpy(&recvFromStruct->senderINetAddress.address.addr4, (sockaddr_in *) &sa, sizeof(sockaddr_in));
+			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr4.sin_port);
 		} else
 		{
-			memcpy(&recvFromStruct->systemAddress.address.addr6, (sockaddr_in6 *) &sa, sizeof(sockaddr_in6));
-			recvFromStruct->systemAddress.debugPort = ntohs(recvFromStruct->systemAddress.address.addr6.sin6_port);
+			memcpy(&recvFromStruct->senderINetAddress.address.addr6, (sockaddr_in6 *) &sa, sizeof(sockaddr_in6));
+			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr6.sin6_port);
 		}
 
 		return recvFromStruct->bytesRead;
@@ -504,7 +503,7 @@ namespace JACKIE_INET
 		{
 			ret = jst->JackieINetSendTo(sendParameters->data,
 				sendParameters->length,
-				sendParameters->systemAddress);
+				sendParameters->receiverINetAddress);
 		} else
 		{
 			ret = SendWithoutVDP(rns2Socket, sendParameters, file, line);
@@ -526,20 +525,20 @@ namespace JACKIE_INET
 		{
 			// Get the current TTL
 			if( getsockopt__(rns2Socket,
-				sendParameters->systemAddress.GetIPProtocol(), IP_TTL, (char *) & oldTTL, &opLen) != -1 )
+				sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *) & oldTTL, &opLen) != -1 )
 			{
 				newTTL = sendParameters->ttl;
-				setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol(), IP_TTL, (char *) & newTTL, sizeof(newTTL));
+				setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *) & newTTL, sizeof(newTTL));
 			}
 		}
 
-		if( sendParameters->systemAddress.address.addr4.sin_family == AF_INET )
+		if( sendParameters->receiverINetAddress.address.addr4.sin_family == AF_INET )
 		{
-			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr4, sizeof(sockaddr_in));
+			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->receiverINetAddress.address.addr4, sizeof(sockaddr_in));
 		} else
 		{
 #if NET_SUPPORT_IPV6 ==1
-			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->systemAddress.address.addr6, sizeof(sockaddr_in6));
+			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->receiverINetAddress.address.addr6, sizeof(sockaddr_in6));
 #endif
 		}
 
@@ -579,7 +578,7 @@ namespace JACKIE_INET
 
 		if( oldTTL != -1 )
 		{
-			setsockopt__(rns2Socket, sendParameters->systemAddress.GetIPProtocol(), IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
+			setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *) & oldTTL, sizeof(oldTTL));
 		}
 
 		sendParameters->bytesWritten = len;
