@@ -139,8 +139,8 @@ namespace JACKIE_INET
 		unsigned short addressFamily; // AF_INET or AF_INET6
 		int type; // SOCK_DGRAM
 		int protocol; // 0
-		bool nonBlockingSocket;
-		int setBroadcast;
+		bool isBlocKing;
+		int isBroadcast;
 		int setIPHdrIncl;
 		int doNotFragment;
 		int pollingThreadPriority;

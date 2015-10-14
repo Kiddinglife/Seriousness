@@ -158,7 +158,6 @@ namespace JACKIE_INET
 		/// we do not test bindResult == JISBindResult_FAILED_SEND_TEST here 
 		while( bindResult == JISBindResult_FAILED_BIND_SOCKET )
 		{
-			printf_s("BindSharedIPV4(%d)\n", bindResult);
 			// Sometimes windows will fail if the socket is recreated too quickly
 			JACKIE_Sleep(100);
 			bindResult = BindShared(bindParameters, file, line);
@@ -188,7 +187,10 @@ namespace JACKIE_INET
 		JISRecvResult rr = RecvFrom(&recvParams);
 
 		if( sr <= 0 || rr <= 0 || sr != rr ) return JISBindResult_FAILED_SEND_RECV_TEST;
+
+		/// deep-copy @param bindParameters into @mem this->binding
 		memcpy(&this->binding, bindParameters, sizeof(JISBerkleyBindParams));
+
 		return br;
 	}
 	JISBindResult JISBerkley::BindSharedIPV4(JISBerkleyBindParams *bindParameters,
@@ -216,8 +218,8 @@ namespace JACKIE_INET
 		}
 
 		SetSocketOptions();
-		SetNonBlockingSocket(bindParameters->nonBlockingSocket);
-		SetBroadcastSocket(bindParameters->setBroadcast);
+		SetNonBlockingSocket(bindParameters->isBlocKing);
+		SetBroadcastSocket(bindParameters->isBroadcast);
 		SetIPHdrIncl(bindParameters->setIPHdrIncl);
 
 		/// test hostAddress exists and != empty string
@@ -289,8 +291,8 @@ namespace JACKIE_INET
 				freeaddrinfo(servinfo); // free the linked-list
 
 				SetSocketOptions();
-				SetNonBlockingSocket(bindParameters->nonBlockingSocket);
-				SetBroadcastSocket(bindParameters->setBroadcast);
+				SetNonBlockingSocket(bindParameters->isBlocKing);
+				SetBroadcastSocket(bindParameters->isBroadcast);
 				SetIPHdrIncl(bindParameters->setIPHdrIncl);
 
 				GetSystemAddressViaJISSocketIPV4And6(rns2Socket, &boundAddress);
@@ -299,7 +301,7 @@ namespace JACKIE_INET
 			} else
 			{
 #if defined(_WIN32)
-				if( ( binding.nonBlockingSocket && GetLastError() != WSAEWOULDBLOCK ) || !binding.nonBlockingSocket )
+				if( ( binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK ) || !binding.isBlocKing )
 				{
 					HLOCAL messageBuffer = 0;
 					FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -311,7 +313,7 @@ namespace JACKIE_INET
 					LocalFree(messageBuffer);
 				}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-				if( ( binding.nonBlockingSocket && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.nonBlockingSocket )
+				if( ( binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.isBlocKing )
 				{
 					fprintf_s(stderr, "JISBerkley::BindSharedIPV4And6()::bind__()::failed with errno code (%d-%s)\n", errno, strerror(errno));
 				}
@@ -378,7 +380,7 @@ namespace JACKIE_INET
 		if( recvFromStruct->bytesRead < 0 )
 		{
 #if defined(_WIN32)
-			if( ( binding.nonBlockingSocket && GetLastError() != WSAEWOULDBLOCK ) || !binding.nonBlockingSocket )
+			if( ( binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK ) || !binding.isBlocKing )
 			{
 				HLOCAL messageBuffer = 0;
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -390,7 +392,7 @@ namespace JACKIE_INET
 				LocalFree(messageBuffer);
 			}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-			if( ( binding.nonBlockingSocket && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.nonBlockingSocket )
+			if( ( binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.isBlocKing )
 			{
 				fprintf_s(stderr, "JISBerkley::RecvFromNonBlockingIPV4()::recvfrom__()::failed with errno code (%d-%s)\n", errno, strerror(errno));
 			}
@@ -429,7 +431,7 @@ namespace JACKIE_INET
 		if( recvFromStruct->bytesRead < 0 )
 		{
 #if defined(_WIN32)
-			if( ( binding.nonBlockingSocket && GetLastError() != WSAEWOULDBLOCK ) || !binding.nonBlockingSocket )
+			if( ( binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK ) || !binding.isBlocKing )
 			{
 				HLOCAL messageBuffer = 0;
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -441,7 +443,7 @@ namespace JACKIE_INET
 				LocalFree(messageBuffer);
 			}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-			if( (binding.nonBlockingSocket && errno != EAGAIN && errno != EWOULDBLOCK) || !binding.nonBlockingSocket)
+			if( (binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK) || !binding.isBlocKing)
 			{
 				fprintf_s(stderr, "JISBerkley::RecvFromNonBlockingIPV4()::recvfrom__()::failed with errno code (%d-%s)\n", errno, strerror(errno));
 			}
@@ -555,7 +557,7 @@ namespace JACKIE_INET
 		if( len < 0 )
 		{
 #if defined(_WIN32)
-			if( ( binding.nonBlockingSocket && GetLastError() != WSAEWOULDBLOCK ) || !binding.nonBlockingSocket )
+			if( ( binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK ) || !binding.isBlocKing )
 			{
 				HLOCAL messageBuffer = 0;
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -568,7 +570,7 @@ namespace JACKIE_INET
 				LocalFree(messageBuffer);
 			}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-			if( ( binding.nonBlockingSocket && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.nonBlockingSocket )
+			if( ( binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.isBlocKing )
 			{
 				fprintf_s(stderr, "JISBerkley::SendWithoutVDP()::sendto__() failed with errno %i(%s) for char %i and length %i.\n",
 					errno, strerror(errno), sendParameters->data[0], sendParameters->length);

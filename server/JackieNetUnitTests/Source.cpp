@@ -239,8 +239,8 @@ void test_JISBerkley_All_funcs()
 		bbp.addressFamily = AF_INET;
 		bbp.type = SOCK_DGRAM;
 		bbp.protocol = 0;
-		bbp.nonBlockingSocket = true;
-		bbp.setBroadcast = true;
+		bbp.isBlocKing = true;
+		bbp.isBroadcast = true;
 		bbp.setIPHdrIncl = false;
 		bbp.doNotFragment = false;
 		bbp.pollingThreadPriority = 0;
