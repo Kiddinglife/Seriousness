@@ -399,14 +399,13 @@ namespace JACKIE_INET
 		}
 
 
+		/// fill out the remote endpoint address
 		recvFromStruct->timeRead = GetTimeUS();
 		recvFromStruct->systemAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->systemAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
-
-		printf_s("received %d bytes from %s\n",
-			recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
 		return recvFromStruct->bytesRead;
 	}
+
 	JISRecvResult JISBerkley::RecvFromIPV4And6(JISRecvParams *recvFromStruct)
 	{
 #if  NET_SUPPORT_IPV6==1

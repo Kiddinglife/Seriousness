@@ -205,6 +205,7 @@ void test_GetMyIP_Wins_Linux_funcs()
 
 class myhandler : public JISEventHandler
 {
+	public:
 	virtual void OnJISRecv(JISRecvParams *recvStruct) { }
 	virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line)
 	{
@@ -284,7 +285,20 @@ void test_JISBerkley_All_funcs()
 
 		printf_s("Start CreateRecvPollingThread...\n");
 		bsock->CreateRecvPollingThread(0);
-		
+
+		int ret;
+		char* data = "JackieNet";
+		JISSendParams sendParams;
+		sendParams.data = data;
+		sendParams.length = strlen(data) + 1;
+		sendParams.systemAddress = bsock->GetBoundAddress();
+		do { ret = bsock->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+
+		JISRecvParams* recvParams = handler.AllocJISRecvParams(TRACE_FILE_AND_LINE_);
+		recvParams->socket = bsock;
+		ret = bsock->RecvFrom(recvParams);
+		if( ret >= 0 ) printf_s("recv(%s)", recvParams->data);
+
 		printf_s("Start Polling Recv in another thread...\n");
 		bsock->RecvFromLoop(bsock);
 
