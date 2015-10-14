@@ -22,6 +22,10 @@
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR (-1)
 #endif
+
+#define SAFE_CLOSE_SOCK(rns2Socket) \
+if( rns2Socket != INVALID_SOCKET ) { closesocket__(rns2Socket); rns2Socket = (JISSocket) INVALID_SOCKET; }
+
 #if   defined(WINDOWS_STORE_RT)
 #include <windows.h>
 #include "WinRTSockAddr.h"
@@ -59,6 +63,7 @@ typedef int socklen_t;
 
 #if (defined(__GNUC__)  || defined(__GCCXML__))
 #include <netdb.h>
+#include <errno.h>
 #endif
 
 #include <net/if.h>

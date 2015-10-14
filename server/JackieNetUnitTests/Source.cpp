@@ -201,13 +201,24 @@ void test_GetMyIP_Wins_Linux_funcs()
 		printf_s("(%s)\n", addr[i].ToString());
 	}
 }
+
+
+class myhandler : public JISEventHandler
+{
+	virtual void OnJISRecv(JISRecvParams *recvStruct) { }
+	virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line)
+	{
+	}
+	virtual JISRecvParams *AllocJISRecvParams(const char *file, UInt32 line) { static JISRecvParams recv; return &recv; }
+};
 void test_JISBerkley_All_funcs()
 {
 	std::cout << "test_JISBerkley_All_funcs starts...\n";
+
 	JACKIE_INet_Socket* sock = JISAllocator::AllocJIS();
 	sock->SetUserConnectionSocketIndex(0);
-	JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR];
 
+	JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR];
 	sock->GetMyIP(addresses);
 	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
 	{
@@ -217,6 +228,10 @@ void test_JISBerkley_All_funcs()
 
 	if( sock->IsBerkleySocket() )
 	{
+		JISBerkley* bsock = ( (JISBerkley*) sock );
+
+		myhandler handler;
+
 		JISBerkleyBindParams bbp;
 		bbp.port = 36005;
 		bbp.hostAddress = "127.0.0.1";
@@ -228,12 +243,28 @@ void test_JISBerkley_All_funcs()
 		bbp.setIPHdrIncl = false;
 		bbp.doNotFragment = false;
 		bbp.pollingThreadPriority = 0;
-		bbp.eventHandler = 0;
+		bbp.eventHandler = &handler;
 		bbp.remotePortJackieNetWasStartedOn_PS3_PS4_PSP2 = 0;
 
-		JISBindResult br = ( (JISBerkley*) sock )->Bind(&bbp, TRACE_FILE_AND_LINE_);
+		if( JISBerkley::IsPortInUse(bbp.port, bbp.hostAddress, bbp.addressFamily, bbp.type) )
+		{
+			printf_s("isportinuse(true)\n");
+		} else
+		{
+			printf_s("isportinuse(false)\n");
+		}
 
-		printf_s("(%s)\n", JISBindResultToString(br));
+		JISBindResult br = bsock->Bind(&bbp, TRACE_FILE_AND_LINE_);
+		printf_s("%s, bound addr (%s)\n", JISBindResultToString(br), bsock->GetBoundAddress().ToString());
+
+		if( JISBerkley::IsPortInUse(bbp.port, bbp.hostAddress, bbp.addressFamily, bbp.type) )
+		{
+			printf_s("Isportinuse(true)\n");
+		} else
+		{
+			printf_s("Isportinuse(false)\n");
+		}
+
 		switch( br )
 		{
 			case JISBindResult_FAILED_BIND_SOCKET:
@@ -251,7 +282,12 @@ void test_JISBerkley_All_funcs()
 				break;
 		}
 
-		( (JISBerkley*) sock )->CreateRecvPollingThread(0);
+		printf_s("Start CreateRecvPollingThread...\n");
+		bsock->CreateRecvPollingThread(0);
+		
+		printf_s("Start Polling Recv in another thread...\n");
+		bsock->RecvFromLoop(bsock);
+
 	}
 }
 //////////////////////////////////////////////////////////////////////////

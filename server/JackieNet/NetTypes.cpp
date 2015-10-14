@@ -72,8 +72,6 @@ namespace JACKIE_INET
 	JACKIE_INET_Address::JACKIE_INET_Address()
 	{
 		address.addr4.sin_family = AF_INET;
-		// used for operator ==
-		memset(&address, 0, sizeof(address)); address.addr4.sin_family = AF_INET;
 		systemIndex = (SystemIndex) -1;
 		debugPort = 0;
 	}
