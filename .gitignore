@@ -7,7 +7,7 @@
 /client/Assets/Models
 /client/Assets/Fonts
 /client/Assets/NGUI
-/clientAssets/*.meta
+/client/Assets/*.meta
 /client/Assets/Scenes
 /server/Lib
 /server/IntermediateDir
