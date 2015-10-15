@@ -100,7 +100,7 @@ public class vp_Timer : MonoBehaviour
 		}
 
 	}
-	
+
 
 	/// <summary>
 	/// in Update the active list is looped every frame, executing
@@ -156,7 +156,7 @@ public class vp_Timer : MonoBehaviour
 		}
 
 	}
-	
+
 
 	/// <summary>
 	/// the "In" method is used for scheduling events. it always takes a
@@ -191,7 +191,7 @@ public class vp_Timer : MonoBehaviour
 	// time + callback + arguments + iterations + interval + [timer handle]
 	public static void In(float delay, ArgCallback callback, object arguments, int iterations, float interval, Handle timerHandle = null)
 	{ Schedule(delay, null, callback, arguments, timerHandle, iterations, interval); }
-	
+
 
 	/// <summary>
 	/// the "Start" method is used to run a timer for the sole
@@ -205,7 +205,7 @@ public class vp_Timer : MonoBehaviour
 	{
 		Schedule(315360000.0f, /* ten years, yo ;) */ delegate() { }, null, null, timerHandle, 1, -1.0f);
 	}
-	
+
 
 	/// <summary>
 	/// the 'Schedule' method sets everything in order for the
@@ -289,7 +289,7 @@ public class vp_Timer : MonoBehaviour
 #endif
 
 	}
-	
+
 
 	/// <summary>
 	/// cancels a timer if the passed timer handle is still active
@@ -314,7 +314,7 @@ public class vp_Timer : MonoBehaviour
 		}
 
 	}
-	
+
 
 	/// <summary>
 	/// cancels every currently active timer
@@ -344,7 +344,7 @@ public class vp_Timer : MonoBehaviour
 		}
 
 	}
-	
+
 
 	/// <summary>
 	/// clears all currently active timers along with the object
@@ -361,7 +361,7 @@ public class vp_Timer : MonoBehaviour
 #endif
 
 	}
-	
+
 
 	/// <summary>
 	/// provides the custom vp_Timer editor class with debug info
@@ -420,7 +420,7 @@ public class vp_Timer : MonoBehaviour
 		m_MainObject.name = "Timers (" + m_Active.Count + " / " + (m_Pool.Count + m_Active.Count).ToString() + ")";
 	}
 #endif
-	
+
 
 	/////////////////////////////////////////////////////////////////////////////////
 	//
@@ -451,7 +451,7 @@ public class vp_Timer : MonoBehaviour
 #if (DEBUG && UNITY_EDITOR)
 		private string m_CallingMethod = "";
 #endif
-		
+
 
 		/// <summary>
 		/// runs an event function, taking care of iterations, intervals
@@ -500,7 +500,7 @@ public class vp_Timer : MonoBehaviour
 			DueTime = Time.time + Interval;
 
 		}
-		
+
 
 		/// <summary>
 		/// performs internal recycling of the vp_Timer
@@ -924,7 +924,7 @@ public class vp_Timer : MonoBehaviour
 		/// plus a stack trace (if compiling with the DEBUG define)
 		/// </summary>
 		public string MethodInfo { get { return m_Event.MethodInfo; } }
-		
+
 
 		/// <summary>
 		/// cancels the event associated with this handle, if active
@@ -944,6 +944,6 @@ public class vp_Timer : MonoBehaviour
 		}
 
 	}
-	
+
 
 }

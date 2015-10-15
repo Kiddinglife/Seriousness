@@ -235,7 +235,7 @@ namespace JACKIE_INET
 		// bind our address to the socket
 		if( bind__(rns2Socket, ( struct sockaddr * ) &boundAddress.address.addr4, sizeof(sockaddr_in)) == SOCKET_ERROR )
 		{
-			SAFE_CLOSE_SOCK(rns2Socket);
+			//SAFE_CLOSE_SOCK(rns2Socket);
 			return JISBindResult_FAILED_BIND_SOCKET;
 		}
 

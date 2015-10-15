@@ -1,7 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////////
+ï»¿/////////////////////////////////////////////////////////////////////////////////
 //
 //	vp_TimeUtility.cs
-//	© VisionPunk, Minea Softworks. All Rights Reserved.
+//	?VisionPunk, Minea Softworks. All Rights Reserved.
 //
 //	description:	vp_TimeUtility contains static utility methods for performing
 //					common time related game programming tasks
@@ -13,7 +13,7 @@ using UnityEngine;
 
 public static class vp_TimeUtility
 {
-	
+
 	/// <summary>
 	/// represents a time measured in standard units
 	/// </summary>
@@ -128,8 +128,8 @@ public static class vp_TimeUtility
 	{
 		return SystemTimeToString(System.DateTime.Now, showHours, showMinutes, showSeconds, showTenths, showHundredths, showMilliSeconds, delimiter);
 	}
-	
-	
+
+
 	/// <summary>
 	/// takes a 'System.DateTime' object and returns a struct
 	/// representing that time divided into standard units.
@@ -178,7 +178,7 @@ public static class vp_TimeUtility
 		return SystemTimeToSeconds(System.DateTime.Now);
 	}
 
-	
+
 	/// <summary>
 	/// converts a floating point time in seconds to an angle in
 	/// degrees, typically for use by clocks and meters in both 2d
@@ -235,7 +235,7 @@ public static class vp_TimeUtility
 
 	}
 
-	
+
 	/// <summary>
 	/// converts a 'System.DateTime' object into three degree angles:
 	/// 'x' representing the hour-hand, 'y' representing the minute-hand,
@@ -259,7 +259,7 @@ public static class vp_TimeUtility
 		return SystemTimeToDegrees(System.DateTime.Now, smooth);
 	}
 
-	
+
 	/// <summary>
 	/// converts a time in hours to an angle in degrees, assuming
 	/// a traditional analog clock face containing 12 hours.
