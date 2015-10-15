@@ -19,9 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Source.def" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="DefaultNetDefines.h" />
     <ClInclude Include="DLLExport.h" />
