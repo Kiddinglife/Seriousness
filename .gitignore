@@ -9,7 +9,8 @@
 /client/Assets/NGUI
 /clientAssets/*.meta
 /client/Assets/Scenes
-/server/Built
+/server/Lib
+/server/IntermediateDir
 
 # ----[ Visual Studio / MonoDevelop generated ]------- #
  
