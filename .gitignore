@@ -31,6 +31,8 @@ ExportedObj/
 *.ilk
 *.exe
 *.pdb
+*.lib
+*.dll
 
 [Dd]ebug/
 [Rr]elease/

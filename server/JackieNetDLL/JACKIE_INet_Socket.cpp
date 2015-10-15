@@ -1,8 +1,10 @@
 ﻿#include <stdio.h>  
 #include "JACKIE_INet_Socket.h"
 #include "WSAStartupSingleton.h"
+
 #include <wchar.h>
 #include <locale>
+
 namespace JACKIE_INET
 {
 	const char* JISBindResultToString(JISBindResult reason)
@@ -126,8 +128,7 @@ namespace JACKIE_INET
 		}
 	}
 
-	bool JISBerkley::IsPortInUse(unsigned short port, const char *hostAddress,
-		unsigned short addressFamily, int type)
+	bool JISBerkley::IsPortInUse(unsigned short port, const char *hostAddress, unsigned short addressFamily, int type)
 	{
 		JISBerkleyBindParams bbp = {
 			port, //unsigned short port;
@@ -151,8 +152,7 @@ namespace JACKIE_INET
 		return bindResult == JISBindResult_FAILED_BIND_SOCKET;
 	}
 
-	JISBindResult JISBerkley::Bind(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+	JISBindResult JISBerkley::Bind(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line)
 	{
 		JISBindResult bindResult = BindShared(bindParameters, file, line);
 		/// we do not test bindResult == JISBindResult_FAILED_SEND_TEST here 
@@ -164,9 +164,9 @@ namespace JACKIE_INET
 		}
 		return bindResult;
 	}
-	JISBindResult JISBerkley::BindShared(JISBerkleyBindParams *bindParameters,
-		const char *file, unsigned int line)
+	JISBindResult JISBerkley::BindShared(JISBerkleyBindParams *bindParameters, const char *file, unsigned int line)
 	{
+
 		JISBindResult br;
 
 #if NET_SUPPORT_IPV6==1
@@ -193,8 +193,7 @@ namespace JACKIE_INET
 
 		return br;
 	}
-	JISBindResult JISBerkley::BindSharedIPV4(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+	JISBindResult JISBerkley::BindSharedIPV4(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line)
 	{
 		memset(&boundAddress.address.addr4, 0, sizeof(sockaddr_in));
 		boundAddress.address.addr4.sin_port = htons(bindParameters->port);
@@ -245,8 +244,7 @@ namespace JACKIE_INET
 
 		return JISBindResult_SUCCESS;
 	}
-	JISBindResult JISBerkley::BindSharedIPV4And6(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+	JISBindResult JISBerkley::BindSharedIPV4And6(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line)
 	{
 #if NET_SUPPORT_IPV6 ==1
 
@@ -356,6 +354,7 @@ namespace JACKIE_INET
 	}
 	JISRecvResult JISBerkley::RecvFromIPV4(JISRecvParams *recvFromStruct)
 	{
+
 		static  sockaddr_in sa = { 0 };
 		static socklen_t sockLen = sizeof(sa);
 		static socklen_t* socketlenPtr = (socklen_t*) &sockLen;
@@ -404,6 +403,7 @@ namespace JACKIE_INET
 		recvFromStruct->timeRead = GetTimeUS();
 		recvFromStruct->senderINetAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
+
 		return recvFromStruct->bytesRead;
 	}
 
@@ -493,8 +493,7 @@ namespace JACKIE_INET
 		}
 	}
 
-	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
-		const char *file, UInt32 line)
+	JISSendResult JISBerkley::Send(JISSendParams *sendParameters, const char *file, UInt32 line)
 	{
 		/// we will nevwer send o len data
 		JACKIE_ASSERT(sendParameters->length > 0);
@@ -513,9 +512,7 @@ namespace JACKIE_INET
 
 		return ret;
 	}
-	JISSendResult JISBerkley::SendWithoutVDP(JISSocket rns2Socket,
-		JISSendParams *sendParameters,
-		const char *file, unsigned int line)
+	JISSendResult JISBerkley::SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line)
 	{
 		int len = 0;
 		int oldTTL = -1;
@@ -601,8 +598,7 @@ namespace JACKIE_INET
 		GetSystemAddressViaJISSocketIPV4And6(rns2Socket, systemAddressOut);
 		WSAStartupSingleton::Deref();
 	}
-	void JISBerkley::GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket,
-		JACKIE_INET_Address *systemAddressOut)
+	void JISBerkley::GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
 	{
 		static  sockaddr_in sa;
 		static socklen_t len = sizeof(sa);
@@ -627,8 +623,7 @@ namespace JACKIE_INET
 			systemAddressOut->address.addr4.sin_addr.s_addr = inet_addr__("127.0.0.1");
 		}
 	}
-	void JISBerkley::GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket,
-		JACKIE_INET_Address *systemAddressOut)
+	void JISBerkley::GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
 	{
 #if NET_SUPPORT_IPV6 ==1
 
