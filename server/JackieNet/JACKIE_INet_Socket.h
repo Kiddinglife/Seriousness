@@ -220,12 +220,13 @@ namespace JACKIE_INET
 		{
 			int returnVal = SOCKET_ERROR;
 
-			/// do not support reuse addr which means you cannot to a in - use port
+			/// do not support reuse addr which means you cannot to a in - use port， only in this way,
+			/// detecting id a port is in use can be acheieved
 			//returnVal = setsockopt(rns2Socket, SOL_SOCKET, SO_REUSEADDR, (const char*) &returnVal, sizeof(returnVal));
 			//JACKIE_ASSERT(returnVal == 0);
 
 			// This doubles the max throughput rate
-			returnVal = JACKIE_SO_REVBUF_SIZE;
+			returnVal = JACKIE_SO_REVBUF_SIZE; 
 			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_RCVBUF, (char *) & returnVal, sizeof(returnVal));
 			JACKIE_ASSERT(returnVal == 0);
 

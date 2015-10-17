@@ -3,6 +3,7 @@
 #include "WSAStartupSingleton.h"
 #include <wchar.h>
 #include <locale>
+
 namespace JACKIE_INET
 {
 	const char* JISBindResultToString(JISBindResult reason)
@@ -101,12 +102,9 @@ namespace JACKIE_INET
 # else 	/// We are using Wins or LINUX or Unix plateform
 
 #if defined(__APPLE__)
-	static void SocketReadCallback(CFSocketRef s, CFSocketCallBackType type, 
-		CFDataRef address, const void *data, void *info)
-		// This C routine is called by CFSocket when there's data waiting on our 
-		// UDP socket.  It just redirects the call to Objective-C code.
-	{
-	}
+	/// This C routine is called by CFSocket when there's data waiting on our 
+	/// UDP socket.  It just redirects the call to Objective-C code.
+	static void SocketReadCallback(CFSocketRef s, CFSocketCallBackType type, CFDataRef address, const void *data, void *info){}
 #endif
 
 	////////////////////////////// JISBerkley implementations ////////////////////////////
@@ -318,7 +316,7 @@ namespace JACKIE_INET
 					fprintf_s(stderr, "JISBerkley::BindSharedIPV4And6()::bind__()::failed with errno code (%d-%s)\n", errno, strerror(errno));
 				}
 #endif
-				SAFE_CLOSE_SOCK(rns2Socket);
+				SAFE_CLOSE_SOCK(this->rns2Socket);
 			}
 		}
 
