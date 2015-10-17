@@ -196,6 +196,7 @@
     <ClInclude Include="DefaultNetDefines.h" />
     <ClInclude Include="DLLExport.h" />
     <ClInclude Include="GlobalFunctions.h" />
+    <ClInclude Include="IServerApplication.h" />
     <ClInclude Include="JACKIE_Atomic.h" />
     <ClInclude Include="JACKIE_INet_Socket.h" />
     <ClInclude Include="JACKIE_Simple_Mutex.h" />

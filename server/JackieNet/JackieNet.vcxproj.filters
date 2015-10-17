@@ -91,5 +91,8 @@
     <ClInclude Include="WSAStartupSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IServerApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
