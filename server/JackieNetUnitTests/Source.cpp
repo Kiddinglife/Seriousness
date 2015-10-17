@@ -239,7 +239,7 @@ void test_JISBerkley_All_funcs()
 		bbp.addressFamily = AF_INET;
 		bbp.type = SOCK_DGRAM;
 		bbp.protocol = 0;
-		bbp.isBlocKing = true;
+		bbp.isBlocKing = false;
 		bbp.isBroadcast = true;
 		bbp.setIPHdrIncl = false;
 		bbp.doNotFragment = false;

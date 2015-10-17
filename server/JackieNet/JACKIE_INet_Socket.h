@@ -176,7 +176,12 @@ namespace JACKIE_INET
 		JISBerkleyBindParams binding;
 		JACKIE_ISocketTransceiver *jst;
 		JACKIE_ATOMIC_LONG isRecvFromLoopThreadActive;
+
+#ifdef USE_THREADED_SEND
 		volatile bool endThreads;
+#else
+		bool endThreads;
+#endif
 
 #if defined(__APPLE__)
 		// http://sourceforge.net/p/open-dis/discussion/683284/thread/0929d6a0
@@ -226,7 +231,7 @@ namespace JACKIE_INET
 			//JACKIE_ASSERT(returnVal == 0);
 
 			// This doubles the max throughput rate
-			returnVal = JACKIE_SO_REVBUF_SIZE; 
+			returnVal = JACKIE_SO_REVBUF_SIZE;
 			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_RCVBUF, (char *) & returnVal, sizeof(returnVal));
 			JACKIE_ASSERT(returnVal == 0);
 
