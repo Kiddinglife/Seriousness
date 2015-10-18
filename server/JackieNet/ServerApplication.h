@@ -19,20 +19,91 @@
 //#include "RakNetSmartPtr.h"
 //#include "DS_ThreadsafeAllocatingQueue.h"
 //#include "SignaledEvent.h"
-//#include "NativeFeatureIncludes.h"
+#include "CompileFeatures.h"
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
 //#include "DS_Queue.h"
 
 namespace JACKIE_INET
 {
+
 	class ServerApplication : public IServerApplication
 	{
 		public:
+
+#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV
+		volatile bool endThreads; ///Set this to true to terminate the thread execution 
+		volatile bool isMainLoopThreadActive; ///true if the peer thread is active. 
+#else
+		bool endThreads; bool isMainLoopThreadActive;
+#endif
+
+#if LIBCAT_SECURITY == 1
+		// Encryption and security
+		bool _using_security, _require_client_public_key;
+		char my_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+		cat::ServerEasyHandshake *_server_handshake;
+		cat::CookieJar *_cookie_jar;
+		bool InitializeClientSecurity(RequestedConnectionStruct *rcs, const char *public_key);
+#endif
+
+		JACKIE_INet_GUID myGuid;
+		int defaultMTUSize;
+		bool trackFrequencyTable;
+
+		/// Do we occasionally ping the other systems?
+		bool occasionalPing;
+
+		/// Store the maximum number of peers allowed to connect
+		unsigned int maximumNumberOfPeers;
+		///Store the maximum incoming connection allowed 
+		unsigned int maximumIncomingConnections;
+
+		char incomingPassword[256];
+		unsigned char incomingPasswordLength;
+
+		//////////////////////////////////////////////////////////////////////////
+		/// This is an array of pointers to RemoteEndPoint
+		/// This allows us to preallocate the list when starting,
+		/// so we don't have to allocate or delete at runtime.
+		/// Another benefit is that is lets us add and remove active
+		/// players simply by setting systemAddress
+		/// and moving elements in the list by copying pointers variables
+		/// without affecting running threads, even if they are in the reliability layer
+		//////////////////////////////////////////////////////////////////////////
+		RemoteEndPoint* remoteSystemList;
+		//////////////////////////////////////////////////////////////////////////
+		/// activeSystemList holds a list of pointers and is preallocated to be the same size as 
+		/// remoteSystemList. It is updated only by the network thread, but read by both threads
+		/// When the isActive member of RemoteEndPoint is set to true or false, that system is 
+		/// added to this list of pointers. Threadsafe because RemoteEndPoint is preallocated, 
+		/// and the list is only added to, not removed from
+		//////////////////////////////////////////////////////////////////////////
+		RemoteEndPoint** activeSystemList;
+		unsigned int activeSystemListSize;
+		/// Use a hash, with binaryAddress plus port mod length as the index
+		RemoteEndPointIndex **remoteSystemLookup;
+
+
+		unsigned int bytesSentPerSecond, bytesReceivedPerSecond;
+
+		bool(*recvHandler)( JISRecvParams* );
+
+		TimeMS defaultTimeoutTime;
+
+		// Generate and store a unique GUID
+		void GenerateGUID(void);
+		unsigned int GetSystemIndexFromGuid(const JACKIE_INet_GUID& input) const;
+
 		ServerApplication();
 		virtual ~ServerApplication();
 
-		virtual StartupResult Start(UInt32 maxConnections, JACKIE_LOCAL_SOCKET *socketDescriptors, UInt32 socketDescriptorCount, Int32 threadPriority = -99999) override { return STARTED; }
+		bool IsActive(void) const { return endThreads == false; }
+		virtual void OnJISRecv(JISRecvParams *recvStruct) override;
+		virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line) override;
+		virtual JISRecvParams * AllocJISRecvParams(const char *file, UInt32 line) override;
+
+		virtual StartupResult Start(UInt32 maxConnections, JACKIE_LOCAL_SOCKET *socketDescriptors, UInt32 socketDescriptorCount, Int32 threadPriority = -99999) override;
 
 	};
 }

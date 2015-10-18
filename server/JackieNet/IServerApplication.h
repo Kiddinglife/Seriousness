@@ -37,7 +37,7 @@ namespace JACKIE_INET
 	/// \author mengdi
 	/// \date Oct 2015
 	//////////////////////////////////////////////////////////////////////////
-	class JACKIE_EXPORT IServerApplication
+	class JACKIE_EXPORT IServerApplication : public JISEventHandler
 	{
 		public:
 		/// GetInstance() and DestroyInstance(instance*)
@@ -68,10 +68,6 @@ namespace JACKIE_INET
 			JACKIE_LOCAL_SOCKET *socketDescriptors,
 			UInt32 socketDescriptorCount,
 			Int32 threadPriority = -99999) = 0;
-
-		//virtual void OnJISRecv(JISRecvParams *recvStruct) = 0;
-		//virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line) = 0;
-		//virtual JISRecvParams *AllocJISRecvParams(const char *file, UInt32 line) = 0;
 	};
 
 

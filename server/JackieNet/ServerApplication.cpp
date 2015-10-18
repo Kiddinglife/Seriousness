@@ -1,7 +1,84 @@
 #include "ServerApplication.h"
+#include "NetTypes.h"
+#include "WSAStartupSingleton.h"
 
 namespace JACKIE_INET
 {
-	ServerApplication::ServerApplication() { }
+	static const int mtuSizesCount = 3;
+	static const int mtuSizes[mtuSizesCount] = { MAXIMUM_MTU_SIZE, 1200, 576 };
+
+	ServerApplication::ServerApplication()
+	{
+#if LIBCAT_SECURITY == 1
+		// Encryption and security
+		CAT_AUDIT_PRINTF("AUDIT: Initializing RakPeer security flags: using_security = false, server_handshake = null, cookie_jar = null\n");
+		_using_security = false;
+		_server_handshake = 0;
+		_cookie_jar = 0;
+#endif
+
+		// Dummy call to PacketLogger to ensure it's included in exported symbols.
+		//PacketLogger::BaseIDTOString(0);
+		//StringCompressor::AddReference();
+		//RakNet::StringTable::AddReference();
+		WSAStartupSingleton::AddRef();
+
+		defaultMTUSize = mtuSizes[mtuSizesCount - 1];
+		trackFrequencyTable = false;
+		maximumIncomingConnections = maximumNumberOfPeers = 0;
+		bytesSentPerSecond = bytesReceivedPerSecond = 0;
+		endThreads = true;
+		isMainLoopThreadActive = false;
+		recvHandler = 0;
+
+#ifdef _DEBUG
+		// Wait longer to disconnect in debug so I don't get disconnected while tracing
+		defaultTimeoutTime = 30000;
+#else
+		defaultTimeoutTime = 10000;
+#endif
+
+	}
+
 	ServerApplication::~ServerApplication() { }
+
+	JACKIE_INET::StartupResult ServerApplication::Start(UInt32 maxConnections,
+		JACKIE_LOCAL_SOCKET *socketDescriptors,
+		UInt32 socketDescriptorCount,
+		Int32 threadPriority /*= -99999*/)
+	{
+		if( IsActive() ) return StartupResult::ALREADY_STARTED;
+
+		// If getting the guid failed in the constructor, try again
+		if( myGuid.g == 0 )
+		{
+			GenerateGUID();
+			if( myGuid.g == 0 ) return StartupResult::COULD_NOT_GENERATE_GUID;
+		}
+
+		if( threadPriority == -99999 )
+		{
+#if  defined(_WIN32)
+			threadPriority = 0;
+#else
+			threadPriority = 1000;
+#endif
+		}
+
+		return ALREADY_STARTED;
+	}
+
+	void ServerApplication::OnJISRecv(JISRecvParams *recvStruct)
+	{
+	}
+
+	void ServerApplication::DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line)
+	{
+	}
+
+	JISRecvParams * ServerApplication::AllocJISRecvParams(const char *file, UInt32 line)
+	{
+		return NULL;
+	}
+
 }

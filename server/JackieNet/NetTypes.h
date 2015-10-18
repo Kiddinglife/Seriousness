@@ -18,6 +18,7 @@
 #include "SockOSIncludes.h"
 #include "SocketDefines.h"
 #include "NetTime.h"
+#include "ReliabilityMgr.h"
 
 namespace JACKIE_INET
 {
@@ -27,6 +28,7 @@ namespace JACKIE_INET
 	struct  Packet;
 	struct  JACKIE_INET_Address;
 	struct  JACKIE_INet_GUID;
+	class JACKIE_INet_Socket;
 
 	//////////////////////////////////////////////////////////////////////////
 	/// @Internal Defines the default maximum transfer unit.
@@ -702,7 +704,7 @@ namespace JACKIE_INET
 			REFCOUNTDATA,
 			/// If allocation scheme is STACK, 
 			/// data points to stackData and should not be deallocated
-			/// This is only used when sending. Received packets are deallocated in RakPeer
+			/// This is only used when sending. Received packets are deallocated in JACKIE_INET_
 			STACK
 		} allocationScheme;
 		/// Used in InternalPacket when pointing to refCountedData, 
@@ -755,6 +757,69 @@ namespace JACKIE_INET
 		/// so do not process it through plugins
 		bool wasGeneratedLocally;
 	};
+
+	/// for internally use
+	/// All the information representing a connected remote end point
+	struct RemoteEndPoint
+	{
+		// Is this structure in use?
+		bool isActive;
+		/// Their external IP on the internet
+		JACKIE_INET_Address systemAddress;
+		/// Your external IP on the internet, from their perspective
+		JACKIE_INET_Address myExternalSystemAddress;
+		/// Their internal IP, behind the LAN
+		JACKIE_INET_Address theirInternalSystemAddress[MAX_COUNT_LOCAL_IP_ADDR];
+		/// The reliability layer associated with this player
+		ReliabilityLayer reliabilityLayer;
+		/// True if we started this connection via Connect.  
+		/// False if someone else connected to us.
+		bool doConnect;
+		/// last x ping times and calculated clock differentials with it
+		struct PingAndClockDifferential
+		{
+			unsigned short pingTime;
+			Time clockDifferential;
+		} pingAndClockDifferential[PING_TIMES_ARRAY_SIZE];
+		/// The index we are writing into the pingAndClockDifferential circular buffer
+		Time pingAndClockDifferentialWriteIndex;
+		unsigned short lowestPing; ///The lowest ping value encountered
+		Time nextPingTime;  /// When to next ping this player
+		/// When did the last reliable send occur.  
+		/// Reliable sends must occur at least once every 
+		/// timeoutTime/2 units to notice disconnects
+		Time lastReliableSend;
+		/// connection time, if active.
+		Time connectionTime;
+		JACKIE_INet_GUID guid;
+		int MTUSize;
+		// Reference counted socket to send back on
+		JACKIE_INet_Socket* rakNetSocket;
+		SystemIndex remoteSystemIndex;
+
+#if LIBCAT_SECURITY==1
+		// Cached answer used internally by JackieNet
+		/// to prevent DoS attacks based on the connetion handshake
+		char answer[cat::EasyHandshake::ANSWER_BYTES];
+		// If the server has bRequireClientKey = true,
+		/// then this is set to the validated public key of the connected client
+		/// Valid after connectMode reaches HANDLING_CONNECTION_REQUEST
+		char client_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+#endif
+		enum ConnectMode
+		{
+			NO_ACTION,
+			DISCONNECT_ASAP,
+			DISCONNECT_ASAP_SILENTLY,
+			DISCONNECT_ON_NO_ACK,
+			REQUESTED_CONNECTION,
+			HANDLING_CONNECTION_REQUEST,
+			UNVERIFIED_SENDER,
+			CONNECTED
+		} connectMode;
+	};
+
+	struct RemoteEndPointIndex { unsigned index; RemoteEndPointIndex *next; }
 }
 
 #endif

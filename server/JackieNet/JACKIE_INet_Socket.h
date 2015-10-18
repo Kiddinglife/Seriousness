@@ -177,7 +177,7 @@ namespace JACKIE_INET
 		JACKIE_ISocketTransceiver *jst;
 		JACKIE_ATOMIC_LONG isRecvFromLoopThreadActive;
 
-#ifdef USE_THREADED_SEND
+#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV
 		volatile bool endThreads;
 #else
 		bool endThreads;

@@ -210,6 +210,11 @@
 #define USE_THREADED_SEND 0
 #endif
 
+/// Define in OverrideDefines.h to enable (non-zero) or disable (0)
+#ifndef USE_SINGLE_THREAD_TO_SEND_AND_RECV
+#define USE_SINGLE_THREAD_TO_SEND_AND_RECV 0
+#endif
+
 #ifndef JACKIE_SO_SNDBUF_SIZE
 #define JACKIE_SO_SNDBUF_SIZE 1024*256; //256KB
 #endif

@@ -100,5 +100,17 @@
     <ClInclude Include="ServerApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CompileFeatures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CompileFeaturesOverride.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ReliabilityMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReliabilityMgr" />
   </ItemGroup>
 </Project>

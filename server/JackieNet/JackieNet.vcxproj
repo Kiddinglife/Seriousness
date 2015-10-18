@@ -194,6 +194,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTypes.h" />
+    <ClInclude Include="CompileFeatures.h" />
+    <ClInclude Include="CompileFeaturesOverride.h" />
     <ClInclude Include="DefaultNetDefines.h" />
     <ClInclude Include="DLLExport.h" />
     <ClInclude Include="GlobalFunctions.h" />
@@ -206,11 +208,15 @@
     <ClInclude Include="NetTypes.h" />
     <ClInclude Include="OverrideMemory.h" />
     <ClInclude Include="OverrideNetDefines.h" />
+    <ClInclude Include="ReliabilityMgr.h" />
     <ClInclude Include="ServerApplication.h" />
     <ClInclude Include="SocketDefines.h" />
     <ClInclude Include="SockOSIncludes.h" />
     <ClInclude Include="WindowsIncludes.h" />
     <ClInclude Include="WSAStartupSingleton.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReliabilityMgr" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
