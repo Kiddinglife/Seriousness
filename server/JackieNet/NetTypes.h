@@ -1,9 +1,13 @@
-﻿/*
-*  RakNetTypes.h, INetApplication = RakPeerInterface
-*  This source code is licensed under the BSD-style license found in the
-*  LICENSE file in the root directory of this source tree. An additional grant
-*  of patent rights can be found in the PATENTS file in the same directory.
-*/
+﻿/*!
+ * \file NetTypes.h
+ * \author mengdi
+ * \date Oct 2015
+ * RakNetTypes.h, INetApplication = RakPeerInterface
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 #ifndef NET_TYPES_H_
 #define NET_TYPES_H_
 
@@ -13,6 +17,7 @@
 #include "WindowsIncludes.h"
 #include "SockOSIncludes.h"
 #include "SocketDefines.h"
+#include "NetTime.h"
 
 namespace JACKIE_INET
 {
@@ -23,11 +28,14 @@ namespace JACKIE_INET
 	struct  JACKIE_INET_Address;
 	struct  JACKIE_INet_GUID;
 
+	//////////////////////////////////////////////////////////////////////////
 	/// @Internal Defines the default maximum transfer unit.
 	/// \li \em 17914 16 Mbit/Sec Token Ring
 	/// \li \em 4464 4 Mbits/Sec Token Ring
 	/// \li \em 4352 FDDI
-	/// \li \em 1500. The largest Ethernet packet size \b recommended. This is the typical setting for non-PPPoE, non-VPN connections. The default value for NETGEAR routers, adapters and switches.
+	/// \li \em 1500. The largest Ethernet packet size \b recommended. 
+	/// This is the typical setting for non-PPPoE, non-VPN connections. 
+	/// The default value for NETGEAR routers, adapters and switches.
 	/// \li \em 1492. The size PPPoE prefers.
 	/// \li \em 1472. Maximum size to use for pinging. (Bigger packets are fragmented.)
 	/// \li \em 1468. The size DHCP prefers.
@@ -36,6 +44,7 @@ namespace JACKIE_INET
 	/// \li \em 1400. Maximum size for AOL DSL.
 	/// \li \em 576. Typical value to connect to dial-up ISPs.
 	/// The largest value for an UDP datagram
+	//////////////////////////////////////////////////////////////////////////
 #define MAXIMUM_MTU_SIZE 1492
 #define MINIMUM_MTU_SIZE 400
 
@@ -60,7 +69,7 @@ namespace JACKIE_INET
 	typedef UInt8 MessageID;
 	typedef UInt32 BitSize;
 
-	/// Index of an invalid JACKIE_INET_Address
+	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
 	JACKIE_EXPORT extern const  JACKIE_INET_Address JACKIE_INET_Address_Null;
 	JACKIE_EXPORT extern const  JACKIE_INet_GUID JACKIE_INet_GUID_Null;
@@ -75,9 +84,9 @@ namespace JACKIE_INET
 	/// enums
 	enum StartupResult
 	{
-		RAKNET_STARTED,
-		RAKNET_ALREADY_STARTED,
-		INVALID_SOCKET_DESCRIPTORS,
+		STARTED,
+		ALREADY_STARTED,
+		INVALID_JACKIE_LOCAL_SOCKET,
 		INVALID_MAX_CONNECTIONS,
 		SOCKET_FAMILY_NOT_SUPPORTED,
 		SOCKET_PORT_ALREADY_IN_USE,
@@ -144,86 +153,6 @@ namespace JACKIE_INET
 		USE_TWO_WAY_AUTHENTICATION
 	};
 
-	/// These enumerations are used to describe when packets are delivered.
-	enum JACKIE_Packet_Send_Priority
-	{
-		/// The highest possible priority. These message trigger sends immediately, 
-		/// and are generally not buffered or aggregated into a single datagram.
-		UNBUFFERED_IMMEDIATELY_SEND,
-
-		/// For every 2 IMMEDIATE_PRIORITY messages, 1 HIGH_PRIORITY will be sent.
-		/// Messages at this priority and lower are buffered to be sent in groups at 10 
-		/// millisecond intervals to reduce UDP overhead and better measure congestion 
-		/// control. 
-		BUFFERED_FIRSTLY_SEND,
-
-		/// For every 2 HIGH_PRIORITY messages, 1 MEDIUM_PRIORITY will be sent.
-		/// Messages at this priority and lower are buffered to be sent in groups at 10 
-		/// millisecond intervals to reduce UDP overhead and better measure congestion 
-		/// control. 
-		BUFFERED_SECONDLY_SEND,
-
-		/// For every 2 MEDIUM_PRIORITY messages, 1 LOW_PRIORITY will be sent.
-		/// Messages at this priority and lower are buffered to be sent in groups at 10
-		/// millisecond intervals to reduce UDP overhead and better measure congestion 
-		/// control. 
-		BUFFERED_THIRDLY_SEND,
-
-		/// \internal
-		PRIORITIES_COUNT
-	};
-
-	/// These enumerations are used to describe how packets are delivered.
-	/// \note  Note to self: I write this with 3 bits in the stream.  If I add more 
-	/// remember to change that
-	/// \note In ReliabilityLayer::WriteToBitStreamFromInternalPacket I assume 
-	/// there are 5 major types
-	/// \note Do not reorder, I check on >= UNRELIABLE_WITH_ACK_RECEIPT which equals 5
-	enum JACKIE_Packet_Reliability
-	{
-		/// Same as regular UDP, except that it will also discard duplicate datagrams.  
-		/// JackieINet adds (6 to 17) + 21 bits of overhead, 16 of which is used to detect 
-		/// duplicate msg and 6 to 17 of which is used for message length.
-		UNRELIABLE,
-
-		/// Regular UDP with a sequence counter.  Out of order messages will be discarded.
-		/// Sequenced and ordered messages sent on the same channel will arrive in the order sent.
-		UNRELIABLE_SEQUENCED,
-
-		/// The message is sent reliably, but not necessarily in any order. 
-		/// Same overhead as UNRELIABLE.
-		RELIABLE,
-
-		/// This message is reliable and will arrive in the order you sent it.  Messages will be delayed while 
-		/// waiting for out of order messages.  Same overhead as UNRELIABLE_SEQUENCED.
-		/// Sequenced and ordered messages sent on the same channel will arrive in the order sent.
-		RELIABLE_ORDERED,
-
-		/// This message is reliable and will arrive in the sequence you sent it.  Out of order messages will be dropped.  Same overhead as UNRELIABLE_SEQUENCED.
-		/// Sequenced and ordered messages sent on the same channel will arrive in the order sent.
-		RELIABLE_SEQUENCED,
-
-		/// Same as UNRELIABLE, however the user will get either ID_SND_RECEIPT_ACKED or ID_SND_RECEIPT_LOSS based on the result of sending this message when calling RakPeerInterface::Receive(). Bytes 1-4 will contain the number returned from the Send() function. On disconnect or shutdown, all messages not previously acked should be considered lost.
-		UNRELIABLE_WITH_ACK_RECEIPT,
-
-		/// Same as UNRELIABLE_SEQUENCED, however the user will get either ID_SND_RECEIPT_ACKED or ID_SND_RECEIPT_LOSS based on the result of sending this message when calling RakPeerInterface::Receive(). Bytes 1-4 will contain the number returned from the Send() function. On disconnect or shutdown, all messages not previously acked should be considered lost.
-		/// 05/04/10 You can't have sequenced and ack receipts, because you don't know if the other system discarded the message, meaning you don't know if the message was processed
-		// UNRELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
-
-		/// Same as RELIABLE. The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain the number returned from the Send() function. On disconnect or shutdown, all messages not previously acked should be considered lost. This does not return ID_SND_RECEIPT_LOSS.
-		RELIABLE_WITH_ACK_RECEIPT,
-
-		/// Same as RELIABLE_ORDERED_ACK_RECEIPT. The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain the number returned from the Send() function. On disconnect or shutdown, all messages not previously acked should be considered lost. This does not return ID_SND_RECEIPT_LOSS.
-		RELIABLE_ORDERED_WITH_ACK_RECEIPT,
-
-		/// Same as RELIABLE_SEQUENCED. The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when calling RakPeerInterface::Receive(). Bytes 1-4 will contain the number returned from the Send() function. On disconnect or shutdown, all messages not previously acked should be considered lost.
-		/// 05/04/10 You can't have sequenced and ack receipts, because you don't know if the other system discarded the message, meaning you don't know if the message was processed
-		// RELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
-
-		/// \internal
-		NUMBER_OF_RELIABILITIES
-	};
-
 	/// Passed to RakPeerInterface::Connect()
 	struct  JACKIE_EXPORT JACKIE_Public_Key
 	{
@@ -241,9 +170,9 @@ namespace JACKIE_INET
 		char *myPrivateKey;
 	};
 
-
-	/// SocketDescriptor
-	/// Describes the local socket to use for ServerApplication::Startup
+	//////////////////////////////////////////////////////////////////////////
+	/// SocketDescriptor that escribes the local socket to use for ServerApplication::Run()
+	//////////////////////////////////////////////////////////////////////////
 	struct JACKIE_EXPORT JACKIE_LOCAL_SOCKET
 	{
 		JACKIE_LOCAL_SOCKET();
@@ -265,7 +194,7 @@ namespace JACKIE_INET
 		/// be used with IPV6 because there are enough addresses that routers do not need to 
 		/// create address mappings.
 		/// 
-		/// RakPeer::Startup() will fail if this IP version is not supported.
+		/// ServerApplication::Startup() will fail if this IP version is not supported.
 		/// @Notice NET_SUPPORT_IPV6 must be set to 1 in DefaultDefines.h for AF_INET6
 		Int16 socketFamily;
 
@@ -283,14 +212,16 @@ namespace JACKIE_INET
 		UInt32 extraSocketOptions;
 	};
 
-
-	/// 1. Network address for a system Corresponds to a network address
-	/// 2. This is not necessarily a unique identifier. For example, if a system has both LAN and 
+	//////////////////////////////////////////////////////////////////////////
+	/// Network address for a system Corresponds to a network address
+	/// This is not necessarily a unique identifier. For example, if a system has both LAN and
 	/// WAN connections, the system may be identified by either one, depending on who is
 	/// communicating Therefore, you should not transmit the JACKIE_INET_Address over the 
-	/// network and expect it to  identify a system, or use it to connect to that system, except in 
-	/// the case where that system is not behind a NAT (such as with a dedciated server)
-	/// 3. Use JACKIE_INet_GUID for a unique per-instance of ServerApplication to identify systems
+	/// network and expect it to  identify a system, or use it to connect to that system, except 
+	/// in the case where that system is not behind a NAT (such as with a dedciated server)
+	/// Use JACKIE_INet_GUID for a unique per-instance of ServerApplication to identify 
+	/// systems
+	//////////////////////////////////////////////////////////////////////////
 	struct JACKIE_EXPORT JACKIE_INET_Address /// JACKIE_INET_Address
 	{
 		/// In6 Or In4 
@@ -406,11 +337,14 @@ namespace JACKIE_INET
 		void ToString_IPV6(bool writePort, char *dest, char portDelineator) const;
 	};
 
-
-	/// Uniquely identifies an instance of RakPeer. Use RakPeer::GetGuidFromSystemAddress() 
-	/// and RakPeer::GetSystemAddressFromGuid() to go between JACKIE_INET_Address and 
-	/// JACKIE_INet_GUID Use RakPeer::GetGuidFromSystemAddress
+	//////////////////////////////////////////////////////////////////////////
+	/// Uniquely identifies an instance of ServerApplication. 
+	/// Use ServerApplication::GetGuidFromSystemAddress() 
+	/// and ServerApplication::GetSystemAddressFromGuid() to go between 
+	/// JACKIE_INET_Address and  JACKIE_INet_GUID. 
+	/// Use ServerApplication::GetGuidFromSystemAddress
 	/// (JACKIE_INET_Address_Null) to get your own GUID
+	//////////////////////////////////////////////////////////////////////////
 	struct JACKIE_EXPORT JACKIE_INet_GUID
 	{
 		/// Used internally for fast lookup. Optional (use -1 to do regular lookup).
@@ -442,7 +376,6 @@ namespace JACKIE_INET
 		bool operator > ( const JACKIE_INet_GUID& right ) const;
 		bool operator < ( const JACKIE_INet_GUID& right ) const;
 	};
-
 
 	struct JACKIE_EXPORT JACKIE_INET_Address_GUID_Wrapper
 	{
@@ -519,38 +452,6 @@ namespace JACKIE_INET
 		}
 	};
 
-	/// 1. This is the smallest unit that represents a meaningful user-created logic data
-	/// 2. An msg can be fragmented to one or more than one UDP datagrams
-	struct JACKIE_EXPORT JACKIE_Packet
-	{
-		/// The system that send this packet.
-		JACKIE_INET_Address systemAddress;
-
-		/// A unique identifier for the system that sent this packet, 
-		/// regardless of IP address (internal / external / remote system)
-		/// Only valid once a connection has been established 
-		/// (ID_CONNECTION_REQUEST_ACCEPTED, or ID_NEW_INCOMING_CONNECTION)
-		/// Until that time, will be JACKIE_INet_GUID_Null
-		JACKIE_INet_GUID guid;
-
-		/// The length of the data in bytes
-		UInt32 length;
-
-		/// The length of the data in bits
-		BitSize bitSize;
-
-		/// The data from the sender
-		char *data;
-
-		/// @internal
-		/// Indicates whether to delete the data, or to simply delete the packet.
-		bool deleteData;
-
-		/// @internal  If true, this message is meant for the user, not for the plugins,
-		/// so do not process it through plugins
-		bool wasGeneratedLocally;
-	};
-
 	struct JACKIE_EXPORT UInt24
 	{
 		UInt32 val;
@@ -590,6 +491,269 @@ namespace JACKIE_INET
 		const UInt24 operator-( const UInt32 &other ) const { return UInt24(val - other); }
 		const UInt24 operator/( const UInt32 &other ) const { return UInt24(val / other); }
 		const UInt24 operator*( const UInt32 &other ) const { return UInt24(val*other); }
+	};
+
+
+	typedef UInt16 SplitPacketId;
+	typedef UInt32 SplitPacketIndex;
+
+	//////////////////////////////////////////////////////////////////////////
+	/// This is the counter used for holding packet numbers,
+	/// so we can detect duplicate packets.  
+	/// Internally assumed to be 4 bytes, but written as 3 bytes in 
+	/// ReliabilityLayer::WriteToBitStreamFromInternalPacket
+	/// typedef uint24_t MessageNumberType;
+	//////////////////////////////////////////////////////////////////////////
+	typedef UInt24 PacketIndex;
+
+	//////////////////////////////////////////////////////////////////////////
+	/// This is the counter used for holding ordered packet numbers, 
+	/// so we can detect out-of-order  packets. 
+	/// It should be large enough  that if the variables were to wrap,
+	/// the newly wrapped values would no longer be in use.  
+	/// Warning: Too large of a value wastes bandwidth!
+	/// typedef MessageNumberType OrderingIndexType;
+	//////////////////////////////////////////////////////////////////////////
+	typedef UInt24 OrderPacketIndex;
+
+	typedef TimeUS RemoteEndPointTimeType;
+
+	/// These enumerations are used to describe when packets are delivered.
+	enum SendPriority
+	{
+		/// The highest possible priority. These message trigger sends immediately, 
+		/// and are generally not buffered or aggregated into a single datagram.
+		UNBUFFERED_IMMEDIATELY_SEND,
+
+		/// For every 2 IMMEDIATE_PRIORITY messages, 1 HIGH_PRIORITY will be sent.
+		/// Messages at this priority and lower are buffered to be sent in groups at 10 
+		/// millisecond intervals to reduce UDP overhead and better measure congestion 
+		/// control. 
+		BUFFERED_FIRSTLY_SEND,
+
+		/// For every 2 HIGH_PRIORITY messages, 1 MEDIUM_PRIORITY will be sent.
+		/// Messages at this priority and lower are buffered to be sent in groups at 10 
+		/// millisecond intervals to reduce UDP overhead and better measure congestion 
+		/// control. 
+		BUFFERED_SECONDLY_SEND,
+
+		/// For every 2 MEDIUM_PRIORITY messages, 1 LOW_PRIORITY will be sent.
+		/// Messages at this priority and lower are buffered to be sent in groups at 10
+		/// millisecond intervals to reduce UDP overhead and better measure congestion 
+		/// control. 
+		BUFFERED_THIRDLY_SEND,
+
+		/// \internal
+		PRIORITIES_COUNT
+	};
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	/// These enumerations are used to describe how packets are delivered.
+	/// \note  Note to self: I write this with 3 bits in the stream.  If I add more 
+	/// remember to change that
+	/// \note In ReliabilityLayer::WriteToBitStreamFromInternalPacket I assume 
+	/// there are 5 major types
+	/// \note Do not reorder, I check on >= UNRELIABLE_WITH_ACK_RECEIPT which equals 5
+	//////////////////////////////////////////////////////////////////////////////////////
+	enum PacketReliability
+	{
+		//////////////////////////////////////////////////////////////////////////
+		/// Same as regular UDP, except that it will also discard duplicate datagrams.  
+		/// JackieINet adds (6 to 17) + 21 bits of overhead, 16 of which is used to detect 
+		/// duplicate msg and 6 to 17 of which is used for message length.
+		//////////////////////////////////////////////////////////////////////////
+		UNRELIABLE_NOT_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// Regular UDP with a sequence counter. Out of order messages will be discarded.
+		/// Sequenced and ordered messages sent on the same channel will arrive in the 
+		/// order sent.
+		//////////////////////////////////////////////////////////////////////////
+		UNRELIABLE_SEQUENCED_NOT_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// The message is sent reliably, but not necessarily in any order.
+		/// reliable here means no dropping msgs, lost msgs will be resent
+		//////////////////////////////////////////////////////////////////////////
+		RELIABLE_NOT_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// This message is reliable and will arrive in the order you sent it. 
+		/// Messages will be delayed while waiting for out of order messages. 
+		/// Same overhead as UNRELIABLE_SEQUENCED. Sequenced and ordered 
+		/// messages sent on the same channel will arrive in the order sent.
+		//////////////////////////////////////////////////////////////////////////
+		RELIABLE_ORDERED_NOT_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// This message is reliable and will arrive in the sequence you sent it. 
+		/// Out of order messages will be dropped.  Same overhead as 
+		/// UNRELIABLE_SEQUENCED. Sequenced and ordered messages 
+		/// sent on the same channel will arrive in the order sent.
+		//////////////////////////////////////////////////////////////////////////
+		RELIABLE_SEQUENCED_NOT_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// however the user will get either ID_SND_RECEIPT_ACKED or ID_SND_RECEIPT_LOSS
+		/// based on the result of sending this message when calling RakPeerInterface::Receive
+		/// (). Bytes 1-4 will contain the number returned from the Send() function. On 
+		/// disconnect or shutdown, all messages not previously acked should be considered 
+		/// lost.
+		//////////////////////////////////////////////////////////////////////////
+		UNRELIABLE_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		///  [10/18/2015 mengdi] You can't have sequenced and ack receipts, because you 
+		/// don't know if the other system discarded the message, meaning you don't know
+		/// if the message was processed
+		// UNRELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
+		//////////////////////////////////////////////////////////////////////////
+
+		//////////////////////////////////////////////////////////////////////////
+		/// The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when 
+		/// calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
+		/// message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain 
+		/// the number returned from the Send() function. On disconnect or shutdown, all 
+		/// messages not previously acked should be considered lost. This does not return 
+		/// ID_SND_RECEIPT_LOSS.
+		//////////////////////////////////////////////////////////////////////////
+		RELIABLE_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when 
+		/// calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
+		/// message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain 
+		/// the number returned from the Send() function. On disconnect or shutdown, all 
+		/// messages not previously acked should be considered lost. This does not return 
+		/// ID_SND_RECEIPT_LOSS.
+		//////////////////////////////////////////////////////////////////////////
+		RELIABLE_ORDERED_ACK_RECEIPT_OF_PACKET,
+
+		//////////////////////////////////////////////////////////////////////////
+		/// 05/04/10 You can't have sequenced and ack receipts, because you don't know if the 
+		/// other system discarded the message, meaning you don't know if the message was 
+		/// processed
+		// RELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
+		//////////////////////////////////////////////////////////////////////////
+
+		/// internal
+		NUMBER_OF_RELIABILITIES
+	};
+
+	/// Not endian safe
+	/// InternalPacketFixedSizeTransmissionHeader
+	struct PacketHeader
+	{
+		/// A unique numerical identifier given to this user message.
+		/// Used to identify reliable messages on the network
+		PacketIndex packetIndex;
+		/// The ID used as identification for ordering messages. 
+		/// Also included in sequenced messages
+		OrderPacketIndex orderingIndex;
+		/// Used only with sequenced messages
+		OrderPacketIndex sequencingIndex;
+		/// What ordering channel this packet is on, 
+		/// if the reliability type uses ordering channels
+		unsigned char orderingChannel;
+		/// The ID of the split packet, if we have split packets.  
+		/// This is the maximum number of split messages 
+		/// we can send simultaneously per connection.
+		SplitPacketId splitPacketId;
+		/// If this is a split packet, the index into the array of subsplit packets
+		SplitPacketIndex splitPacketIndex;
+		/// The size of the array of subsplit packets
+		SplitPacketIndex splitPacketCount;
+		/// How many bits long the data is
+		BitSize dataBitLength;
+		/// What type of reliability algorithm to use with this packet
+		PacketReliability reliability;
+	};
+
+
+	/// Holds a user message, and related information
+	/// Don't use a constructor or destructor, due to the memory pool I am using
+	struct InternalPacket : public PacketHeader
+	{
+		/// Identifies the order in which this number was sent. Used locally
+		PacketIndex messageInternalOrder;
+		/// Has this message number been assigned yet?  We don't assign until the message is actually sent.
+		/// This fixes a bug where pre-determining message numbers and then sending a message on a different channel creates a huge gap.
+		/// This causes performance problems and causes those messages to timeout.
+		bool messageNumberAssigned;
+		/// Was this packet number used this update to track windowing drops or increases?  Each packet number is only used once per update.
+		//	bool allowWindowUpdate;
+		///When this packet was created
+		TimeUS creationTime;
+		///The resendNext time to take action on this packet
+		TimeUS nextActionTime;
+		// For debugging
+		TimeUS retransmissionTime;
+		// Size of the header when encoded into a bitstream
+		BitSize headerLength;
+		/// Buffer is a pointer to the actual data, assuming this packet has data at all
+		unsigned char *data;
+		/// How to alloc and delete the data member
+		enum
+		{
+			/// Data is allocated using rakMalloc. Just free it
+			NORMAL,
+			/// data points to a larger block of data, 
+			/// where the larger block is reference counted. RefCountedData is used in this case
+			REFCOUNTDATA,
+			/// If allocation scheme is STACK, 
+			/// data points to stackData and should not be deallocated
+			/// This is only used when sending. Received packets are deallocated in RakPeer
+			STACK
+		} allocationScheme;
+		/// Used in InternalPacket when pointing to refCountedData, 
+		/// rather than allocating itself
+		struct RefCountData
+		{
+			char *refCountedData;
+			unsigned int refCount;
+		} *refCountedData;
+		/// How many attempts we made at sending this message
+		unsigned char timesTrytoSend;
+		/// The priority level of this packet
+		SendPriority priority;
+		/// If the reliability type requires a receipt, then return this number with it
+		UInt32 sendReceiptSerial;
+		// Used for the resend queue
+		// Linked list implementation so I can remove from the list via a pointer, 
+		/// without finding it in the list
+		InternalPacket *resendPrev, *resendNext, *unreliablePrev, *unreliableNext;
+		unsigned char stackData[128];
+	};
+
+	/// This is the smallest unit that represents a meaningful user-created logic data
+	struct JACKIE_EXPORT Packet
+	{
+		/// The system that send this packet.
+		JACKIE_INET_Address systemAddress;
+
+		/// A unique identifier for the system that sent this packet, 
+		/// regardless of IP address (internal / external / remote system)
+		/// Only valid once a connection has been established 
+		/// (ID_CONNECTION_REQUEST_ACCEPTED, or ID_NEW_INCOMING_CONNECTION)
+		/// Until that time, will be JACKIE_INet_GUID_Null
+		JACKIE_INet_GUID guid;
+
+		/// The length of the data in bytes
+		UInt32 length;
+
+		/// The length of the data in bits
+		BitSize bitSize;
+
+		/// The data from the sender
+		char *data;
+
+		/// @internal
+		/// Indicates whether to delete the data, or to simply delete the packet.
+		bool deleteData;
+
+		/// @internal  If true, this message is meant for the user, not for the plugins,
+		/// so do not process it through plugins
+		bool wasGeneratedLocally;
 	};
 }
 

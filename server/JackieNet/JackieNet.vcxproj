@@ -189,6 +189,7 @@
     <ClCompile Include="NetTime.cpp" />
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
+    <ClCompile Include="ServerApplication.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +206,7 @@
     <ClInclude Include="NetTypes.h" />
     <ClInclude Include="OverrideMemory.h" />
     <ClInclude Include="OverrideNetDefines.h" />
+    <ClInclude Include="ServerApplication.h" />
     <ClInclude Include="SocketDefines.h" />
     <ClInclude Include="SockOSIncludes.h" />
     <ClInclude Include="WindowsIncludes.h" />

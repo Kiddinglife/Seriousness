@@ -1,4 +1,4 @@
-﻿#ifndef JACKIE_Atomic_H
+﻿#ifndef JACKIE_ATOMIC_H
 #define JACKIE_ATOMIC_H
 
 #include "DLLExport.h"

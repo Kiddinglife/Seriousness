@@ -14,7 +14,6 @@
 
 #include "DLLExport.h"
 //#include "DS_List.h"
-//#include "PacketPriority.h"
 #include "OverrideMemory.h"
 #include "JACKIE_INet_Socket.h"
 
@@ -28,16 +27,16 @@ namespace JACKIE_INET
 	struct RakNetBandwidth;
 	class RouterInterface;
 	class NetworkIDManager;
-
-	/*!
-	 * \class IServerApplication
-	 * \brief
-	 * The primary interface for JackieNet, ApplicationInstance contains all major
-	 * functions for the library. See the individual functions for what the class can do.
-	 * The main interface fonetwork communications
-	 * \author mengdi
-	 * \date Oct 2015
-	 */
+	struct JISRecvParams;
+	//////////////////////////////////////////////////////////////////////////
+	/// \class IServerApplication
+	/// \brief
+	/// The primary interface for JackieNet, ApplicationInstance contains all major
+	/// functions for the library. See the individual functions for what the class can do.
+	/// The main interface fonetwork communications
+	/// \author mengdi
+	/// \date Oct 2015
+	//////////////////////////////////////////////////////////////////////////
 	class JACKIE_EXPORT IServerApplication
 	{
 		public:
@@ -46,21 +45,21 @@ namespace JACKIE_INET
 		virtual ~IServerApplication() { }
 
 		//////////////////////////////////////////////////////////////////////////
-		/// 1. Starts the network threads [optional], opens the listen port.
-		/// 2. You must call this before calling Connect().
-		/// 3. On the PS3, call Startup() after Client_Login()
-		/// 4. On Android, add the necessary permission to your application's 
+		/// Starts the network threads [optional], opens the listen port.
+		/// You must call this before calling Connect().
+		/// On the PS3, call Startup() after Client_Login()
+		/// On Android, add the necessary permission to your application's 
 		/// androidmanifest.xml: <uses-permission 
 		/// android:name="android.permission.INTERNET" />
-		/// 5. Multiple calls while already active are ignored.  
+		/// Multiple calls while already active are ignored.  
 		/// To call this function again with different settings, you must first call End().
-		/// 6. param[in] maxConnections 
+		/// param[in] maxConnections 
 		/// The maximum number of connections between this instance of ServerApplication 
 		/// and another instance of ServerApplication. Required so, the network can preallocate
 		/// and for thread safety. A pure client would set this to 1.  A pure server would set it to
 		/// the number of allowed clients. A hybrid would set it to the sum of both types of 
 		/// connections
-		/// 7. param[in] localPort 
+		/// param[in] localPort 
 		/// The port to listen for connections on. On linux the system may be set up so thast 
 		/// ports under 1024 are restricted for everything but the root user. Use a higher port 
 		/// for maximum compatibility. 
@@ -70,7 +69,9 @@ namespace JACKIE_INET
 			UInt32 socketDescriptorCount,
 			Int32 threadPriority = -99999) = 0;
 
-
+		//virtual void OnJISRecv(JISRecvParams *recvStruct) = 0;
+		//virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line) = 0;
+		//virtual JISRecvParams *AllocJISRecvParams(const char *file, UInt32 line) = 0;
 	};
 
 

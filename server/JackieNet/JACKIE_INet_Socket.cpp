@@ -1,8 +1,5 @@
-﻿#include <stdio.h>  
-#include "JACKIE_INet_Socket.h"
+﻿#include "JACKIE_INet_Socket.h"
 #include "WSAStartupSingleton.h"
-#include <wchar.h>
-#include <locale>
 
 namespace JACKIE_INET
 {
