@@ -27,16 +27,45 @@ namespace JACKIE_INET
 		trackFrequencyTable = false;
 		maximumIncomingConnections = maximumNumberOfPeers = 0;
 		bytesSentPerSecond = bytesReceivedPerSecond = 0;
+
 		endThreads = true;
 		isMainLoopThreadActive = false;
 		recvHandler = 0;
+		userUpdateThreadPtr = 0;
+		userUpdateThreadData = 0;
+
+		allowInternalRouting = false;
+		incomingPasswordLength = 0;
+		splitMessageProgressInterval = 0;
+
+		allowConnectionResponseIPMigration = false;
+		unreliableTimeout = 1000;
+		maxOutgoingBPS = 0;
+
+		myGuid = JACKIE_INet_GUID_Null;
+		firstExternalID = JACKIE_INET_Address_Null;
+
+		for( unsigned int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
+		{
+			IPAddress[i] = JACKIE_INET_Address_Null;
+		}
 
 #ifdef _DEBUG
 		// Wait longer to disconnect in debug so I don't get disconnected while tracing
 		defaultTimeoutTime = 30000;
+		_packetloss = 0.0;
+		_minExtraPing = 0;
+		_extraPingVariance = 0;
 #else
 		defaultTimeoutTime = 10000;
 #endif
+
+#if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
+		occasionalPing = true;
+#else
+		occasionalPing = false;
+#endif
+
 
 	}
 

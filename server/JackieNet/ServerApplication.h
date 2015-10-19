@@ -72,6 +72,7 @@ namespace JACKIE_INET
 		/// without affecting running threads, even if they are in the reliability layer
 		//////////////////////////////////////////////////////////////////////////
 		RemoteEndPoint* remoteSystemList;
+
 		//////////////////////////////////////////////////////////////////////////
 		/// activeSystemList holds a list of pointers and is preallocated to be the same size as 
 		/// remoteSystemList. It is updated only by the network thread, but read by both threads
@@ -80,16 +81,45 @@ namespace JACKIE_INET
 		/// and the list is only added to, not removed from
 		//////////////////////////////////////////////////////////////////////////
 		RemoteEndPoint** activeSystemList;
+
 		unsigned int activeSystemListSize;
+
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
-
 
 		unsigned int bytesSentPerSecond, bytesReceivedPerSecond;
 
 		bool(*recvHandler)( JISRecvParams* );
+		void(*userUpdateThreadPtr)( IServerApplication *, void * );
+		void *userUpdateThreadData;
 
 		TimeMS defaultTimeoutTime;
+
+		/// Do we occasionally ping the other systems?
+		bool occasionalPing;
+		bool allowInternalRouting;
+
+		JACKIE_INET_Address IPAddress[MAX_COUNT_LOCAL_IP_ADDR];
+
+		/// How long it has been since things were updated by a call
+		/// to receiveUpdate thread uses this to determine how long to sleep for
+		/// unsigned int lastUserUpdateCycle;
+		/// True to allow connection accepted packets from anyone. 
+		/// False to only allow these packets from servers we requested a connection to.
+		bool allowConnectionResponseIPMigration;
+
+
+		int splitMessageProgressInterval;
+		TimeMS unreliableTimeout;
+		unsigned maxOutgoingBPS;
+		JACKIE_INET_Address firstExternalID;
+
+		// Nobody would use the internet simulator in a final build.
+#ifdef _DEBUG
+		double _packetloss;
+		unsigned short _minExtraPing;
+		unsigned short _extraPingVariance;
+#endif
 
 		// Generate and store a unique GUID
 		void GenerateGUID(void);
