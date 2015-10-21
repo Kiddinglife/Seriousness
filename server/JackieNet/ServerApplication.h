@@ -1,9 +1,9 @@
 /*!
  * \file ServerApplication.h
- *
  * \author mengdi
  * \date Oct 18, 2015
  */
+
 #ifndef SERVERAPPLICATION_H_
 #define SERVERAPPLICATION_H_
 
