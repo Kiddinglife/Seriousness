@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include "DLLExport.h"
+#include "BasicTypes.h"
 
 /////////////////////////////////////////// SuperFastHash //////////////////////////////////////////////
 /// From http://www.azillionmonkeys.com/qed/hash.html
@@ -61,5 +62,20 @@ JACKIE_EXPORT inline  extern void  DomainNameToIP(const char *domainName, char i
 JACKIE_EXPORT extern void  JACKIE_Sleep(unsigned int ms);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+inline JACKIE_EXPORT extern UInt64 JackieAlignBinary(UInt64 ptr, UInt8 alignment)
+{
+	unsigned int const tmp = alignment - 1;
+	return ( ptr + tmp ) & ( ~tmp );
+}
+/// Return the next address aligned to a required boundary
+inline JACKIE_EXPORT extern char* JackiePointerAlignBinary(char const * ptr, UInt8 alignment)
+{
+	return reinterpret_cast<char *> (JackieAlignBinary(reinterpret_cast<UInt64> ( ptr ), 
+		alignment) );
+}
+/// Return the next address aligned to a required boundary
+inline JACKIE_EXPORT extern char* JackiePointerAlignBinary(unsigned char const * ptr, UInt8 alignment)
+{
+	return JackiePointerAlignBinary(reinterpret_cast<char const *> ( ptr ), alignment);
+}
 #endif

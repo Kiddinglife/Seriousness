@@ -160,6 +160,11 @@ namespace DataStructures
 				assert(availablePagesSize == 0 || availablePage->availableStackSize > 0);
 				return retValue;
 			}
+			if( ( availablePage = rakMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
+			availablePagesSize = 1;
+			if( !InitPage(availablePage, availablePage, TRACE_FILE_AND_LINE_) ) return 0;
+			assert(availablePage->availableStackSize > 1);
+			return (MemoryBlockType *) availablePage->availableStack[--availablePage->availableStackSize];
 		}
 		void MemoryPool<MemoryBlockType>::Release(MemoryBlockType *m)
 		{
@@ -182,7 +187,7 @@ namespace DataStructures
 				unavailablePagesSize--;
 
 				// update the unavailablePage  
-				if (unavailablePagesSize > 0 && currentPage == unavailablePage)
+				if( unavailablePagesSize > 0 && currentPage == unavailablePage )
 				{
 					unavailablePage = unavailablePage->next;
 				}
