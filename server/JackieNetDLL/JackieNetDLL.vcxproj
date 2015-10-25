@@ -27,6 +27,7 @@
     <ClInclude Include="JACKIE_INet_Socket.h" />
     <ClInclude Include="JACKIE_Simple_Mutex.h" />
     <ClInclude Include="JACKIE_Thread.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="NetTime.h" />
     <ClInclude Include="NetTypes.h" />
     <ClInclude Include="OverrideMemory.h" />

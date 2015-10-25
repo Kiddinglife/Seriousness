@@ -22,8 +22,12 @@ JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
 #endif
 #endif
 
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
+inline
+#endif
 void JACKIE_Simple_Mutex::Lock(void)
 {
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #ifdef _WIN32
 	EnterCriticalSection(&criticalSection);
 #else
@@ -31,10 +35,15 @@ void JACKIE_Simple_Mutex::Lock(void)
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif
+#endif
 }
 
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
+inline
+#endif
 void JACKIE_Simple_Mutex::Unlock(void)
 {
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #ifdef _WIN32
 	LeaveCriticalSection(&criticalSection);
 #else
@@ -42,10 +51,15 @@ void JACKIE_Simple_Mutex::Unlock(void)
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif
+#endif
 }
 
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
+inline
+#endif
 void JACKIE_Simple_Mutex::Init(void)
 {
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #if defined(WINDOWS_PHONE_8) || defined(WINDOWS_STORE_RT)
 	InitializeCriticalSectionEx(&criticalSection, 0, CRITICAL_SECTION_NO_DEBUG_INFO);
 #elif defined(_WIN32)
@@ -55,6 +69,6 @@ void JACKIE_Simple_Mutex::Init(void)
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif
-	//	isInitialized=true;
+#endif
 }
 

@@ -51,9 +51,6 @@ namespace JACKIE_INET
 		int defaultMTUSize;
 		bool trackFrequencyTable;
 
-		/// Do we occasionally ping the other systems?
-		bool occasionalPing;
-
 		/// Store the maximum number of peers allowed to connect
 		unsigned int maximumNumberOfPeers;
 		///Store the maximum incoming connection allowed 
@@ -111,14 +108,23 @@ namespace JACKIE_INET
 
 		int splitMessageProgressInterval;
 		TimeMS unreliableTimeout;
-		unsigned maxOutgoingBPS;
+		unsigned int maxOutgoingBPS;
 		JACKIE_INET_Address firstExternalID;
+
+		/// This is used to return a number to the user 
+		/// when they call Send identifying the message
+		/// This number will be returned back with ID_SND_RECEIPT_ACKED
+		/// or ID_SND_RECEIPT_LOSS and is only returned with the reliability 
+		/// types that DOES NOT contain 'NOT' in the name
+		JACKIE_Simple_Mutex sendReceiptSerialMutex;
+		UInt32 sendReceiptSerial;
 
 		// Nobody would use the internet simulator in a final build.
 #ifdef _DEBUG
 		double _packetloss;
 		unsigned short _minExtraPing;
 		unsigned short _extraPingVariance;
+		bool limitConnectionFrequencyFromTheSameIP;
 #endif
 
 		// Generate and store a unique GUID
@@ -135,6 +141,7 @@ namespace JACKIE_INET
 
 		virtual StartupResult Start(UInt32 maxConnections, JACKIE_LOCAL_SOCKET *socketDescriptors, UInt32 socketDescriptorCount, Int32 threadPriority = -99999) override;
 
+		void ResetSendReceipt(void);
 	};
 }
 

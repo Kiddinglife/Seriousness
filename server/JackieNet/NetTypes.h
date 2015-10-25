@@ -819,7 +819,6 @@ namespace JACKIE_INET
 		} connectMode;
 	};
 
-	struct RemoteEndPointIndex { unsigned index; RemoteEndPointIndex *next; }
+	struct RemoteEndPointIndex { unsigned int index; RemoteEndPointIndex *next; };
 }
-
 #endif

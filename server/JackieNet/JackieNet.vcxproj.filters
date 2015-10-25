@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Header Files\DataStructures">
+      <UniqueIdentifier>{dcee10b2-b287-423c-9e2b-925a601f8eb7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -108,6 +111,9 @@
     </ClInclude>
     <ClInclude Include="ReliabilityMgr.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryPool.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -23,6 +23,11 @@
 #define USE_MEM_OVERRIDE 0
 #endif
 
+/// #define _DISABLE_MEMORY_POOL 1 to disable use of memory pool
+#ifndef _DISABLE_MEMORY_POOL
+#define _DISABLE_MEMORY_POOL 0
+#endif
+
 /// Threshold at which to do a malloc / free rather than pushing data onto a fixed stack
 /// for the bitstream class. 256 is an arbitrary size, just picking something likely to be larger 
 /// than  most packets

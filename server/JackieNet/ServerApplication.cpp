@@ -66,7 +66,11 @@ namespace JACKIE_INET
 		occasionalPing = false;
 #endif
 
+		limitConnectionFrequencyFromTheSameIP = false;
 
+		GenerateGUID();
+		// quitAndDataEvents.InitEvent();
+		ResetSendReceipt();
 	}
 
 	ServerApplication::~ServerApplication() { }
@@ -97,6 +101,7 @@ namespace JACKIE_INET
 		return ALREADY_STARTED;
 	}
 
+
 	void ServerApplication::OnJISRecv(JISRecvParams *recvStruct)
 	{
 	}
@@ -108,6 +113,13 @@ namespace JACKIE_INET
 	JISRecvParams * ServerApplication::AllocJISRecvParams(const char *file, UInt32 line)
 	{
 		return NULL;
+	}
+
+	void ServerApplication::ResetSendReceipt(void)
+	{
+		sendReceiptSerialMutex.Lock();
+		sendReceiptSerial = 1;
+		sendReceiptSerialMutex.Unlock();
 	}
 
 }
