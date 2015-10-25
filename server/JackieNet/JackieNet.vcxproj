@@ -194,7 +194,7 @@
     <ClCompile Include="WSAStartupSingleton.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArrayQueue.h" />
+    <ClInclude Include="CircularArrayQueue.h" />
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="CompileFeatures.h" />
     <ClInclude Include="CompileFeaturesOverride.h" />

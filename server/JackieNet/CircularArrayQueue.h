@@ -11,7 +11,7 @@
 namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
-	template <class queue_type> class JACKIE_EXPORT Queue
+	template <class queue_type> class JACKIE_EXPORT CircularArrayQueue
 	{
 		private:
 		queue_type* array;
@@ -20,19 +20,19 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 		public:
-		Queue()
+		CircularArrayQueue()
 		{
 			allocation_size = head = tail = 0;
 			array = 0;
 		}
-		~Queue()
+		~CircularArrayQueue()
 		{
 			if( allocation_size > 0 )
 				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 		}
-		Queue(Queue& original_copy);
+		CircularArrayQueue(CircularArrayQueue& original_copy);
 
-		bool operator= ( const Queue& original_copy );
+		bool operator= ( const CircularArrayQueue& original_copy );
 
 		void Push(const queue_type& input, const char *file, unsigned int line);
 		void PushAtHead(const queue_type& input, unsigned index, const char *file, unsigned int line);
