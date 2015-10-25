@@ -190,9 +190,11 @@
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
+    <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArrayQueue.h" />
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="CompileFeatures.h" />
     <ClInclude Include="CompileFeaturesOverride.h" />
@@ -213,11 +215,9 @@
     <ClInclude Include="ServerApplication.h" />
     <ClInclude Include="SocketDefines.h" />
     <ClInclude Include="SockOSIncludes.h" />
+    <ClInclude Include="ThreadConditionSignalEvent.h" />
     <ClInclude Include="WindowsIncludes.h" />
     <ClInclude Include="WSAStartupSingleton.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReliabilityMgr" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

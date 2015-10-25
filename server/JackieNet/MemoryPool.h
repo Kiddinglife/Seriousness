@@ -9,32 +9,36 @@
 #include "DLLExport.h"
 #include "OverrideMemory.h"
 
+//////////////////////////////////////////////////////////////////////////
+/// Very fast memory pool for allocating and deallocating structures that don't have 
+/// constructors or destructors (in other words, there no pointer type of 
+/// variables).Contains a list of pages, each of which has an array of 
+/// the user structures
+//////////////////////////////////////////////////////////////////////////
 namespace DataStructures
 {
 	const int DS_MEMORY_POOL_MAX_FREE_PAGES = 4;
-	//////////////////////////////////////////////////////////////////////////
-	/// Very fast memory pool for allocating and deallocating structures that don't have 
-	/// constructors or destructors.Contains a list of pages, each of which has an array of 
-	/// the user structures
-	//////////////////////////////////////////////////////////////////////////
 	template <class MemoryBlockType>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
+		struct MemoryWithPage;
+		struct Page
+		{
+			MemoryWithPage** availableStack;
+			int availableStackSize;
+			MemoryWithPage* block;
+			Page *next;
+			Page *prev;
+		};
 
 		struct MemoryWithPage
 		{
 			MemoryBlockType userMemory;
 			Page *parentPage;
 		};
-		struct Page
-		{
-			MemoryWithPage** availableStack;
-			int availableStackSize;
-			MemoryWithPage* block;
-			Page *next, *prev;
-		};
 
+		private:
 		//////////////////////////////////////////////////////////////////////////
 		// availablePage contains pages which have room to give the user new blocks.  
 		/// We return these blocks from the head of the list
@@ -50,57 +54,6 @@ namespace DataStructures
 		UInt32 memoryPoolPageSize;
 		UInt32 blocksCountPerPage;
 
-		MemoryPool()
-		{
-#if _DISABLE_MEMORY_POOL == 0
-			availablePagesSize = unavailablePagesSize = 0;
-			memoryPoolPageSize = 16384;
-			blocksCountPerPage = memoryPoolPageSize / sizeof(MemoryWithPage);
-#endif
-		}
-		~MemoryPool()
-		{
-#if _DISABLE_MEMORY_POOL != 0
-			return;
-#endif
-			Page *currentPage, *freedPage;
-
-			if( availablePagesSize > 0 )
-			{
-				currentPage = availablePage;
-				while( true )
-				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					freedPage = currentPage;
-					rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-					if( ( currentPage = currentPage->next ) == availablePage )
-					{
-						availablePagesSize = 0;
-						break;
-					}
-				}
-			}
-
-			if( unavailablePagesSize > 0 )
-			{
-				currentPage = unavailablePage;
-				while( true )
-				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					freedPage = currentPage;
-					rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-					if( ( currentPage = currentPage->next ) == availablePage )
-					{
-						unavailablePagesSize = 0;
-						break;
-					}
-				}
-			}
-		}
-
-		void SetPageSize(UInt32 size) { memoryPoolPageSize = size; }
 		bool InitPage(Page *page, Page *prev)
 		{
 			int i = 0;
@@ -124,10 +77,66 @@ namespace DataStructures
 			}
 			page->availableStackSize = blocksCountPerPage;
 			page->next = availablePage;
-			page->prev = pre;
+			page->prev = prev;
 			return true;
 		}
 
+		public:
+		MemoryPool()
+		{
+#if _DISABLE_MEMORY_POOL == 0
+			availablePagesSize = unavailablePagesSize = 0;
+			memoryPoolPageSize = 16384;
+			blocksCountPerPage = memoryPoolPageSize / sizeof(MemoryWithPage);
+#endif
+		}
+		~MemoryPool()
+		{
+#if _DISABLE_MEMORY_POOL != 0
+			return;
+#endif
+			Page *currentPage, *freedPage;
+
+			if( availablePagesSize > 0 )
+			{
+				currentPage = availablePage;
+				while( true )
+				{
+					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					freedPage = currentPage;
+					currentPage = currentPage->next;
+					if( currentPage == availablePage )
+					{
+						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						availablePagesSize = 0;
+						break;
+					}
+				}
+			}
+
+			if( unavailablePagesSize > 0 )
+			{
+				currentPage = unavailablePage;
+				while( true )
+				{
+					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					freedPage = currentPage;
+					currentPage = currentPage->next;
+					if( currentPage == availablePage )
+					{
+						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						unavailablePagesSize = 0;
+						break;
+					}
+				}
+			}
+		}
+		void SetPoolObjectsInitialSize(UInt32 size)
+		{
+			memoryPoolPageSize = size* sizeof(MemoryWithPage);
+		}
 		MemoryBlockType* Allocate(void)
 		{
 #if _DISABLE_MEMORY_POOL != 0
@@ -136,7 +145,7 @@ namespace DataStructures
 			if( availablePagesSize > 0 )
 			{
 				Page *currentPage = availablePage;
-				MemoryWithPage *retValue = currentPage->availableStack[--( currentPage->availableStackSize )];
+				MemoryBlockType *retValue = (MemoryBlockType*) currentPage->availableStack[--( currentPage->availableStackSize )];
 				if( currentPage->availableStackSize == 0 )
 				{
 					--availablePagesSize;
@@ -160,9 +169,9 @@ namespace DataStructures
 				assert(availablePagesSize == 0 || availablePage->availableStackSize > 0);
 				return retValue;
 			}
-			if( ( availablePage = rakMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
+			if( ( availablePage = (Page *) rakMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
 			availablePagesSize = 1;
-			if( !InitPage(availablePage, availablePage, TRACE_FILE_AND_LINE_) ) return 0;
+			if( !InitPage(availablePage, availablePage) ) return 0;
 			assert(availablePage->availableStackSize > 1);
 			return (MemoryBlockType *) availablePage->availableStack[--availablePage->availableStackSize];
 		}
@@ -234,3 +243,56 @@ namespace DataStructures
 	};
 }
 #endif
+/*
+#include "DS_MemoryPool.h"
+#include "DS_List.h"
+
+struct TestMemoryPool
+{
+int allocationId;
+};
+
+int main(void)
+{
+DataStructures::MemoryPool<TestMemoryPool> memoryPool;
+DataStructures::List<TestMemoryPool*> returnList;
+
+for (int i=0; i < 100000; i++)
+returnList.Push(memoryPool.Allocate(_FILE_AND_LINE_), _FILE_AND_LINE_);
+for (int i=0; i < returnList.Size(); i+=2)
+{
+memoryPool.Release(returnList[i], _FILE_AND_LINE_);
+returnList.RemoveAtIndexFast(i);
+}
+for (int i=0; i < 100000; i++)
+returnList.Push(memoryPool.Allocate(_FILE_AND_LINE_), _FILE_AND_LINE_);
+while (returnList.Size())
+{
+memoryPool.Release(returnList[returnList.Size()-1], _FILE_AND_LINE_);
+returnList.RemoveAtIndex(returnList.Size()-1);
+}
+for (int i=0; i < 100000; i++)
+returnList.Push(memoryPool.Allocate(_FILE_AND_LINE_), _FILE_AND_LINE_);
+while (returnList.Size())
+{
+memoryPool.Release(returnList[returnList.Size()-1], _FILE_AND_LINE_);
+returnList.RemoveAtIndex(returnList.Size()-1);
+}
+for (int i=0; i < 100000; i++)
+returnList.Push(memoryPool.Allocate(_FILE_AND_LINE_), _FILE_AND_LINE_);
+for (int i=100000-1; i <= 0; i-=2)
+{
+memoryPool.Release(returnList[i], _FILE_AND_LINE_);
+returnList.RemoveAtIndexFast(i);
+}
+for (int i=0; i < 100000; i++)
+returnList.Push(memoryPool.Allocate(_FILE_AND_LINE_), _FILE_AND_LINE_);
+while (returnList.Size())
+{
+memoryPool.Release(returnList[returnList.Size()-1], _FILE_AND_LINE_);
+returnList.RemoveAtIndex(returnList.Size()-1);
+}
+
+return 0;
+}
+*/

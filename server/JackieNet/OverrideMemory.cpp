@@ -149,7 +149,6 @@ void* JACKIE_INET::_RakRealloc_Ex(void *p, size_t size, const char *file, unsign
 {
 	(void) file;
 	(void) line;
-
 	return realloc(p, size);
 }
 
@@ -157,7 +156,6 @@ void JACKIE_INET::_RakFree_Ex(void *p, const char *file, unsigned int line)
 {
 	(void) file;
 	(void) line;
-
 	free(p);
 }
 

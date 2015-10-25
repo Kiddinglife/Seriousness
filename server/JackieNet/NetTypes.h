@@ -820,5 +820,35 @@ namespace JACKIE_INET
 	};
 
 	struct RemoteEndPointIndex { unsigned int index; RemoteEndPointIndex *next; };
+
+	struct BufferedCommand
+	{
+		BitSize numberOfBitsToSend;
+		PacketReliability priority;
+		PacketReliability reliability;
+		char orderingChannel;
+		JACKIE_INET_Address_GUID_Wrapper systemIdentifier;
+		bool broadcast;
+		RemoteEndPoint::ConnectMode connectionMode;
+		NetworkID networkID;
+		bool blockingCommand; // Only used for RPC
+		char *data;
+		bool haveRakNetCloseSocket;
+		unsigned connectionSocketIndex;
+		unsigned short remotePortRakNetWasStartedOn_PS3;
+		unsigned int extraSocketOptions;
+		JACKIE_INet_Socket* socket;
+		unsigned short port;
+		UInt32 receipt;
+		enum
+		{
+			BCS_SEND,
+			BCS_CLOSE_CONNECTION,
+			BCS_GET_SOCKET,
+			BCS_CHANGE_SYSTEM_ADDRESS,
+			/* BCS_USE_USER_SOCKET, BCS_REBIND_SOCKET_ADDRESS, BCS_RPC, BCS_RPC_SHIFT,*/
+			BCS_DO_NOTHING
+		} command;
+	};
 }
 #endif

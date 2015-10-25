@@ -18,11 +18,12 @@
 //#include "RakThread.h"
 //#include "RakNetSmartPtr.h"
 //#include "DS_ThreadsafeAllocatingQueue.h"
-//#include "SignaledEvent.h"
+#include "ThreadConditionSignalEvent.h"
 #include "CompileFeatures.h"
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
 //#include "DS_Queue.h"
+#include "MemoryPool.h"
 
 namespace JACKIE_INET
 {
@@ -31,7 +32,7 @@ namespace JACKIE_INET
 	{
 		public:
 
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		volatile bool endThreads; ///Set this to true to terminate the thread execution 
 		volatile bool isMainLoopThreadActive; ///true if the peer thread is active. 
 #else
@@ -125,6 +126,14 @@ namespace JACKIE_INET
 		unsigned short _minExtraPing;
 		unsigned short _extraPingVariance;
 		bool limitConnectionFrequencyFromTheSameIP;
+#endif
+
+		JACKIE_Simple_Mutex packetAllocationPoolMutex;
+		DataStructures::MemoryPool<Packet> packetAllocationPool;
+		DataStructures::MemoryPool<RemoteEndPointIndex> remoteSystemIndexPool;
+
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+		ThreadConditionSignalEvent quitAndDataEvents;
 #endif
 
 		// Generate and store a unique GUID

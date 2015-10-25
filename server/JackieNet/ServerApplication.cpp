@@ -65,11 +65,17 @@ namespace JACKIE_INET
 #else
 		occasionalPing = false;
 #endif
-
+		
 		limitConnectionFrequencyFromTheSameIP = false;
+		quitAndDataEvents.Init();
+
+		packetAllocationPoolMutex.Lock();
+		packetAllocationPool.SetPoolObjectsInitialSize(256);
+		remoteSystemIndexPool.SetPoolObjectsInitialSize(256);
+		packetAllocationPoolMutex.Unlock();
+
 
 		GenerateGUID();
-		// quitAndDataEvents.InitEvent();
 		ResetSendReceipt();
 	}
 

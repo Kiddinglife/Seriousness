@@ -303,6 +303,26 @@ void test_JISBerkley_All_funcs()
 
 	}
 }
+
+#include "JackieNet/MemoryPool.h"
+#include "JackieNet/ArrayQueue.h"
+struct TestMemoryPool
+{
+	int allocationId;
+};
+void test_MemoryPool_funcs()
+{
+	std::cout << "test_MemoryPool_funcs starts...\n";
+	DataStructures::MemoryPool<TestMemoryPool> memoryPool;
+	for( int i = 0; i < 100000; i++ )
+	{
+		TestMemoryPool* test = memoryPool.Allocate();
+		test->allocationId = i;
+		//printf_s("allocationId(%d)\n", test->allocationId);
+		memoryPool.Release(test);
+	}
+
+}
 //////////////////////////////////////////////////////////////////////////
 enum
 {
@@ -334,6 +354,8 @@ enum
 	JACKIE_INet_Socket_h,
 	ClassJISBerkley,
 	//////////////////////////////////////////////////////////////////////////
+	MemoryPool_h,
+	//////////////////////////////////////////////////////////////////////////
 	AllClass,
 	AllFuncs
 };
@@ -354,8 +376,11 @@ enum
 //static int testcase = NetTime_h;
 //static int testfunc = AllFuncs;
 
-static int testcase = JACKIE_INet_Socket_h;
-static int testfunc = ClassJISBerkley;
+//static int testcase = JACKIE_INet_Socket_h;
+//static int testfunc = ClassJISBerkley;
+
+static int testcase = MemoryPool_h;
+static int testfunc = AllFuncs;
 
 int main()
 {
@@ -458,6 +483,17 @@ int main()
 					break;
 				default:
 					test_JISBerkley_All_funcs();
+					break;
+			}
+			break;
+		case MemoryPool_h:
+			switch( testfunc )
+			{
+				case ClassJISBerkley:
+					test_MemoryPool_funcs();
+					break;
+				default:
+					test_MemoryPool_funcs();
 					break;
 			}
 			break;
