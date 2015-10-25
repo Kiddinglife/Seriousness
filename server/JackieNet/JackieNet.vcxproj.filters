@@ -121,7 +121,10 @@
     <ClInclude Include="ThreadConditionSignalEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CircularArrayQueue.h">
+    <ClInclude Include="CircularArrayQueueSingleThread.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

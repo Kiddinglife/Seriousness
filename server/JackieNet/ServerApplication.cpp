@@ -65,15 +65,12 @@ namespace JACKIE_INET
 #else
 		occasionalPing = false;
 #endif
-		
+
 		limitConnectionFrequencyFromTheSameIP = false;
+
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		quitAndDataEvents.Init();
-
-		packetAllocationPoolMutex.Lock();
-		packetAllocationPool.SetPoolObjectsInitialSize(256);
-		remoteSystemIndexPool.SetPoolObjectsInitialSize(256);
-		packetAllocationPoolMutex.Unlock();
-
+#endif
 
 		GenerateGUID();
 		ResetSendReceipt();

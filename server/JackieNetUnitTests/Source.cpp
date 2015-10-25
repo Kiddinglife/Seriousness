@@ -305,7 +305,7 @@ void test_JISBerkley_All_funcs()
 }
 
 #include "JackieNet/MemoryPool.h"
-#include "JackieNet/ArrayQueue.h"
+#include "JackieNet/CircularArrayQueueSingleThread.h"
 struct TestMemoryPool
 {
 	int allocationId;

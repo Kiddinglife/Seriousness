@@ -17,8 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 namespace DataStructures
 {
-	const int DS_MEMORY_POOL_MAX_FREE_PAGES = 4;
-	template <class MemoryBlockType>
+	template <typename MemoryBlockType, UInt32 BLOCKS_COUNT_PER_PAGE = 256, UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 8>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
@@ -86,8 +85,8 @@ namespace DataStructures
 		{
 #if _DISABLE_MEMORY_POOL == 0
 			availablePagesSize = unavailablePagesSize = 0;
-			memoryPoolPageSize = 16384;
-			blocksCountPerPage = memoryPoolPageSize / sizeof(MemoryWithPage);
+			memoryPoolPageSize = BLOCKS_COUNT_PER_PAGE* sizeof(MemoryWithPage);
+			blocksCountPerPage = BLOCKS_COUNT_PER_PAGE;
 #endif
 		}
 		~MemoryPool()
@@ -133,10 +132,6 @@ namespace DataStructures
 				}
 			}
 		}
-		void SetPoolObjectsInitialSize(UInt32 size)
-		{
-			memoryPoolPageSize = size* sizeof(MemoryWithPage);
-		}
 		MemoryBlockType* Allocate(void)
 		{
 #if _DISABLE_MEMORY_POOL != 0
@@ -175,7 +170,7 @@ namespace DataStructures
 			assert(availablePage->availableStackSize > 1);
 			return (MemoryBlockType *) availablePage->availableStack[--availablePage->availableStackSize];
 		}
-		void MemoryPool<MemoryBlockType>::Release(MemoryBlockType *m)
+		void Release(MemoryBlockType *m)
 		{
 #if _DISABLE_MEMORY_POOL != 0
 			rakFree_Ex(m, TRACE_FILE_AND_LINE_);
