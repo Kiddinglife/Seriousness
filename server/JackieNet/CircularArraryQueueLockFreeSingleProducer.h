@@ -45,6 +45,8 @@
 
 #include <assert.h> // assert()
 #include "BasicTypes.h"
+#include "atomic_ops.h"
+#include "JACKIE_Atomic.h"
 
 #define ARRAY_LOCK_FREE_Q_DEFAULT_SIZE 256 // 2^16 = 65,536 elements by default
 
@@ -120,6 +122,7 @@ class CircularArraryQueueLockFreeSingleProducer
 #ifdef ARRAY_LOCK_FREE_Q_KEEP_REAL_SIZE
 	/// @brief number of elements in the queue
 	volatile UInt32 m_count;
+	//JACKIE_ATOMIC_LONG m_count;
 #endif
 
 	/// @brief where a new element will be inserted
@@ -213,6 +216,7 @@ bool CircularArraryQueueLockFreeSingleProducer<ELEM_T, Q_SIZE>::push(const ELEM_
 	// The value was successfully inserted into the queue
 #ifdef ARRAY_LOCK_FREE_Q_KEEP_REAL_SIZE
 	AtomicAdd(&m_count, 1);
+	
 #endif
 
 	return true;

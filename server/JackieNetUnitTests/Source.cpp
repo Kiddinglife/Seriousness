@@ -303,9 +303,10 @@ void test_JISBerkley_All_funcs()
 
 	}
 }
+//////////////////////////////////////////////////////////////////////////
 
+////////////////////////// test_MemoryPool_funcs ///////////////////////////
 #include "JackieNet/MemoryPool.h"
-#include "JackieNet/CircularArrayQueueSingleThread.h"
 struct TestMemoryPool
 {
 	int allocationId;
@@ -321,7 +322,27 @@ void test_MemoryPool_funcs()
 		//printf_s("allocationId(%d)\n", test->allocationId);
 		memoryPool.Release(test);
 	}
+}
+//////////////////////////////////////////////////////////////////////////
 
+/////////////////////// test_Queue_funcs ////////////////////////////
+#include "JackieNet/CircularArrayQueueSingleThread.h"
+void test_Queue_funcs()
+{
+	std::cout << "test_Queue_funcs starts...\n";
+	DataStructures::CircularArrayQueueSingleThread<int> queue;
+	for( int i = 1; i < 100; i++ )
+	{
+		queue.PushTail(i, __FILE__, __LINE__);
+	}
+	queue.PushHead(12, 3, __FILE__, __LINE__);
+	queue.Contains(12);
+	queue.IsEmpty();
+	queue.PopTail();
+	queue.PopHead();
+	queue.RemoveAtIndex(12);
+	queue.Resize(1000, __FILE__, __LINE__);
+	queue.Clear(__FILE__, __LINE__);
 }
 //////////////////////////////////////////////////////////////////////////
 enum
@@ -356,6 +377,9 @@ enum
 	//////////////////////////////////////////////////////////////////////////
 	MemoryPool_h,
 	//////////////////////////////////////////////////////////////////////////
+	CircularArrayQueueSingleThread,
+	Test_Queue_funcs,
+	//////////////////////////////////////////////////////////////////////////
 	AllClass,
 	AllFuncs
 };
@@ -379,8 +403,11 @@ enum
 //static int testcase = JACKIE_INet_Socket_h;
 //static int testfunc = ClassJISBerkley;
 
-static int testcase = MemoryPool_h;
-static int testfunc = AllFuncs;
+//static int testcase = MemoryPool_h;
+//static int testfunc = AllFuncs;
+
+static int testcase = CircularArrayQueueSingleThread;
+static int testfunc = Test_Queue_funcs;
 
 int main()
 {
@@ -489,11 +516,19 @@ int main()
 		case MemoryPool_h:
 			switch( testfunc )
 			{
-				case ClassJISBerkley:
-					test_MemoryPool_funcs();
-					break;
 				default:
 					test_MemoryPool_funcs();
+					break;
+			}
+			break;
+		case CircularArrayQueueSingleThread:
+			switch( testfunc )
+			{
+				case Test_Queue_funcs:
+					test_Queue_funcs();
+					break;
+				default:
+					test_Queue_funcs();
 					break;
 			}
 			break;

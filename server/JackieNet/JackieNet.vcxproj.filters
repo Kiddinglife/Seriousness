@@ -127,5 +127,8 @@
     <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="atomic_ops.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

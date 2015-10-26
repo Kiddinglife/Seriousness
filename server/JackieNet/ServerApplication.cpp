@@ -11,7 +11,7 @@ namespace JACKIE_INET
 	{
 #if LIBCAT_SECURITY == 1
 		// Encryption and security
-		CAT_AUDIT_PRINTF("AUDIT: Initializing RakPeer security flags: using_security = false, server_handshake = null, cookie_jar = null\n");
+		CAT_AUDIT_PRINTF("AUDIT: Initializing ServerApplication security flags: using_security = false, server_handshake = null, cookie_jar = null\n");
 		_using_security = false;
 		_server_handshake = 0;
 		_cookie_jar = 0;
