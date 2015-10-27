@@ -9,8 +9,7 @@
  */
 
 #include "WSAStartupSingleton.h"
-
-#include "NetTypes.h"
+#include <WinSock2.h>
 #include <stdio.h>
 
 int WSAStartupSingleton::refCount = 0;
@@ -37,7 +36,7 @@ void WSAStartupSingleton::AddRef(void)
 			NULL, dwIOError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
 			(LPTSTR) & messageBuffer, 0, NULL);
 		// something has gone wrong here...
-		JACKIE_NET_DEBUG_PRINTF("WSAStartup failed:Error code - %d\n%s", dwIOError, messageBuffer);
+		printf_s("WSAStartup failed:Error code - %d,%s\n", dwIOError, messageBuffer);
 		//Free the buffer.
 		LocalFree(messageBuffer);
 #endif
@@ -56,7 +55,6 @@ void WSAStartupSingleton::Deref(void)
 		refCount--;
 		return;
 	}
-
 	WSACleanup();
 	refCount = 0;
 #endif

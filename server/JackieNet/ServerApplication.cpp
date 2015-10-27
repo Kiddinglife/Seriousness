@@ -56,6 +56,7 @@ namespace JACKIE_INET
 		_packetloss = 0.0;
 		_minExtraPing = 0;
 		_extraPingVariance = 0;
+		limitConnectionFrequencyFromTheSameIP = false;
 #else
 		defaultTimeoutTime = 10000;
 #endif
@@ -66,7 +67,6 @@ namespace JACKIE_INET
 		occasionalPing = false;
 #endif
 
-		limitConnectionFrequencyFromTheSameIP = false;
 
 #if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		quitAndDataEvents.Init();

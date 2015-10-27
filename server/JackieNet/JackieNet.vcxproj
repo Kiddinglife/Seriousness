@@ -139,8 +139,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
@@ -190,13 +190,15 @@
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
+    <ClCompile Include="SingleProducerSingleConsumerLockFreeQueue.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic_ops.h" />
     <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h" />
-    <ClInclude Include="CircularArrayQueueSingleThread.h" />
+    <ClInclude Include="SingleProducerSingleConsumerLockFreeQueue.h" />
+    <ClInclude Include="SingleThreadRingBufferQueue.h" />
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="CompileFeatures.h" />
     <ClInclude Include="CompileFeaturesOverride.h" />

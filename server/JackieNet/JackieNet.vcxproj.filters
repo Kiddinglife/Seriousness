@@ -50,6 +50,9 @@
     <ClCompile Include="ThreadConditionSignalEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SingleProducerSingleConsumerLockFreeQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTypes.h">
@@ -121,13 +124,16 @@
     <ClInclude Include="ThreadConditionSignalEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CircularArrayQueueSingleThread.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="atomic_ops.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="SingleThreadRingBufferQueue.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="SingleProducerSingleConsumerLockFreeQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

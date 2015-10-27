@@ -9,8 +9,8 @@
  */
 
 #if   defined (WINDOWS_STORE_RT)
-#include <windows.h>
 #include <winsock.h>
+#include <windows.h>
 #elif defined (_WIN32)
 #include <WinSock2.h>
 #include <windows.h>

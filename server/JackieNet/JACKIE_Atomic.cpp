@@ -32,7 +32,7 @@ UInt32 JACKIE_ATOMIC_LONG::Decrement(void)
 	mutex.Unlock();
 	return v;
 #else
-	return __sync_fetch_and_add(&value, (UInt32) -1);
+	return __sync_fetch_and_add(&value, (Int32) -1);
 #endif
 }
 

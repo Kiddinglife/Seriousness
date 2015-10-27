@@ -1,5 +1,5 @@
-#ifndef Address_H_
-#define Address_H_
+#ifndef SingleThreadRingBufferQueue_H_
+#define SingleThreadRingBufferQueue_H_
 
 #include <cassert>
 #include "DLLExport.h"
@@ -12,7 +12,7 @@ namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
 	template <typename queue_type, UInt32 QUEUE_INIT_SIZE = 256>
-	class JACKIE_EXPORT CircularArrayQueueSingleThread
+	class JACKIE_EXPORT SingleThreadRingBufferQueue
 	{
 		private:
 		queue_type* array;
@@ -21,12 +21,12 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 		public:
-		CircularArrayQueueSingleThread()
+		SingleThreadRingBufferQueue()
 		{
 			allocation_size = head = tail = 0;
 			array = 0;
 		}
-		~CircularArrayQueueSingleThread()
+		~SingleThreadRingBufferQueue()
 		{
 			if( allocation_size > 0 )
 				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
@@ -34,7 +34,7 @@ namespace DataStructures
 			array = 0;
 			allocation_size = head = tail = 0;
 		}
-		CircularArrayQueueSingleThread(CircularArrayQueueSingleThread& original_copy)
+		SingleThreadRingBufferQueue(SingleThreadRingBufferQueue& original_copy)
 		{
 			// Allocate memory for copy
 			if( original_copy.Size() == 0 )
@@ -57,7 +57,7 @@ namespace DataStructures
 			allocation_size = original_copy.Size() + 1;
 		}
 
-		bool operator= ( const CircularArrayQueueSingleThread& original_copy )
+		bool operator= ( const SingleThreadRingBufferQueue& original_copy )
 		{
 			if( ( &original_copy ) == this ) return false;
 
@@ -253,7 +253,6 @@ namespace DataStructures
 		void Clear(const char *file, unsigned int line)
 		{
 			if( allocation_size == 0 ) return;
-
 			if( allocation_size > QUEUE_INIT_SIZE )
 			{
 				JACKIE_INET::OP_DELETE_ARRAY(array, file, line);

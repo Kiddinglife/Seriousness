@@ -15,13 +15,6 @@
 #define _PP_Instance_ int
 #endif
 
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET (-1)
-#endif
-
-#ifndef SOCKET_ERROR
-#define SOCKET_ERROR (-1)
-#endif
 #if   defined(WINDOWS_STORE_RT)
 #include <windows.h>
 #include "WinRTSockAddr.h"
@@ -40,7 +33,7 @@ typedef unsigned int socklen_t;
 // winsock.h must be linked against WSock32.lib.  If these two are mixed up the flag won't work correctly
 // WinRT: http://msdn.microsoft.com/en-us/library/windows/apps/windows.networking.sockets
 // Sample code: http://stackoverflow.com/questions/10290945/correct-use-of-udp-datagramsocket
-#include <winsock2.h>
+#include <WinSock2.h>
 typedef SOCKET __UDPSOCKET__;
 typedef SOCKET __TCPSOCKET__;
 typedef int socklen_t;
@@ -105,7 +98,14 @@ typedef PP_Resource __TCPSOCKET__;
 typedef int __UDPSOCKET__;
 typedef int __TCPSOCKET__;
 #endif
-
 #endif
 
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR (-1)
+#endif
+#define SAFE_CLOSE_SOCK(rns2Socket) \
+if( rns2Socket != INVALID_SOCKET ) { closesocket__(rns2Socket); rns2Socket = (JISSocket) INVALID_SOCKET; }
 #endif

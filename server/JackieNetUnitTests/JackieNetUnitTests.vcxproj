@@ -172,6 +172,10 @@
       <Project>{d4217985-7f10-4299-8dc3-873af7a92066}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="891easylogging++.h" />
+    <ClInclude Include="980easylogging++.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

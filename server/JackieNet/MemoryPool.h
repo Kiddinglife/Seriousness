@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////
 namespace DataStructures
 {
-	template <typename MemoryBlockType, UInt32 BLOCKS_COUNT_PER_PAGE = 256, UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 8>
+	template <typename MemoryBlockType, UInt32 BLOCKS_COUNT_PER_PAGE = 256, UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
@@ -55,7 +55,7 @@ namespace DataStructures
 
 		bool InitPage(Page *page, Page *prev)
 		{
-			int i = 0;
+			UInt32 i = 0;
 
 			if( ( page->block = (MemoryWithPage*) rakMalloc_Ex(memoryPoolPageSize, TRACE_FILE_AND_LINE_) )
 				== 0 ) return false;

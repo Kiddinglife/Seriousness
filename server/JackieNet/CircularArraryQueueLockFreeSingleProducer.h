@@ -216,7 +216,6 @@ bool CircularArraryQueueLockFreeSingleProducer<ELEM_T, Q_SIZE>::push(const ELEM_
 	// The value was successfully inserted into the queue
 #ifdef ARRAY_LOCK_FREE_Q_KEEP_REAL_SIZE
 	AtomicAdd(&m_count, 1);
-	
 #endif
 
 	return true;
