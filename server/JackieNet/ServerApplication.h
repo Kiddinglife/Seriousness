@@ -7,7 +7,7 @@
 #ifndef SERVERAPPLICATION_H_
 #define SERVERAPPLICATION_H_
 
-//#include "ReliabilityLayer.h"
+#include "ReliabilityMgr.h"
 #include "IServerApplication.h"
 //#include "BitStream.h"
 //#include "SingleProducerConsumer.h"
@@ -15,14 +15,14 @@
 //#include "DS_OrderedList.h"
 #include "DLLExport.h"
 //#include "RakString.h"
-//#include "RakThread.h"
+#include "JACKIE_Thread.h"
 //#include "RakNetSmartPtr.h"
 #include "MemPoolAllocQueue.h"
 #include "ThreadConditionSignalEvent.h"
 #include "CompileFeatures.h"
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
-//#include "DS_Queue.h"
+#include "RingBufferQueue.h"
 #include "MemoryPool.h"
 #include "IPlugin.h"
 

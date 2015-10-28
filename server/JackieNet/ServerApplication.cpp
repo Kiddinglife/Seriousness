@@ -1,5 +1,4 @@
 #include "ServerApplication.h"
-#include "NetTypes.h"
 #include "WSAStartupSingleton.h"
 #include "RandomSeedCreator.h"
 
@@ -466,8 +465,8 @@ namespace JACKIE_INET
 
 
 	///////////////////////////////// DECLARATIONS //////////////////////////////
-	JACKIE_THREAD_DECLARATION(JACKIE_INET::UpdateNetworkLoop) { }
-	JACKIE_THREAD_DECLARATION(JACKIE_INET::UDTConnect) { }
+	JACKIE_THREAD_DECLARATION(JACKIE_INET::UpdateNetworkLoop) { return 0; }
+	JACKIE_THREAD_DECLARATION(JACKIE_INET::UDTConnect) { return 0; }
 	STATIC_FACTORY_DEFINITIONS(IServerApplication, ServerApplication);
 	////////////////////////////////////////////////////////////////////////////////////
 

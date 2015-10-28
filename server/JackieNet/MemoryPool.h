@@ -17,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////
 namespace DataStructures
 {
-	template <typename MemoryBlockType, 
-		UInt32 BLOCKS_COUNT_PER_PAGE = 256, 
+	template <typename MemoryBlockType,
+		UInt32 BLOCKS_COUNT_PER_PAGE = 256,
 		UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
 	class JACKIE_EXPORT MemoryPool
 	{
@@ -236,6 +236,51 @@ namespace DataStructures
 					rakFree_Ex(currentPage, TRACE_FILE_AND_LINE_);
 				}
 			}
+		}
+		void Clear(const char *file, unsigned int line)
+		{
+#if  _DISABLE_MEMORY_POOL != 0
+			return;
+#endif
+			Page *cur, *freed;
+
+			if( availablePagesSize > 0 )
+			{
+				cur = availablePage;
+				while( true )
+				{
+					rakFree_Ex(cur->availableStack, file, line);
+					rakFree_Ex(cur->block, file, line);
+					freed = cur;
+					cur = cur->next;
+					if( cur == availablePage )
+					{
+						rakFree_Ex(freed, file, line);
+						break;
+					}
+					rakFree_Ex(freed, file, line);
+				}
+			}
+
+			if( unavailablePagesSize > 0 )
+			{
+				cur = unavailablePage;
+				while( 1 )
+				{
+					rakFree_Ex(cur->availableStack, file, line);
+					rakFree_Ex(cur->block, file, line);
+					freed = cur;
+					cur = cur->next;
+					if( cur == unavailablePage )
+					{
+						rakFree_Ex(freed, file, line);
+						break;
+					}
+					rakFree_Ex(freed, file, line);
+				}
+			}
+			availablePagesSize = 0;
+			unavailablePagesSize = 0;
 		}
 	};
 }

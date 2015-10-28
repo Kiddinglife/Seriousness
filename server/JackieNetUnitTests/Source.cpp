@@ -212,10 +212,10 @@ class myhandler : public JISEventHandler
 {
 	public:
 	virtual  void OnJISRecv(JISRecvParams *recvStruct) { }
-	virtual  void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line)
+	virtual  void ReclaimJISRecvParams(JISRecvParams *s)
 	{
 	}
-	virtual JISRecvParams *AllocJISRecvParams(const char *file, UInt32 line) { static JISRecvParams recv; return &recv; }
+	virtual JISRecvParams *AllocJISRecvParams() { static JISRecvParams recv; return &recv; }
 };
 static void test_JISBerkley_All_funcs()
 {
@@ -299,7 +299,7 @@ static void test_JISBerkley_All_funcs()
 		sendParams.receiverINetAddress = bsock->GetBoundAddress();
 		do { ret = bsock->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
-		JISRecvParams* recvParams = handler.AllocJISRecvParams(TRACE_FILE_AND_LINE_);
+		JISRecvParams* recvParams = handler.AllocJISRecvParams();
 		recvParams->socket = bsock;
 		ret = bsock->RecvFrom(recvParams);
 		if( ret >= 0 ) printf_s("recv(%s)\n", recvParams->data);
@@ -326,7 +326,7 @@ static void test_MemoryPool_funcs()
 		TestMemoryPool* test = memoryPool.Allocate();
 		test->allocationId = i;
 		printf_s("allocationId(%d)\n", test->allocationId);
-		memoryPool.Release(test);
+		memoryPool.Reclaim(test);
 	}
 }
 //////////////////////////////////////////////////////////////////////////

@@ -98,7 +98,7 @@ namespace DataStructures
 		{
 			structureType *s;
 			memoryPoolMutex.Lock();
-			s = memoryPool.Allocate(file, line);
+			s = memoryPool.Allocate();
 			memoryPoolMutex.Unlock();
 			// Call new operator, memoryPool doesn't do this
 			s = new ( (void*) s ) structureType;
@@ -110,7 +110,7 @@ namespace DataStructures
 		{
 			memoryPoolMutex.Lock();
 			s->~structureType();
-			memoryPool.Release(s, file, line);
+			memoryPool.Reclaim(s);
 			memoryPoolMutex.Unlock();
 		}
 		void Clear(const char *file, unsigned int line)
@@ -119,7 +119,7 @@ namespace DataStructures
 			for( unsigned int i = 0; i < queue.Size(); i++ )
 			{
 				queue[i]->~structureType();
-				memoryPool.Release(queue[i], file, line);
+				memoryPool.Reclaim(queue[i]);
 			}
 			queue.Clear(file, line);
 			memoryPool.Clear(file, line);

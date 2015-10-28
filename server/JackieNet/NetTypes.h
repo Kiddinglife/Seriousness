@@ -716,8 +716,9 @@ namespace JACKIE_INET
 		} *refCountedData;
 		/// How many attempts we made at sending this message
 		unsigned char timesTrytoSend;
-		/// The priority level of this packet
-		SendPriority priority;
+		/// The priority level of this packe
+		
+		PacketSendPriority priority;
 		/// If the reliability type requires a receipt, then return this number with it
 		UInt32 sendReceiptSerial;
 		// Used for the resend queue

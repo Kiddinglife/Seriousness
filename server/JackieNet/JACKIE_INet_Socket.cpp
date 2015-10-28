@@ -329,13 +329,13 @@ namespace JACKIE_INET
 		JISRecvParams* recvParams = 0;
 		while( !endThreads )
 		{
-			recvParams = binding.eventHandler->AllocJISRecvParams(TRACE_FILE_AND_LINE_);
+			recvParams = binding.eventHandler->AllocJISRecvParams();
 			if( recvParams != 0 )
 			{
 				recvParams->socket = this;
 				RecvFrom(recvParams) >= 0 ? // we can recv 0 length data
 					binding.eventHandler->OnJISRecv(recvParams) :
-					binding.eventHandler->DeallocJISRecvParams(recvParams, TRACE_FILE_AND_LINE_);
+					binding.eventHandler->ReclaimJISRecvParams(recvParams);
 			}
 		}
 		isRecvFromLoopThreadActive.Decrement();
