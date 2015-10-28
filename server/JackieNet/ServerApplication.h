@@ -32,6 +32,7 @@ namespace JACKIE_INET
 	{
 		private:
 
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
 #if LIBCAT_SECURITY == 1
 		// Encryption and security
 		bool _using_security, _require_client_public_key;
@@ -40,6 +41,8 @@ namespace JACKIE_INET
 		cat::CookieJar *_cookie_jar;
 		bool InitializeClientSecurity(RequestedConnectionStruct *rcs, const char *public_key);
 #endif
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 		//////////////////////////////// ADDRESS //////////////////////////////////
 		JACKIE_INet_GUID myGuid;
@@ -128,7 +131,7 @@ namespace JACKIE_INET
 		////////////////////////////////////////////////////////////////////////////////////////////
 
 
-		//////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////SendReceiptSerial////////////////////////////////
 		/// This is used to return a number to the user 
 		/// when they call Send identifying the message
 		/// This number will be returned back with ID_SND_RECEIPT_ACKED
@@ -136,7 +139,7 @@ namespace JACKIE_INET
 		/// types that DOES NOT contain 'NOT' in the name
 		JACKIE_Simple_Mutex sendReceiptSerialMutex;
 		UInt32 sendReceiptSerial;
-		//////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////////////
 
 
 		//////////////////////////////////MemoryPools///////////////////////////////////////////
@@ -170,41 +173,61 @@ namespace JACKIE_INET
 
 
 		public:
+		//////////////////////////////////////////////////////////////////////////
+		ServerApplication();
+		virtual ~ServerApplication();
+		//////////////////////////////////////////////////////////////////////////
+
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////
+		virtual StartupResult Start(UInt32 maxConnections, JACKIE_LOCAL_SOCKET *socketDescriptors, UInt32 socketDescriptorCount, Int32 threadPriority = -99999) override;
+		void End(unsigned int blockDuration, unsigned char orderingChannel = 0, PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+		protected:
+		void InitIPAddress(void);
+		void DeallocJISList(void);
+		void ResetSendReceipt(void);
+		bool IsActive(void) const { return endThreads == false; }
+
+
+		//////////////////////////////////////////////////////////////////////////
+		/// ONLY called  by recv thread so thread safe
+		virtual void OnJISRecv(JISRecvParams *recvStruct) override;
+		virtual void ReclaimJISRecvParams(JISRecvParams *s) override;
+		virtual JISRecvParams * AllocJISRecvParams() override;
+		//////////////////////////////////////////////////////////////////////////
+
+
+		//////////////////////////////////////////////////////////////////////////
 		// Generate and store a unique GUID
 		void GenerateGUID(void) { myGuid.g = Get64BitUniqueRandomNumber(); }
 		/// Mac address is a poor solution because 
 		/// you can't have multiple connections from the same system
 		UInt64 Get64BitUniqueRandomNumber(void);
 		unsigned int GetSystemIndexFromGuid(const JACKIE_INet_GUID& input) const;
+		//////////////////////////////////////////////////////////////////////////
 
-		ServerApplication();
-		virtual ~ServerApplication();
 
-		bool IsActive(void) const { return endThreads == false; }
-
-		/// ONLY called  by recv thread so thread safe
-		virtual void OnJISRecv(JISRecvParams *recvStruct) override;
-		virtual void ReclaimJISRecvParams(JISRecvParams *s) override;
-		virtual JISRecvParams * AllocJISRecvParams() override;
-
-		virtual StartupResult Start(UInt32 maxConnections, JACKIE_LOCAL_SOCKET *socketDescriptors, UInt32 socketDescriptorCount, Int32 threadPriority = -99999) override;
-		void End(unsigned int blockDuration, unsigned char orderingChannel = 0, PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
-
-		void ResetSendReceipt(void);
-
-		protected:
-		void InitIPAddress(void);
-		void DeallocJISList(void);
+		//////////////////////////////////////////////////////////////////////////
 		void ClearBufferedCommands(void);
 		void ClearSocketQueryOutputs(void);
 		void ClearBufferedRecvParams(void);
+		//////////////////////////////////////////////////////////////////////////
 
+
+		//////////////////////////////////////////////////////////////////////////
 		/// recv thread type = 0, send thread type = 1
 		Packet* AllocPacket(unsigned int dataSize, unsigned int threadType);
 		Packet* AllocPacket(unsigned dataSize, char *data, unsigned int threadType);
+		//////////////////////////////////////////////////////////////////////////
 
+
+		//////////////////////////////////////////////////////////////////////////
 		friend JACKIE_THREAD_DECLARATION(UpdateNetworkLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);
+		//////////////////////////////////////////////////////////////////////////
 	};
 }
 
