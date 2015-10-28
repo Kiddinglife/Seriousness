@@ -93,7 +93,7 @@ namespace JACKIE_INET
 		SOCKET_FAMILY_NOT_SUPPORTED,
 		SOCKET_PORT_ALREADY_IN_USE,
 		SOCKET_FAILED_TO_BIND,
-		SOCKET_FAILED_TEST_SEND,
+		SOCKET_FAILED_TEST_SEND_RECV,
 		PORT_CANNOT_BE_ZERO,
 		FAILED_TO_CREATE_NETWORK_THREAD,
 		COULD_NOT_GENERATE_GUID,
@@ -521,7 +521,7 @@ namespace JACKIE_INET
 	typedef TimeUS RemoteEndPointTimeType;
 
 	/// These enumerations are used to describe when packets are delivered.
-	enum SendPriority
+	enum PacketSendPriority
 	{
 		/// The highest possible priority. These message trigger sends immediately, 
 		/// and are generally not buffered or aggregated into a single datagram.

@@ -1,4 +1,4 @@
-#include "SingleProducerSingleConsumerLockFreeQueue.h"
+#include "LockFreeQueue.h"
 #include "OverrideMemory.h"
 //#include <algorithm>
 
@@ -9,8 +9,8 @@ __sync_synchronize();
 #endif
 namespace DataStructures
 {
-	SingleProducerSingleConsumerLockFreeQueue::
-		SingleProducerSingleConsumerLockFreeQueue(int nSize) :
+	LockFreeQueue::
+		LockFreeQueue(int nSize) :
 		m_pBuffer(0),
 		m_nSize(nSize),
 		m_nIn(0),
@@ -24,8 +24,8 @@ namespace DataStructures
 		Init();
 	}
 
-	SingleProducerSingleConsumerLockFreeQueue::
-		~SingleProducerSingleConsumerLockFreeQueue()
+	LockFreeQueue::
+		~LockFreeQueue()
 	{
 		if( 0 != m_pBuffer )
 		{
@@ -34,7 +34,7 @@ namespace DataStructures
 		}
 	}
 
-	bool SingleProducerSingleConsumerLockFreeQueue::Init()
+	bool LockFreeQueue::Init()
 	{
 		m_pBuffer = JACKIE_INET::OP_NEW_ARRAY<char>(m_nSize, __FILE__, __LINE__);
 		if( m_pBuffer == 0 ) return false;
@@ -42,7 +42,7 @@ namespace DataStructures
 		return true;
 	}
 
-	unsigned long SingleProducerSingleConsumerLockFreeQueue::RoundUpPower2(unsigned long val)
+	unsigned long LockFreeQueue::RoundUpPower2(unsigned long val)
 	{
 		if( ( val & ( val - 1 ) ) == 0 ) return val;
 		unsigned long maxulong = (unsigned long) ( (unsigned long) ~0 );
@@ -51,7 +51,7 @@ namespace DataStructures
 		return andv << 1;
 	}
 
-	unsigned int SingleProducerSingleConsumerLockFreeQueue::PushTail(const unsigned char *buffer, unsigned int len)
+	unsigned int LockFreeQueue::PushTail(const unsigned char *buffer, unsigned int len)
 	{
 		unsigned int l = m_nSize - m_nIn + m_nOut;
 		len = len < l ? len : l;
@@ -88,7 +88,7 @@ namespace DataStructures
 		return len;
 	}
 
-	unsigned int SingleProducerSingleConsumerLockFreeQueue::PopHead(unsigned char *buffer, unsigned int len)
+	unsigned int LockFreeQueue::PopHead(unsigned char *buffer, unsigned int len)
 	{
 		unsigned int l = m_nIn - m_nOut;
 		len = len < l ? len : l;

@@ -182,6 +182,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GlobalFunctions.cpp" />
+    <ClCompile Include="IPlugin.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
     <ClCompile Include="JACKIE_INet_Socket.cpp" />
     <ClCompile Include="JACKIE_Simple_Mutex.cpp" />
@@ -189,6 +190,7 @@
     <ClCompile Include="NetTime.cpp" />
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
+    <ClCompile Include="RandomSeedCreator.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
     <ClCompile Include="SingleProducerSingleConsumerLockFreeQueue.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
@@ -196,9 +198,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atomic_ops.h" />
-    <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h" />
-    <ClInclude Include="SingleProducerSingleConsumerLockFreeQueue.h" />
-    <ClInclude Include="SingleThreadRingBufferQueue.h" />
+    <ClInclude Include="IPlugin.h" />
+    <ClInclude Include="MemPoolAllocQueue.h" />
+    <ClInclude Include="LockFreeQueue.h" />
+    <ClInclude Include="RandomSeedCreator.h" />
+    <ClInclude Include="RingBufferQueue.h" />
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="CompileFeatures.h" />
     <ClInclude Include="CompileFeaturesOverride.h" />

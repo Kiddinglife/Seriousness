@@ -12,6 +12,12 @@
     <Filter Include="Header Files\DataStructures">
       <UniqueIdentifier>{dcee10b2-b287-423c-9e2b-925a601f8eb7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Ultils">
+      <UniqueIdentifier>{17a16f5a-ca71-4fde-96ad-145cc5c310d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Configs">
+      <UniqueIdentifier>{fe75a1ae-3791-473e-a2e5-93140c209088}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -53,54 +59,18 @@
     <ClCompile Include="SingleProducerSingleConsumerLockFreeQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RandomSeedCreator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BasicTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultNetDefines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DLLExport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalFunctions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JACKIE_Atomic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="JACKIE_INet_Socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Simple_Mutex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JACKIE_Thread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NetTime.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NetTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OverrideMemory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OverrideNetDefines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SocketDefines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SockOSIncludes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsIncludes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WSAStartupSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IServerApplication.h">
@@ -109,32 +79,80 @@
     <ClInclude Include="ServerApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CompileFeatures.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CompileFeaturesOverride.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ReliabilityMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadConditionSignalEvent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CircularArraryQueueLockFreeSingleProducer.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="atomic_ops.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="SingleThreadRingBufferQueue.h">
+    <ClInclude Include="RingBufferQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="SingleProducerSingleConsumerLockFreeQueue.h">
+    <ClInclude Include="LockFreeQueue.h">
       <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="MemPoolAllocQueue.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="CompileFeatures.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="CompileFeaturesOverride.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultNetDefines.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="OverrideMemory.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="OverrideNetDefines.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="SockOSIncludes.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketDefines.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsIncludes.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicTypes.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="DLLExport.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="WSAStartupSingleton.h">
+      <Filter>Header Files\Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalFunctions.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadConditionSignalEvent.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JACKIE_Thread.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JACKIE_Simple_Mutex.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JACKIE_Atomic.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="NetTime.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomSeedCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IPlugin.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

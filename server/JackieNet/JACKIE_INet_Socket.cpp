@@ -49,19 +49,19 @@ namespace JACKIE_INET
 	/////////////////////////////// JISAllocator starts /////////////////////////////////
 	inline JACKIE_INet_Socket*  JISAllocator::AllocJIS(void)
 	{
-		JACKIE_INet_Socket* s2;
+		JACKIE_INet_Socket* s2 = 0;
 #if defined(WINDOWS_STORE_RT)
 		s2 = JACKIE_INET::OP_NEW<JISWINSTROE8>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_WINDOWS_STORE_8);
+		if(s2 != 0)  s2->SetSocketType(JISType_WINDOWS_STORE_8);
 #elif defined(__native_client__)
 		s2 = JACKIE_INET::OP_NEW<JISNativeClient>(TRACE_FILE_AND_LINE_);
 		s2->SetSocketType(RNS2T_CHROME);
 #elif defined(_WIN32)
 		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_WINDOWS);
+		if(s2 != 0) s2->SetSocketType(JISType_WINDOWS);
 #else
 		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
-		s2->SetSocketType(JISType_LINUX);
+		if(s2 != 0)  s2->SetSocketType(JISType_LINUX);
 #endif
 		return s2;
 	}

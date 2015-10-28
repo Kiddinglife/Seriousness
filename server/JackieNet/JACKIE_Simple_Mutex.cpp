@@ -33,7 +33,7 @@ void JACKIE_Simple_Mutex::Lock(void)
 #else
 	int error = pthread_mutex_lock(&hMutex);
 	(void) error;
-	JACKIE_ASSERT(error == 0);
+	assert(error == 0);
 #endif
 #endif
 }
@@ -49,7 +49,7 @@ void JACKIE_Simple_Mutex::Unlock(void)
 #else
 	int error = pthread_mutex_unlock(&hMutex);
 	(void) error;
-	JACKIE_ASSERT(error == 0);
+	assert(error == 0);
 #endif
 #endif
 }
@@ -67,7 +67,7 @@ void JACKIE_Simple_Mutex::Init(void)
 #else
 	int error = pthread_mutex_init(&hMutex, 0);
 	(void) error;
-	JACKIE_ASSERT(error == 0);
+	assert(error == 0);
 #endif
 #endif
 }

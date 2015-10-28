@@ -20,8 +20,8 @@ static x* GetInstance(void); \
 static void DestroyInstance( x *i);
 
 #define STATIC_FACTORY_DEFINITIONS(x,y) \
-x* x::GetInstance(void) {return JACKIE_INET::OP_NEW<y>( _FILE_AND_LINE_ );} \
-void x::DestroyInstance( x *i) {JACKIE_INET::OP_DELETE(( y* ) i, _FILE_AND_LINE_);}
+x* x::GetInstance(void) {return JACKIE_INET::OP_NEW<y>( TRACE_FILE_AND_LINE_ );} \
+void x::DestroyInstance( x *i) {JACKIE_INET::OP_DELETE(( y* ) i, TRACE_FILE_AND_LINE_);}
 
 #ifndef DO_NOT_USE_EASY_LOGGING
 #define JackieNetName  "JackieNet"

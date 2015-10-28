@@ -8,6 +8,12 @@ class JACKIE_EXPORT ReliabilityLayer
 	public:
 	ReliabilityLayer() { }
 	~ReliabilityLayer() { }
+
+	void ApplyNetworkSimulator(double _packetloss, unsigned short _minExtraPing, unsigned short _extraPingVariance)
+	{
+	}
+
+
 };
 
 #endif

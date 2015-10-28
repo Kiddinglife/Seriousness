@@ -129,7 +129,7 @@
 #endif  //(!defined(ELPP_DISABLE_ASSERT)
 #if ELPP_COMPILER_MSVC
 #   define ELPP_INTERNAL_DEBUGGING_WRITE_PERROR \
-	          { char buff[256]; strerror_s(buff, 256, errno); \
+						  			  	          { char buff[256]; strerror_s(buff, 256, errno); \
        ELPP_INTERNAL_DEBUGGING_OUT_ERROR << ": " << buff << " [" << errno << "]";} (void)0
 #else
 #   define ELPP_INTERNAL_DEBUGGING_WRITE_PERROR \
@@ -1674,9 +1674,9 @@ namespace el
                 std::string s_currentUser = el::base::utils::OS::currentUser(); \
                 std::string s_currentHost = el::base::utils::OS::currentHost(); \
                 bool s_termSupportsColor = el::base::utils::OS::termSupportsColor(); \
-			            }\
-			        }\
-			   }
+									            }\
+									        }\
+									   }
 			/// @brief Contains utilities for cross-platform date/time. This class make use of el::base::utils::Str
 			class DateTime : base::StaticClass
 			{
@@ -5156,9 +5156,9 @@ namespace el
         m_logger->stream() << msg;\
         if (ELPP->hasFlag(LoggingFlag::AutoSpacing)) {\
             m_logger->stream() << " ";\
-		        }\
+						        }\
         return *this;\
-			    }
+									    }
 
 			inline MessageBuilder& operator<<( const std::string& msg )
 			{
@@ -5212,27 +5212,27 @@ namespace el
     template <typename T>                                                                            \
     inline MessageBuilder& operator<<(const temp<T>& template_inst) {                                \
         return writeIterator(template_inst.begin(), template_inst.end(), template_inst.size());      \
-			    }
+									    }
 #define ELPP_ITERATOR_CONTAINER_LOG_TWO_ARG(temp)                                                    \
     template <typename T1, typename T2>                                                              \
     inline MessageBuilder& operator<<(const temp<T1, T2>& template_inst) {                           \
         return writeIterator(template_inst.begin(), template_inst.end(), template_inst.size());      \
-			    }
+									    }
 #define ELPP_ITERATOR_CONTAINER_LOG_THREE_ARG(temp)                                                  \
     template <typename T1, typename T2, typename T3>                                                 \
     inline MessageBuilder& operator<<(const temp<T1, T2, T3>& template_inst) {                       \
         return writeIterator(template_inst.begin(), template_inst.end(), template_inst.size());      \
-			    }
+									    }
 #define ELPP_ITERATOR_CONTAINER_LOG_FOUR_ARG(temp)                                                   \
     template <typename T1, typename T2, typename T3, typename T4>                                    \
     inline MessageBuilder& operator<<(const temp<T1, T2, T3, T4>& template_inst) {                   \
         return writeIterator(template_inst.begin(), template_inst.end(), template_inst.size());      \
-			    }
+									    }
 #define ELPP_ITERATOR_CONTAINER_LOG_FIVE_ARG(temp)                                                   \
     template <typename T1, typename T2, typename T3, typename T4, typename T5>                       \
     inline MessageBuilder& operator<<(const temp<T1, T2, T3, T4, T5>& template_inst) {               \
         return writeIterator(template_inst.begin(), template_inst.end(), template_inst.size());      \
-			    }
+									    }
 
 #if defined(ELPP_STL_LOGGING)
 			ELPP_ITERATOR_CONTAINER_LOG_TWO_ARG(std::vector)
@@ -5428,13 +5428,13 @@ namespace el
         for (std::size_t i = 0; elem != endElem && i < el::base::consts::kMaxLogPerContainer; ++i, ++elem) { \
             ss << ElementInstance;\
             ss << ((i < size_ - 1) ? sep : ELPP_LITERAL(""));\
-		        }\
+						        }\
         if (elem != endElem) {\
             ss << ELPP_LITERAL("...");\
-		        }\
+						        }\
         ss << ELPP_LITERAL("]");\
         return ss;\
-			    }
+									    }
 #if defined(ELPP_WXWIDGETS_LOGGING)
 				ELPP_ITERATOR_CONTAINER_LOG_ONE_ARG(wxVector)
 #   define ELPP_WX_PTR_ENABLED(ContainerType) MAKE_CONTAINERELPP_FRIENDLY(ContainerType, size(), *(*elem))
@@ -5806,20 +5806,20 @@ namespace el
     template <typename T, typename... Args>\
     inline void Logger::FUNCTION_NAME(const char* s, const T& value, const Args&... args) {\
         log(LOG_LEVEL, s, value, args...);\
-	    }\
+			    }\
     template <typename T>\
     inline void Logger::FUNCTION_NAME(const T& value) {\
         log(LOG_LEVEL, value);\
-	    }
+			    }
 #   define LOGGER_LEVEL_WRITERS_DISABLED(FUNCTION_NAME, LOG_LEVEL)\
     template <typename T, typename... Args>\
     inline void Logger::FUNCTION_NAME(const char*, const T&, const Args&...) {\
         return;\
-	    }\
+			    }\
     template <typename T>\
     inline void Logger::FUNCTION_NAME(const T&) {\
         return;\
-	    }
+			    }
 
 #   if ELPP_INFO_LOG
 	LOGGER_LEVEL_WRITERS(info, Level::Info)
@@ -7447,7 +7447,4 @@ namespace el
 #else
 #   define START_EASYLOGGINGPP(argc, argv) el::Helpers::setArgs(argc, argv)
 #endif  // defined(ELPP_UNICODE)
-
-//extern el::Configurations defaultConf;
-
 #endif // EASYLOGGINGPP_H

@@ -17,7 +17,9 @@
 //////////////////////////////////////////////////////////////////////////
 namespace DataStructures
 {
-	template <typename MemoryBlockType, UInt32 BLOCKS_COUNT_PER_PAGE = 256, UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
+	template <typename MemoryBlockType, 
+		UInt32 BLOCKS_COUNT_PER_PAGE = 256, 
+		UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
@@ -170,7 +172,7 @@ namespace DataStructures
 			assert(availablePage->availableStackSize > 1);
 			return (MemoryBlockType *) availablePage->availableStack[--availablePage->availableStackSize];
 		}
-		void Release(MemoryBlockType *m)
+		void Reclaim(MemoryBlockType *m)
 		{
 #if _DISABLE_MEMORY_POOL != 0
 			rakFree_Ex(m, TRACE_FILE_AND_LINE_);

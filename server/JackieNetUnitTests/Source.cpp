@@ -304,6 +304,7 @@ static void test_JISBerkley_All_funcs()
 		ret = bsock->RecvFrom(recvParams);
 		if( ret >= 0 ) printf_s("recv(%s)\n", recvParams->data);
 		printf_s("Start Polling Recv in another thread...\n");
+
 		bsock->RecvFromLoop(bsock);
 
 	}
@@ -331,12 +332,12 @@ static void test_MemoryPool_funcs()
 //////////////////////////////////////////////////////////////////////////
 
 /////////////////////// test_Queue_funcs ////////////////////////////
-#include "JackieNet/SingleThreadRingBufferQueue.h"
-#include "JackieNet/SingleProducerSingleConsumerLockFreeQueue.h"
+#include "JackieNet/RingBufferQueue.h"
+#include "JackieNet/LockFreeQueue.h"
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
-	DataStructures::SingleThreadRingBufferQueue<int> queue;
+	DataStructures::RingBufferQueue<int> queue;
 
 	TIMED_BLOCK(hello, "hello")
 	{
@@ -355,13 +356,12 @@ static void test_Queue_funcs()
 		queue.Clear(__FILE__, __LINE__);
 	}
 
-	DataStructures::SingleProducerSingleConsumerLockFreeQueue lockfree(12);
+	DataStructures::LockFreeQueue lockfree(12);
 	int a = 12;
 	lockfree.PushTail((unsigned char*) &a, sizeof(a));
 	//unsigned char b[8] = { 0 };
-	int b;
-	unsigned char* bptr = (unsigned char*) &b;
-	lockfree.PopHead(bptr, sizeof(int));
+	UInt32 b;
+	lockfree.PopHead((unsigned char*) &b, sizeof(int));
 	JINFO << "b" << b;
 }
 //////////////////////////////////////////////////////////////////////////

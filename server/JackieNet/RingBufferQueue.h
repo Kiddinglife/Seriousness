@@ -12,8 +12,8 @@
 namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
-	template <typename queue_type, UInt32 QUEUE_INIT_SIZE = 256>
-	class JACKIE_EXPORT SingleThreadRingBufferQueue
+	template <typename queue_type, UInt32 QUEUE_INIT_SIZE = 32>
+	class JACKIE_EXPORT RingBufferQueue
 	{
 		private:
 		queue_type* array;
@@ -22,12 +22,12 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 		public:
-		SingleThreadRingBufferQueue()
+		RingBufferQueue()
 		{
 			allocation_size = head = tail = 0;
 			array = 0;
 		}
-		~SingleThreadRingBufferQueue()
+		~RingBufferQueue()
 		{
 			if( allocation_size > 0 )
 				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
@@ -35,7 +35,7 @@ namespace DataStructures
 			array = 0;
 			allocation_size = head = tail = 0;
 		}
-		SingleThreadRingBufferQueue(SingleThreadRingBufferQueue& original_copy)
+		RingBufferQueue(RingBufferQueue& original_copy)
 		{
 			// Allocate memory for copy
 			if( original_copy.Size() == 0 )
@@ -58,7 +58,7 @@ namespace DataStructures
 			allocation_size = original_copy.Size() + 1;
 		}
 
-		bool operator= ( const SingleThreadRingBufferQueue& original_copy )
+		bool operator= ( const RingBufferQueue& original_copy )
 		{
 			if( ( &original_copy ) == this ) return false;
 

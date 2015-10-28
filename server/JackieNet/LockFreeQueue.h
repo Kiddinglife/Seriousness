@@ -1,13 +1,13 @@
-#ifndef SingleProducerSingleConsumerLockFreeQueue_H_
-#define SingleProducerSingleConsumerLockFreeQueue_H_
+#ifndef LockFreeQueue_H_
+#define LockFreeQueue_H_
 
 namespace DataStructures
 {
-	class SingleProducerSingleConsumerLockFreeQueue
+	class LockFreeQueue
 	{
 		public:
-		SingleProducerSingleConsumerLockFreeQueue(int nSize);
-		virtual ~SingleProducerSingleConsumerLockFreeQueue();
+		LockFreeQueue(int nSize);
+		virtual ~LockFreeQueue();
 
 
 		unsigned int PushTail(const unsigned char *pBuffer, unsigned int nLen);

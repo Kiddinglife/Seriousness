@@ -115,8 +115,8 @@ namespace JACKIE_INET
 		{
 			return socketType != JISType_CHROME && socketType != JISType_WINDOWS_STORE_8;
 		}
-		void GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 
+		static void GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 		inline static void DomainNameToIP(const char *domainName, char ip[65])
 		{
 			DomainNameToIP(domainName, ip);
