@@ -4,6 +4,7 @@
 #include <cassert>
 #include "DLLExport.h"
 #include "OverrideMemory.h"
+//#include "../JackieNetUnitTests/980easylogging++.h"
 
 /// The namespace DataStructures was only added to avoid compiler errors for commonly
 /// named data structures  As these data structures are stand-alone, you can use them 

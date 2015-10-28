@@ -337,19 +337,23 @@ static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
 	DataStructures::SingleThreadRingBufferQueue<int> queue;
-	for( int i = 1; i < 100; i++ )
+
+	TIMED_BLOCK(hello, "hello")
 	{
-		queue.PushTail(i, __FILE__, __LINE__);
+		for( int i = 1; i < 100; i++ )
+		{
+			queue.PushTail(i, __FILE__, __LINE__);
+		}
+		queue.PushHead(12, 3, __FILE__, __LINE__);
+		queue.Contains(12);
+		queue.IsEmpty();
+		queue.PopTail();
+		queue.PopHead();
+		queue.RemoveAtIndex(12);
+		queue.Shrink2MiniSzie(__FILE__, __LINE__);
+		queue.Resize(1000, __FILE__, __LINE__);
+		queue.Clear(__FILE__, __LINE__);
 	}
-	queue.PushHead(12, 3, __FILE__, __LINE__);
-	queue.Contains(12);
-	queue.IsEmpty();
-	queue.PopTail();
-	queue.PopHead();
-	queue.RemoveAtIndex(12);
-	queue.Shrink2MiniSzie(__FILE__, __LINE__);
-	queue.Resize(1000, __FILE__, __LINE__);
-	queue.Clear(__FILE__, __LINE__);
 
 	DataStructures::SingleProducerSingleConsumerLockFreeQueue lockfree(12);
 	int a = 12;
@@ -428,6 +432,7 @@ static int testfunc = Test_Queue_funcs;
 
 int main(int argc, char** argv)
 {
+
 	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
 	el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
 
@@ -465,7 +470,6 @@ int main(int argc, char** argv)
 	//JDEBUG << "test debug";
 
 	START_EASYLOGGINGPP(argc, argv);
-
 	switch( testcase )
 	{
 		case GlobalFunctions_h:
