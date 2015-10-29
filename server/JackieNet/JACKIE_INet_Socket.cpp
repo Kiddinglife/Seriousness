@@ -1,5 +1,7 @@
 ﻿#include "JACKIE_INet_Socket.h"
 #include "WSAStartupSingleton.h"
+#include "ServerApplication.h"
+//#include "EasyLog.h"
 
 namespace JACKIE_INET
 {
@@ -58,7 +60,7 @@ namespace JACKIE_INET
 		s2->SetSocketType(RNS2T_CHROME);
 #elif defined(_WIN32)
 		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
-		if(s2 != 0) s2->SetSocketType(JISType_WINDOWS);
+		if( s2 != 0 ) s2->SetSocketType(JISType_WINDOWS);
 #else
 		s2 = JACKIE_INET::OP_NEW<JISBerkley>(TRACE_FILE_AND_LINE_);
 		if(s2 != 0)  s2->SetSocketType(JISType_LINUX);
@@ -146,6 +148,8 @@ namespace JACKIE_INET
 		return bindResult == JISBindResult_FAILED_BIND_SOCKET;
 	}
 
+
+	//////////////////////////////////////////////////////////////////////////
 	JISBindResult JISBerkley::Bind(JISBerkleyBindParams *bindParameters,
 		const char *file, UInt32 line)
 	{
@@ -322,25 +326,9 @@ namespace JACKIE_INET
 		return BindSharedIPV4(bindParameters, file, line);
 #endif
 	}
+	//////////////////////////////////////////////////////////////////////////
 
-	unsigned int JISBerkley::RecvFromLoopInt(void)
-	{
-		isRecvFromLoopThreadActive.Increment();
-		JISRecvParams* recvParams = 0;
-		while( !endThreads )
-		{
-			recvParams = binding.eventHandler->AllocJISRecvParams();
-			if( recvParams != 0 )
-			{
-				recvParams->socket = this;
-				RecvFrom(recvParams) >= 0 ? // we can recv 0 length data
-					binding.eventHandler->OnJISRecv(recvParams) :
-					binding.eventHandler->ReclaimJISRecvParams(recvParams);
-			}
-		}
-		isRecvFromLoopThreadActive.Decrement();
-		return 0;
-	}
+
 	inline JISRecvResult JISBerkley::RecvFrom(JISRecvParams *recvFromStruct)
 	{
 #if NET_SUPPORT_IPV6 ==1
@@ -358,7 +346,6 @@ namespace JACKIE_INET
 		static const int flag = 0;
 
 		recvFromStruct->bytesRead = recvfrom__(this->GetSocket(), recvFromStruct->data, MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
-
 		//////////////////////////////////////////////////////////////////////////
 		/// there are only two resons for UDP recvfrom() return 0 :
 		/// 1. Socket has been soft closed by shutdown() or setting up linear attribute
@@ -401,7 +388,6 @@ namespace JACKIE_INET
 		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 		return recvFromStruct->bytesRead;
 	}
-
 	JISRecvResult JISBerkley::RecvFromIPV4And6(JISRecvParams *recvFromStruct)
 	{
 #if  NET_SUPPORT_IPV6==1
@@ -462,31 +448,7 @@ namespace JACKIE_INET
 		return RecvFromIPV4(recvFromStruct);
 #endif
 	}
-
-
-	int JISBerkley::CreateRecvPollingThread(int threadPriority)
-	{
-		endThreads = false;
-		int errorCode = JACKIE_Thread::Create(RecvFromLoop, this, threadPriority);
-		return errorCode;
-	}
-	void JISBerkley::BlockOnStopRecvPollingThread(void)
-	{
-		endThreads = true;
-
-		/// Change recvfrom to unbloking
-		unsigned int zero = 0;
-		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0, this->boundAddress, 0 };
-		this->Send(&sendParams, TRACE_FILE_AND_LINE_);
-
-		TimeMS timeout = ::GetTimeMS() + 1000;
-		while( isRecvFromLoopThreadActive.GetValue() > 0 && GetTimeMS() < timeout )
-		{
-			// Get recvfrom to unblock
-			this->Send(&sendParams, TRACE_FILE_AND_LINE_);
-			JACKIE_Sleep(30);
-		}
-	}
+	//////////////////////////////////////////////////////////////////////////
 
 	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
 		const char *file, UInt32 line)
@@ -582,13 +544,6 @@ namespace JACKIE_INET
 		return len;
 	}
 
-	/// STATICS
-	JACKIE_THREAD_DECLARATION(JISBerkley::RecvFromLoop)
-	{
-		JISBerkley* ptr = (JISBerkley*) arguments;
-		ptr->RecvFromLoopInt();
-		return 0;
-	}
 
 	void JISBerkley::GetSystemAddressViaJISSocket(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
 	{

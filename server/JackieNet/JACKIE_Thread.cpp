@@ -45,6 +45,7 @@ int JACKIE_Thread::Create(ThreadFunc start_address, void *arglist, int priority)
 		CloseHandle(threadHandle);
 		return 0;
 	}
+	return 0;
 #else
 	/// Create thread Linux
 	pthread_t threadHandle;
@@ -60,47 +61,3 @@ int JACKIE_Thread::Create(ThreadFunc start_address, void *arglist, int priority)
 		return res;
 #endif
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -50,6 +50,11 @@ namespace JACKIE_INET
 #define MAXIMUM_MTU_SIZE 1492
 #define MINIMUM_MTU_SIZE 400
 
+#define CLIENT_LOCKFREE_QUEUE_SIZE sizeof(void*)*32
+#define SERVER_LOCKFREE_QUEUE_SIZE sizeof(void*)*1024
+
+#define USE_NON_BLOBKING_SOCKET true
+#define USE_BLOBKING_SOCKET false
 
 	/// Given a number of bits, return how many bytes are needed to represent that.
 #define BITS_TO_BYTES(x) (((x)+7)>>3)
@@ -95,7 +100,8 @@ namespace JACKIE_INET
 		SOCKET_FAILED_TO_BIND,
 		SOCKET_FAILED_TEST_SEND_RECV,
 		PORT_CANNOT_BE_ZERO,
-		FAILED_TO_CREATE_NETWORK_THREAD,
+		FAILED_TO_CREATE_SEND_THREAD,
+		FAILED_TO_CREATE_RECV_THREAD,
 		COULD_NOT_GENERATE_GUID,
 		STARTUP_OTHER_FAILURE
 	};
@@ -717,7 +723,7 @@ namespace JACKIE_INET
 		/// How many attempts we made at sending this message
 		unsigned char timesTrytoSend;
 		/// The priority level of this packe
-		
+
 		PacketSendPriority priority;
 		/// If the reliability type requires a receipt, then return this number with it
 		UInt32 sendReceiptSerial;

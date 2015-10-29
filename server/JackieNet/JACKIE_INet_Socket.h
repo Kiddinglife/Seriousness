@@ -193,9 +193,9 @@ namespace JACKIE_INET
 
 
 		/// Use these three functions when you want a duplicate thread . to poll recvfrom(...)
-		int CreateRecvPollingThread(int threadPriority);
-		void BlockOnStopRecvPollingThread(void);
-		inline void SignalStopRecvPollingThread(void) { endThreads = true; }
+		//int CreateRecvPollingThread(int threadPriority);
+		//void BlockOnStopRecvPollingThread(void);
+		//inline void SignalStopRecvPollingThread(void) { endThreads = true; }
 
 		const JISBerkleyBindParams *GetBindingParams(void) const { return &binding; }
 		inline JISSocket GetSocket(void) const { return rns2Socket; }
@@ -313,7 +313,9 @@ namespace JACKIE_INET
 		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
 
 		/// Constructor not called at this monment !
-		static JACKIE_THREAD_DECLARATION(RecvFromLoop);
+		//friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
+		//friend JACKIE_THREAD_DECLARATION(RunSendCycleLoop);
+
 		static bool IsPortInUse(unsigned short port, const char *hostAddress, unsigned short addressFamily, int type);
 
 		//////////////////////////////////////////////////////////////////////////

@@ -294,7 +294,6 @@ namespace JACKIE_INET
 		/// 3. returnvalue  > 0 - size of read bytes
 		/// 4. RecvFromLoopInt() will autimatically use the block mode setup in @mem binding
 		//////////////////////////////////////////////////////////////////////////
-		unsigned int RecvFromLoopInt(void);
 		JISRecvResult RecvFrom(JISRecvParams *recvFromStruct);
 		JISRecvResult RecvFromIPV4(JISRecvParams *recvFromStruct);
 		JISRecvResult RecvFromIPV4And6(JISRecvParams *recvFromStruct);

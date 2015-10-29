@@ -41,7 +41,8 @@ namespace JACKIE_INET
 	{
 		public:
 		/// GetInstance() and DestroyInstance(instance*)
-		STATIC_FACTORY_DECLARATIONS(IServerApplication);
+		/*STATIC_FACTORY_DECLARATIONS(IServerApplication);*/
+
 		virtual ~IServerApplication() { }
 
 		//////////////////////////////////////////////////////////////////////////

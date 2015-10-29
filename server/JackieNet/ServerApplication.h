@@ -9,7 +9,7 @@
 
 #include "ReliabilityMgr.h"
 #include "IServerApplication.h"
-//#include "BitStream.h"
+#include "BitStream.h"
 //#include "SingleProducerConsumer.h"
 #include "JACKIE_Simple_Mutex.h"
 //#include "DS_OrderedList.h"
@@ -23,14 +23,17 @@
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
 #include "RingBufferQueue.h"
+#include "LockFreeQueue.h"
 #include "MemoryPool.h"
 #include "IPlugin.h"
 
 namespace JACKIE_INET
 {
-	class ServerApplication : public IServerApplication
+	class JACKIE_EXPORT ServerApplication : public IServerApplication
 	{
-		private:
+		//private:
+		public:
+		STATIC_FACTORY_DECLARATIONS(ServerApplication);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 #if LIBCAT_SECURITY == 1
@@ -91,21 +94,17 @@ namespace JACKIE_INET
 		void(*userUpdateThreadPtr)( IServerApplication *, void * );
 		void *userUpdateThreadData;
 		bool(*incomeDatagramEventHandler)( JISRecvParams * );
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
-		volatile bool endThreads; ///Set this to true to terminate the thread execution 
-		volatile bool isMainLoopThreadActive; ///true if the peer thread is active. 
+		bool updateCycleIsRunning;
+		volatile bool endSendRecvThreads; ///Set this to true to terminate threads execution 
+		volatile bool isSendPollingThreadActive; ///true if the send thread is active. 
+		volatile bool isRecvPollingThreadActive; ///true if the recv thread is active. 
 		ThreadConditionSignalEvent quitAndDataEvents;
-#else
-		bool endThreads;
-		bool isMainLoopThreadActive;
-#endif
 		///////////////////////////////////////////////////////////////////////////////////////////
 
 
 		////////////////////////////////////////// STATS //////////////////////////////////////
 		int defaultMTUSize;
 		bool trackFrequencyTable;
-		bool updateCycleIsRunning;
 		unsigned int bytesSentPerSecond;
 		unsigned int  bytesReceivedPerSecond;
 		/// Do we occasionally ping the other systems?
@@ -161,7 +160,11 @@ namespace JACKIE_INET
 		};
 		DataStructures::MemPoolAllocQueue <SocketQueryOutput> socketQueryOutput;
 		DataStructures::MemPoolAllocQueue<BufferedCommand> bufferedCommands;
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+		DataStructures::LockFreeQueue<JISRecvParams*, SERVER_LOCKFREE_QUEUE_SIZE> bufferedRecvParamQueue;
+#else
 		DataStructures::RingBufferQueue<JISRecvParams*> bufferedRecvParamQueue;
+#endif
 		/// only recv thread use this queue, no need to lock
 		//JACKIE_Simple_Mutex bufferedRecvParamQueueMutex;
 		// Smart pointer so I can return the object to the user
@@ -185,11 +188,10 @@ namespace JACKIE_INET
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-		protected:
 		void InitIPAddress(void);
 		void DeallocJISList(void);
 		void ResetSendReceipt(void);
-		bool IsActive(void) const { return endThreads == false; }
+		bool IsActive(void) const { return endSendRecvThreads == false; }
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -224,8 +226,28 @@ namespace JACKIE_INET
 		//////////////////////////////////////////////////////////////////////////
 
 
+		///////////////////////// CYCLE ONCE////////////////////////////////
+		bool RunSendCycleOnce(BitStream &updateBitStream);
+		void RunRecvCycleOnce(void);
+		int CreateRecvPollingThread(int threadPriority);
+		int CreateSendPollingThread(int threadPriority);
+		void BlockOnStopRecvPollingThread(JISBerkley* sock);
+		void StopRecvPollingThread(void);
+		void StopSendPollingThread(void);
 		//////////////////////////////////////////////////////////////////////////
-		friend JACKIE_THREAD_DECLARATION(UpdateNetworkLoop);
+
+		void ProcessBufferedRecvParamQueue(
+			JACKIE_INET_Address& systemAddress, 
+			const char *data,
+			const int length, 
+			ServerApplication *serverApplication,
+			JACKIE_INet_Socket*  socket,
+			BitStream &updateBitStream,
+			TimeUS timeRead);
+
+		//////////////////////////////////////////////////////////////////////////
+		friend JACKIE_THREAD_DECLARATION(RunSendCycleLoop);
+		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);
 		//////////////////////////////////////////////////////////////////////////
 	};

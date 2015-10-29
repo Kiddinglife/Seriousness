@@ -82,11 +82,11 @@ namespace DataStructures
 			return true;
 		}
 
-		void PushTail(const queue_type& input, const char *file, unsigned int line)
+		void PushTail(const queue_type& input)
 		{
 			if( allocation_size == 0 )
 			{
-				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(QUEUE_INIT_SIZE, file, line);
+				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(QUEUE_INIT_SIZE, TRACE_FILE_AND_LINE_);
 				head = 0; tail = 1; array[0] = input; allocation_size = QUEUE_INIT_SIZE;
 				return;
 			}
@@ -98,7 +98,7 @@ namespace DataStructures
 				/// queue gets full and need to allocate more memory.
 				queue_type * new_array =
 					JACKIE_INET::OP_NEW_ARRAY<queue_type>(allocation_size << 1,
-					file, line);
+					TRACE_FILE_AND_LINE_);
 
 				assert(new_array != 0);
 				if( new_array == 0 ) return;
@@ -113,15 +113,15 @@ namespace DataStructures
 				allocation_size <<= 1;
 
 				// Delete the old array and move the pointer to the new array
-				JACKIE_INET::OP_DELETE_ARRAY(array, file, line);
+				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 				array = new_array;
 			}
 		}
-		void PushHead(const queue_type& input, unsigned index, const char *file, unsigned int line)
+		void PushHead(const queue_type& input, unsigned index)
 		{
 			assert(index <= Size());
 			// Just force a reallocation, will be overwritten
-			PushTail(input, file, line);
+			PushTail(input);
 			if( Size() == 1 ) return;
 
 			/// move all elments after index
@@ -251,12 +251,12 @@ namespace DataStructures
 		}
 		bool IsEmpty(void) const { return head == tail; }
 		unsigned int AllocationSize(void) const { return allocation_size; }
-		void Clear(const char *file, unsigned int line)
+		void Clear(void)
 		{
 			if( allocation_size == 0 ) return;
 			if( allocation_size > QUEUE_INIT_SIZE )
 			{
-				JACKIE_INET::OP_DELETE_ARRAY(array, file, line);
+				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 				allocation_size = 0;
 				array = 0;
 			}
@@ -267,7 +267,7 @@ namespace DataStructures
 
 		/// shrink the size of queue to the minimum size that can still alll the elements
 		/// used to decrease the use of memory
-		void Shrink2MiniSzie(const char *file, unsigned int line)
+		void Shrink2MiniSzie(void)
 		{
 			if( allocation_size == 0 ) return;
 
@@ -276,7 +276,7 @@ namespace DataStructures
 			while( newAllocationSize <= Size() )
 				newAllocationSize <<= 1;
 
-			queue_type* new_array = JACKIE_INET::OP_NEW_ARRAY<queue_type >(newAllocationSize, file, line);
+			queue_type* new_array = JACKIE_INET::OP_NEW_ARRAY<queue_type >(newAllocationSize, TRACE_FILE_AND_LINE_);
 
 			for( unsigned int counter = 0; counter < Size(); ++counter )
 				new_array[counter] = array[( head + counter ) % ( allocation_size )];
@@ -286,7 +286,7 @@ namespace DataStructures
 			head = 0;
 
 			// Delete the old array and move the pointer to the new array
-			JACKIE_INET::OP_DELETE_ARRAY(array, file, line);
+			JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 			array = new_array;
 		}
 
@@ -304,12 +304,12 @@ namespace DataStructures
 		}
 
 		// Force a memory allocation to a certain larger size
-		void Resize(int size, const char *file, unsigned int line)
+		void Resize(int size)
 		{
-			JACKIE_INET::OP_DELETE_ARRAY(array, file, line);
+			JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 
 			if( size > 0 )
-				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(size, file, line);
+				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(size, TRACE_FILE_AND_LINE_);
 			else
 				array = 0;
 

@@ -2,6 +2,8 @@
 
 //#define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
+#define ELPP_THREAD_SAFE 
+#define ELPP_FORCE_USE_STD_THREAD
 #include "980easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
@@ -289,7 +291,6 @@ static void test_JISBerkley_All_funcs()
 		}
 
 		printf_s("Start CreateRecvPollingThread...\n");
-		bsock->CreateRecvPollingThread(0);
 
 		int ret;
 		char* data = "JackieNet";
@@ -304,8 +305,6 @@ static void test_JISBerkley_All_funcs()
 		ret = bsock->RecvFrom(recvParams);
 		if( ret >= 0 ) printf_s("recv(%s)\n", recvParams->data);
 		printf_s("Start Polling Recv in another thread...\n");
-
-		bsock->RecvFromLoop(bsock);
 
 	}
 }
@@ -325,7 +324,7 @@ static void test_MemoryPool_funcs()
 	{
 		TestMemoryPool* test = memoryPool.Allocate();
 		test->allocationId = i;
-		printf_s("allocationId(%d)\n", test->allocationId);
+		//printf_s("allocationId(%d)\n", test->allocationId);
 		memoryPool.Reclaim(test);
 	}
 }
@@ -334,6 +333,7 @@ static void test_MemoryPool_funcs()
 /////////////////////// test_Queue_funcs ////////////////////////////
 #include "JackieNet/RingBufferQueue.h"
 #include "JackieNet/LockFreeQueue.h"
+#include "JackieNet/EasyLog.h"
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
@@ -343,28 +343,58 @@ static void test_Queue_funcs()
 	{
 		for( int i = 1; i < 100; i++ )
 		{
-			queue.PushTail(i, __FILE__, __LINE__);
+			queue.PushTail(i);
 		}
-		queue.PushHead(12, 3, __FILE__, __LINE__);
+		queue.PushHead(12, 3);
 		queue.Contains(12);
 		queue.IsEmpty();
 		queue.PopTail();
 		queue.PopHead();
 		queue.RemoveAtIndex(12);
-		queue.Shrink2MiniSzie(__FILE__, __LINE__);
-		queue.Resize(1000, __FILE__, __LINE__);
-		queue.Clear(__FILE__, __LINE__);
+		queue.Shrink2MiniSzie();
+		queue.Resize(1000);
+		queue.Clear();
 	}
 
-	DataStructures::LockFreeQueue lockfree(12);
+	DataStructures::LockFreeQueue<int> lockfree;
 	int a = 12;
-	lockfree.PushTail((unsigned char*) &a, sizeof(a));
-	//unsigned char b[8] = { 0 };
-	UInt32 b;
-	lockfree.PopHead((unsigned char*) &b, sizeof(int));
+	lockfree.PushTail(a);
+	int b = lockfree.PopHead();
 	JINFO << "b" << b;
 }
 //////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////
+#include "JackieNet/ServerApplication.h"
+static void test_ServerApplication_funcs()
+{
+	JINFO << "test_ServerApplication_funcs STARTS...";
+
+	JACKIE_INET::JACKIE_LOCAL_SOCKET socketDescriptor;
+	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
+	socketDescriptor.port = 0;
+	socketDescriptor.socketFamily = AF_INET;
+
+	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
+	app->Start(4, &socketDescriptor, 1);
+
+	int ret;
+	char* data = "JackieNet";
+	JISSendParams sendParams;
+	sendParams.data = data;
+	sendParams.length = strlen(data) + 1;
+	sendParams.receiverINetAddress =  app->JISList[0]->GetBoundAddress();
+	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+
+	Sleep(1001);
+	app->StopRecvPollingThread();
+	Sleep(1001);
+	app->StopSendPollingThread();
+	Sleep(1001);
+}
+//////////////////////////////////////////////////////////////////////////
+
+
 enum
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -400,6 +430,8 @@ enum
 	CircularArrayQueueSingleThread,
 	Test_Queue_funcs,
 	//////////////////////////////////////////////////////////////////////////
+	ServerApplication_H,
+	Start,
 	AllClass,
 	AllFuncs
 };
@@ -425,9 +457,12 @@ enum
 
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
+//
+//static int testcase = CircularArrayQueueSingleThread;
+//static int testfunc = Test_Queue_funcs;
 
-static int testcase = CircularArrayQueueSingleThread;
-static int testfunc = Test_Queue_funcs;
+static int testcase = ServerApplication_H;
+static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
@@ -444,12 +479,12 @@ int main(int argc, char** argv)
 	//// To set GLOBAL configurations you may use including all levels 
 	//defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
 	//defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "1");
-	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger] InFile[%fbase] AtLine[%line]\n%msg\n====================================================");
+	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n====================================================");
 
 	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
 	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger]\nInFile[%fbase] Call[%func] AtLine[%line]\n%msg\n====================================================");
-	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger] InFile[%fbase] AtLine[%line]\n====================================================");
+	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] Call[%func] AtLine[%line]\n%msg\n====================================================");
+	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n====================================================");
 
 
 	/// reconfigureLogger will create new logger if ir does not exists
@@ -588,6 +623,17 @@ int main(int argc, char** argv)
 					break;
 				default:
 					test_Queue_funcs();
+					break;
+			}
+			break;
+		case ServerApplication_H:
+			switch( testfunc )
+			{
+				case Test_Queue_funcs:
+					test_ServerApplication_funcs();
+					break;
+				default:
+					test_ServerApplication_funcs();
 					break;
 			}
 			break;

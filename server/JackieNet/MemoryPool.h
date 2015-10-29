@@ -91,49 +91,8 @@ namespace DataStructures
 			blocksCountPerPage = BLOCKS_COUNT_PER_PAGE;
 #endif
 		}
-		~MemoryPool()
-		{
-#if _DISABLE_MEMORY_POOL != 0
-			return;
-#endif
-			Page *currentPage, *freedPage;
+		~MemoryPool() { Clear(); }
 
-			if( availablePagesSize > 0 )
-			{
-				currentPage = availablePage;
-				while( true )
-				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					freedPage = currentPage;
-					currentPage = currentPage->next;
-					if( currentPage == availablePage )
-					{
-						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-						availablePagesSize = 0;
-						break;
-					}
-				}
-			}
-
-			if( unavailablePagesSize > 0 )
-			{
-				currentPage = unavailablePage;
-				while( true )
-				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					freedPage = currentPage;
-					currentPage = currentPage->next;
-					if( currentPage == availablePage )
-					{
-						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-						unavailablePagesSize = 0;
-						break;
-					}
-				}
-			}
-		}
 		MemoryBlockType* Allocate(void)
 		{
 #if _DISABLE_MEMORY_POOL != 0
@@ -237,50 +196,48 @@ namespace DataStructures
 				}
 			}
 		}
-		void Clear(const char *file, unsigned int line)
+		void Clear(void)
 		{
-#if  _DISABLE_MEMORY_POOL != 0
+#if _DISABLE_MEMORY_POOL != 0
 			return;
 #endif
-			Page *cur, *freed;
+			Page *currentPage, *freedPage;
 
 			if( availablePagesSize > 0 )
 			{
-				cur = availablePage;
+				currentPage = availablePage;
 				while( true )
 				{
-					rakFree_Ex(cur->availableStack, file, line);
-					rakFree_Ex(cur->block, file, line);
-					freed = cur;
-					cur = cur->next;
-					if( cur == availablePage )
+					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					freedPage = currentPage;
+					currentPage = currentPage->next;
+					if( currentPage == availablePage )
 					{
-						rakFree_Ex(freed, file, line);
+						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						availablePagesSize = 0;
 						break;
 					}
-					rakFree_Ex(freed, file, line);
 				}
 			}
 
 			if( unavailablePagesSize > 0 )
 			{
-				cur = unavailablePage;
-				while( 1 )
+				currentPage = unavailablePage;
+				while( true )
 				{
-					rakFree_Ex(cur->availableStack, file, line);
-					rakFree_Ex(cur->block, file, line);
-					freed = cur;
-					cur = cur->next;
-					if( cur == unavailablePage )
+					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					freedPage = currentPage;
+					currentPage = currentPage->next;
+					if( currentPage == availablePage )
 					{
-						rakFree_Ex(freed, file, line);
+						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						unavailablePagesSize = 0;
 						break;
 					}
-					rakFree_Ex(freed, file, line);
 				}
 			}
-			availablePagesSize = 0;
-			unavailablePagesSize = 0;
 		}
 	};
 }

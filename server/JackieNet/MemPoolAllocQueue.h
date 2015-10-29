@@ -17,14 +17,13 @@
 namespace DataStructures
 {
 	template <typename structureType,
-		UInt32 MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256,
-		UInt32 MEMORY_POOL_MAX_FREE_PAGES = 4,
+		UInt32 MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256, 
+		UInt32 MEMORY_POOL_MAX_FREE_PAGES = 4, 
 		UInt32 QUEUE_INIT_SIZE = 32>
 	class JACKIE_EXPORT MemPoolAllocQueue
 	{
 		protected:
-		mutable MemoryPool<structureType, MEMPOOL_BLOCKS_COUNT_PER_PAGE,
-			MEMORY_POOL_MAX_FREE_PAGES> memoryPool;
+		mutable MemoryPool<structureType, MEMPOOL_BLOCKS_COUNT_PER_PAGE, MEMORY_POOL_MAX_FREE_PAGES> memoryPool;
 		JACKIE_Simple_Mutex memoryPoolMutex;
 
 		RingBufferQueue<structureType*, QUEUE_INIT_SIZE> queue;
@@ -35,9 +34,10 @@ namespace DataStructures
 		void PushTail(structureType *s)
 		{
 			queueMutex.Lock();
-			queue.PushTail(s, TRACE_FILE_AND_LINE_);
+			queue.PushTail(s);
 			queueMutex.Unlock();
 		}
+
 		structureType *PopHeadInaccurate(void)
 		{
 			structureType *s;
@@ -72,14 +72,6 @@ namespace DataStructures
 			//queueMutex.Unlock();
 			return isEmpty;
 		}
-		structureType * operator[] (unsigned int position)
-		{
-			structureType *s;
-			//queueMutex.Lock();
-			s = queue[position];
-			//queueMutex.Unlock();
-			return s;
-		}
 		void RemoveAtIndex(unsigned int position)
 		{
 			queueMutex.Lock();
@@ -104,7 +96,6 @@ namespace DataStructures
 			s = new ( (void*) s ) structureType;
 			return s;
 		}
-
 		/// Call delete operator, memory pool doesn't do this
 		void Deallocate(structureType *s, const char *file, unsigned int line)
 		{
@@ -113,6 +104,7 @@ namespace DataStructures
 			memoryPool.Reclaim(s);
 			memoryPoolMutex.Unlock();
 		}
+
 		void Clear(const char *file, unsigned int line)
 		{
 			memoryPoolMutex.Lock();
@@ -121,8 +113,8 @@ namespace DataStructures
 				queue[i]->~structureType();
 				memoryPool.Reclaim(queue[i]);
 			}
-			queue.Clear(file, line);
-			memoryPool.Clear(file, line);
+			queue.Clear();
+			memoryPool.Clear();
 			memoryPoolMutex.Unlock();
 		}
 	};

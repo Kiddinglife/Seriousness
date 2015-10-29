@@ -326,24 +326,6 @@ namespace JACKIE_INET
 #endif
 	}
 
-	unsigned int JISBerkley::RecvFromLoopInt(void)
-	{
-		isRecvFromLoopThreadActive.Increment();
-		JISRecvParams* recvParams = 0;
-		while( !endThreads )
-		{
-			recvParams = binding.eventHandler->AllocJISRecvParams(TRACE_FILE_AND_LINE_);
-			if( recvParams != 0 )
-			{
-				recvParams->socket = this;
-				RecvFrom(recvParams) >= 0 ? // we can recv 0 length data
-					binding.eventHandler->OnJISRecv(recvParams) :
-					binding.eventHandler->DeallocJISRecvParams(recvParams, TRACE_FILE_AND_LINE_);
-			}
-		}
-		isRecvFromLoopThreadActive.Decrement();
-		return 0;
-	}
 	inline JISRecvResult JISBerkley::RecvFrom(JISRecvParams *recvFromStruct)
 	{
 #if NET_SUPPORT_IPV6 ==1

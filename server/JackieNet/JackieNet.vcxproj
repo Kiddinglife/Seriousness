@@ -181,6 +181,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BitStream.cpp" />
     <ClCompile Include="GlobalFunctions.cpp" />
     <ClCompile Include="IPlugin.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
@@ -192,12 +193,14 @@
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="RandomSeedCreator.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
-    <ClCompile Include="SingleProducerSingleConsumerLockFreeQueue.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="atomic_ops.h" />
+    <ClInclude Include="BitStream.h" />
+    <ClInclude Include="EasyLog.h" />
     <ClInclude Include="IPlugin.h" />
     <ClInclude Include="MemPoolAllocQueue.h" />
     <ClInclude Include="LockFreeQueue.h" />
