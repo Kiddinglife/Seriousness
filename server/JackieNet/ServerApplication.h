@@ -8,7 +8,7 @@
 #define SERVERAPPLICATION_H_
 
 #include "DLLExport.h"
-#include "ReliabilityMgr.h"
+#include "ReliabilityLayer.h"
 #include "IServerApplication.h"
 #include "BitStream.h"
 //#include "SingleProducerConsumer.h"
@@ -26,6 +26,7 @@
 #include "LockFreeQueue.h"
 #include "MemoryPool.h"
 #include "IPlugin.h"
+#include "RandomSeedCreator.h"
 
 using namespace DataStructures;
 
@@ -48,6 +49,7 @@ namespace JACKIE_INET
 #endif
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+		Ultils::RandomSeedCreator rnr;
 
 		////////////////////////////////////////////////////////////////////////////
 		JACKIE_INet_GUID myGuid;

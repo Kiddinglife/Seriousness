@@ -65,7 +65,7 @@
     <ClCompile Include="BitStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ReliabilityMgr.cpp">
+    <ClCompile Include="ReliabilityLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,9 +80,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServerApplication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ReliabilityMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
@@ -167,6 +164,9 @@
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="MessageID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ReliabilityLayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

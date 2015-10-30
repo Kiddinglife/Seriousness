@@ -18,7 +18,7 @@
 #include "SockOSIncludes.h"
 #include "SocketDefines.h"
 #include "NetTime.h"
-#include "ReliabilityMgr.h"
+#include "ReliabilityLayer.h"
 
 namespace JACKIE_INET
 {

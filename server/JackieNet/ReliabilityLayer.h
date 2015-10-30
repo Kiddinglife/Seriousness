@@ -2,14 +2,13 @@
 #define ReliabilityLayer_H_
 
 #include "DLLExport.h"
-#include "IPlugin.h"
-#include "BitStream.h"
-#include "RingBufferQueue.h"
-#include "RandomSeedCreator.h"
-#include "ServerApplication.h"
 
 namespace JACKIE_INET
 {
+
+	class ServerApplication;
+	class BitStream;
+
 	class JACKIE_EXPORT ReliabilityLayer
 	{
 		public:
@@ -24,9 +23,8 @@ namespace JACKIE_INET
 		//connected.  The game should not use that data directly
 		// because some data is used internally, such as packet acknowledgment and
 		//split packets
-		bool ProcessJISRecvParamsFromConnectedEndPoint
-			(ServerApplication* serverApp, int MTUSize,
-			Ultils::RandomSeedCreator* rnr, BitStream &updateBitStream);
+		bool ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication& serverApp,
+			int MTUSize, BitStream &updateBitStream);
 	};
 }
 

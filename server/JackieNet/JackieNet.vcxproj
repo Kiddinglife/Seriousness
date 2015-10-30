@@ -192,7 +192,7 @@
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="RandomSeedCreator.cpp" />
-    <ClCompile Include="ReliabilityMgr.cpp" />
+    <ClCompile Include="ReliabilityLayer.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
@@ -224,7 +224,7 @@
     <ClInclude Include="NetTypes.h" />
     <ClInclude Include="OverrideMemory.h" />
     <ClInclude Include="OverrideNetDefines.h" />
-    <ClInclude Include="ReliabilityMgr.h" />
+    <ClInclude Include="ReliabilityLayer.h" />
     <ClInclude Include="ServerApplication.h" />
     <ClInclude Include="SocketDefines.h" />
     <ClInclude Include="SockOSIncludes.h" />

@@ -1,6 +1,5 @@
 #include "ServerApplication.h"
 #include "WSAStartupSingleton.h"
-#include "RandomSeedCreator.h"
 #include "EasyLog.h"
 #include "MessageID.h"
 
@@ -17,7 +16,6 @@
 namespace JACKIE_INET
 {
 	////////////////////////////////////////////////// STATICS /////////////////////////////////////
-	static Ultils::RandomSeedCreator rnr;
 	static const unsigned int RemoteEndPointLookupHashMutiple = 8;
 	static const int mtuSizesCount = 3;
 	static const int mtuSizes[mtuSizesCount] = { MAXIMUM_MTU_SIZE, 1200, 576 };
@@ -197,7 +195,7 @@ namespace JACKIE_INET
 				berkleyBindParams.remotePortJackieNetWasStartedOn_PS3_PS4_PSP2 =
 					bindLocalSockets[index].remotePortWasStartedOn_PS3_PSP2;
 
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 				/// multi-threads app can use either non-blobk or blobk socket
 				/// false = blobking, true = non-blocking
 				berkleyBindParams.isBlocKing = bindLocalSockets[index].blockingSocket;
@@ -328,7 +326,7 @@ namespace JACKIE_INET
 			endSendRecvThreads = false;
 
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 			// this will create bindLocalSocketsCount of recv threads which is wrong
 			// we only need one recv thread to recv data from all binded sockets
 			//for( index = 0; index < bindLocalSocketsCount; index++ )
@@ -355,7 +353,7 @@ namespace JACKIE_INET
 			/// use another thread to charge of sending
 			if( !isSendPollingThreadActive )
 			{
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 				if( CreateSendPollingThread(threadPriority) != 0 )
 				{
 					End(0);
@@ -403,7 +401,7 @@ namespace JACKIE_INET
 
 		QUEUE_PUSH_TAIL(bufferedAllocatedRecvParamQueue, recvStruct);
 
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		quitAndDataEvents.TriggerEvent();
 #endif
 
@@ -611,19 +609,19 @@ namespace JACKIE_INET
 		{
 			if( !isOfflinerecvParams )
 			{
-				remoteEndPoint->reliabilityLayer.ProcessJISRecvParamsFromConnectedEndPoint(this, remoteEndPoint->MTUSize, &rnr, updateBitStream);
+				remoteEndPoint->reliabilityLayer.ProcessJISRecvParamsFromConnectedEndPoint(*this, remoteEndPoint->MTUSize, updateBitStream);
 			}
 		} else
 		{
 			JWARNING << "Packet from unconnected sender"
-				<< recvParams->senderINetAddress;
+				<< recvParams->senderINetAddress.ToString();
 		}
 	}
 
 	bool ServerApplication::ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 		bool* isOfflinerecvParams)
 	{
-
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////
@@ -814,7 +812,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::PacketGoThroughPlugins(Packet*& incomePacket)
 	{
-		int i;
+		UInt32 i;
 		PluginActionType pluginResult;
 
 		for( i = 0; i < pluginListTS.Size(); i++ )
@@ -851,7 +849,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::UpdatePlugins(void)
 	{
-		int i;
+		UInt32 i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
 			pluginListTS[i]->Update();
@@ -968,7 +966,6 @@ namespace JACKIE_INET
 		ServerApplication *serv = (ServerApplication*) arguments;
 		if( !serv->isRecvPollingThreadActive ) serv->isRecvPollingThreadActive = true;
 
-		unsigned int index;
 		unsigned int count = serv->JISList.Size();
 		JISRecvParams* recvParams = 0;
 
