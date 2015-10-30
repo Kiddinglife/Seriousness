@@ -11,7 +11,7 @@
 /client/Assets/Scenes
 /server/Lib
 /server/IntermediateDir
-
+*.log
 # ----[ Visual Studio / MonoDevelop generated ]------- #
  
 ExportedObj/
