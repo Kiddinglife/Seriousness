@@ -12,7 +12,6 @@
 /server/Lib
 /server/IntermediateDir
 *.log
-# ----[ Visual Studio / MonoDevelop generated ]------- #
  
 ExportedObj/
 *.svd
@@ -38,7 +37,6 @@ ExportedObj/
 [Rr]elease/
 x64/
 
-# Xcode and OS X 
 build/
 *.pbxuser
 !default.pbxuser
@@ -60,7 +58,6 @@ Release/
 .DS_Store
 .Trashes
 
-# -------------[ OS generated ]------------------------ #
 .DS_Store
 .DS_Store?
 ._*
