@@ -6785,7 +6785,7 @@ namespace el
 // Note: Do not surround this definition with null macro because of obj instance
 #define TIMED_SCOPE(obj, blockname) el::base::PerformanceTracker obj(blockname, ELPP_MIN_UNIT)
 #define TIMED_BLOCK(obj, blockName) \
-struct { int i; el::base::PerformanceTracker& timer; } obj = { 0, el::base::PerformanceTracker("HELLO", ELPP_MIN_UNIT) };\
+struct { int i; el::base::PerformanceTracker& timer; } obj = { 0, el::base::PerformanceTracker(blockName, ELPP_MIN_UNIT) };\
 for( ; obj.i < 1; ++obj.i )\
 
 /// @brief Performance tracked function. Performance gets written when goes out of scope using

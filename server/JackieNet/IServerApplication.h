@@ -69,6 +69,8 @@ namespace JACKIE_INET
 			JACKIE_LOCAL_SOCKET *socketDescriptors,
 			UInt32 socketDescriptorCount,
 			Int32 threadPriority = -99999) = 0;
+
+		virtual const JACKIE_INet_GUID& GetMyGUID(void) const = 0;
 	};
 
 

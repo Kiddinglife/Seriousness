@@ -334,33 +334,57 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/RingBufferQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
+#include "JackieNet/MemPoolAllocRingBufferQueue.h"
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
-	DataStructures::RingBufferQueue<int> queue;
 
-	TIMED_BLOCK(hello, "hello")
+	DataStructures::LockFreeQueue<int, 4 * 100000> lockfree;
+	TIMED_BLOCK(LockFreeQueueTimer, "LockFreeQueue")
 	{
-		for( int i = 1; i < 100; i++ )
+		for( int i = 0; i < 100000; i++ )
 		{
-			queue.PushTail(i);
+			lockfree.PushTail(i);
+			lockfree[i];
 		}
-		queue.PushHead(12, 3);
-		queue.Contains(12);
-		queue.IsEmpty();
-		queue.PopTail();
-		queue.PopHead();
-		queue.RemoveAtIndex(12);
-		queue.Shrink2MiniSzie();
-		queue.Resize(1000);
-		queue.Clear();
+		for( int i = 0; i < 100000; i++ )
+		{
+			int t;
+			lockfree.PopHead(t);
+		}
 	}
 
-	DataStructures::LockFreeQueue<int> lockfree;
-	int a = 12;
-	lockfree.PushTail(a);
-	int b = lockfree.PopHead();
-	JINFO << "b" << b;
+	DataStructures::MemPoolAllocRingBufferQueue<int, 100001, 4, 100001> queue;
+	int i = 0;
+	queue.PushTail(&i);
+	TIMED_BLOCK(MemPoolAllocQueueTimer, "MemPoolAllocQueueTimer")
+	{
+		int i = 0;
+		for( ; i < 100000; i++ )
+		{
+			queue.PushTail(&i);
+		}
+		for( ; i < 100000; i++ )
+		{
+			int* t;
+			queue.PopHead(t);
+		}
+	}
+
+	DataStructures::RingBufferQueue<int, 100001> queuee;
+	queuee.PushTail(0);
+	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
+	{
+		for( int i = 0; i < 100000; i++ )
+		{
+			queuee.PushTail(i);
+		}
+		for( int i = 0; i < 100000; i++ )
+		{
+			int t;
+			queuee.PopHead(t);
+		}
+	}
 }
 //////////////////////////////////////////////////////////////////////////
 
@@ -383,7 +407,7 @@ static void test_ServerApplication_funcs()
 	JISSendParams sendParams;
 	sendParams.data = data;
 	sendParams.length = strlen(data) + 1;
-	sendParams.receiverINetAddress =  app->JISList[0]->GetBoundAddress();
+	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
 	Sleep(1001);
@@ -458,11 +482,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 //
-//static int testcase = CircularArrayQueueSingleThread;
-//static int testfunc = Test_Queue_funcs;
+static int testcase = CircularArrayQueueSingleThread;
+static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
+//static int testcase = ServerApplication_H;
+//static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)

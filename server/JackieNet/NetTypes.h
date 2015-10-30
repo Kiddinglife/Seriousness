@@ -50,8 +50,13 @@ namespace JACKIE_INET
 #define MAXIMUM_MTU_SIZE 1492
 #define MINIMUM_MTU_SIZE 400
 
-#define CLIENT_LOCKFREE_QUEUE_SIZE sizeof(void*)*32
-#define SERVER_LOCKFREE_QUEUE_SIZE sizeof(void*)*1024
+	/// try inginitely when pushtail operation return false if memory out
+#define QUEUE_PUSH_TAIL(Queue, ELEMENT)\
+bool result = false;\
+do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !result )
+
+#define CLIENT_QUEUE_PTR_SIZE 250*8
+#define SERVER_QUEUE_PTR_SIZE 2500*8
 
 #define USE_NON_BLOBKING_SOCKET true
 #define USE_BLOBKING_SOCKET false
@@ -87,6 +92,8 @@ namespace JACKIE_INET
 	const int MAX_RPC_MAP_SIZE = ( (RPCIndex) -1 ) - 1; // 254
 	const int UNDEFINED_RPC_INDEX = ( (RPCIndex) -1 ); // 255
 	const int PING_TIMES_ARRAY_SIZE = 5;
+
+	enum ThreadType { RecvThreadType, SendThreadType };
 
 	/// enums
 	enum StartupResult
@@ -754,20 +761,24 @@ namespace JACKIE_INET
 		BitSize bitSize;
 
 		/// The data from the sender
-		char *data;
+		unsigned char *data;
 
 		/// @internal
 		/// Indicates whether to delete the data, or to simply delete the packet.
+		/// if true, this packet is allocated by pool if false, by rakAllloc_Ex function
 		bool deleteData;
 
 		/// @internal  If true, this message is meant for the user, not for the plugins,
 		/// so do not process it through plugins
 		bool wasGeneratedLocally;
+
+		///which pool it belongs to only 
+		ThreadType threadType;
 	};
 
 	/// for internally use
 	/// All the information representing a connected remote end point
-	struct RemoteEndPoint
+	struct JACKIE_EXPORT RemoteEndPoint
 	{
 		// Is this structure in use?
 		bool isActive;
@@ -825,10 +836,13 @@ namespace JACKIE_INET
 			CONNECTED
 		} connectMode;
 	};
+	struct JACKIE_EXPORT RemoteEndPointIndex
+	{
+		UInt32 index;
+		RemoteEndPointIndex *next;
+	};
 
-	struct RemoteEndPointIndex { unsigned int index; RemoteEndPointIndex *next; };
-
-	struct BufferedCommand
+	struct JACKIE_EXPORT BufferedCommand
 	{
 		BitSize numberOfBitsToSend;
 		PacketReliability priority;

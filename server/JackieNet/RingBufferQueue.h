@@ -82,13 +82,26 @@ namespace DataStructures
 			return true;
 		}
 
-		void PushTail(const queue_type& input)
+		bool PushTail(const queue_type& input)
 		{
 			if( allocation_size == 0 )
 			{
-				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(QUEUE_INIT_SIZE, TRACE_FILE_AND_LINE_);
-				head = 0; tail = 1; array[0] = input; allocation_size = QUEUE_INIT_SIZE;
-				return;
+				array = JACKIE_INET::OP_NEW_ARRAY<queue_type>(
+					QUEUE_INIT_SIZE, TRACE_FILE_AND_LINE_);
+
+				assert(array != 0);
+				if( array == 0 )
+				{
+					notifyOutOfMemory(TRACE_FILE_AND_LINE_);
+					return false;
+				}
+
+				head = 0;
+				tail = 1;
+				array[0] = input;
+				allocation_size = QUEUE_INIT_SIZE;
+				return true;
+
 			}
 
 			array[tail++] = input;
@@ -101,7 +114,7 @@ namespace DataStructures
 					TRACE_FILE_AND_LINE_);
 
 				assert(new_array != 0);
-				if( new_array == 0 ) return;
+				if( new_array == 0 ) return false;
 
 				/// copy old values into new array
 				for( unsigned int counter = 0; counter < allocation_size; ++counter )
@@ -116,13 +129,15 @@ namespace DataStructures
 				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
 				array = new_array;
 			}
+			return true;
 		}
-		void PushHead(const queue_type& input, unsigned index)
+		bool PushHead(const queue_type& input, unsigned index)
 		{
 			assert(index <= Size());
+
 			// Just force a reallocation, will be overwritten
-			PushTail(input);
-			if( Size() == 1 ) return;
+			if( !PushTail(input) ) return false;
+			if( Size() == 1 ) return false;
 
 			/// move all elments after index
 			unsigned int writeIndex, readIndex, trueWriteIndex, trueReadIndex;
@@ -155,6 +170,7 @@ namespace DataStructures
 				trueWriteIndex = head + index;
 
 			array[trueWriteIndex] = input;
+			return true;
 		}
 
 		// Not a normal thing you do with a queue but can be used for efficiency
@@ -206,43 +222,50 @@ namespace DataStructures
 			assert(head != tail);
 			return tail != 0 ? array[tail - 1] : array[allocation_size - 1];
 		}
-		queue_type PopHead(void)
+		bool PopHead(queue_type& ele)
 		{
 			assert(head != tail);
+			if( head == tail ) return false;
+
 			if( ++head == allocation_size ) head = 0;
-			if( head == 0 ) return  array[allocation_size - 1];
-			return array[head - 1];
+			if( head == 0 ) ele = array[allocation_size - 1];
+			ele = array[head - 1];
+			return true;
 		}
-		queue_type PopTail(void)
+		bool PopTail(queue_type& ele)
 		{
 			assert(head != tail);
+			if( head == tail ) return false;
+
 			if( tail != 0 )
 			{
 				--tail;
-				return array[tail];
+				ele = array[tail];
 			} else
 			{
 				tail = allocation_size - 1;
-				return array[tail];
+				ele = array[tail];
 			}
-		}
-		// Debug: Set pointer to 0, for memory leak detection
-		queue_type PopDeref(void)
-		{
-			if( ++head == allocation_size )
-				head = 0;
 
-			queue_type& q;
+			return true;
+		}
+
+		// Debug: Set pointer to 0, for memory leak detection
+		bool PopDeref(queue_type& ele)
+		{
+			if( ++head == allocation_size ) head = 0;
+
 			if( head == 0 )
 			{
-				q = array[allocation_size - 1];
+				ele = array[allocation_size - 1];
 				array[allocation_size - 1] = 0;
-				return q;
+				return true;
 			}
 
-			q = array[head - 1];
+			ele = array[head - 1];
 			array[head - 1] = 0;
-			return q;
+
+			return true;
 		}
 
 		unsigned int Size(void) const

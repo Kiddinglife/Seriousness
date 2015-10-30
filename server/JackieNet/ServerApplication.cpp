@@ -2,6 +2,7 @@
 #include "WSAStartupSingleton.h"
 #include "RandomSeedCreator.h"
 #include "EasyLog.h"
+#include "MessageID.h"
 
 #if !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ )
 #include <stdlib.h> // malloc
@@ -21,7 +22,7 @@ namespace JACKIE_INET
 	static const int mtuSizesCount = 3;
 	static const int mtuSizes[mtuSizesCount] = { MAXIMUM_MTU_SIZE, 1200, 576 };
 	/// I set this because I limit ID_CONNECTION_REQUEST to 512 bytes, 
-	/// and the password is appended to that packet.
+	/// and the password is appended to that *incomePacket.
 	static const unsigned int MAX_OFFLINE_DATA_LENGTH = 400;
 	/// Used to distinguish between offline messages with data, 
 	/// and messages from the reliability layer. Should be different 
@@ -318,8 +319,9 @@ namespace JACKIE_INET
 		if( endSendRecvThreads )
 		{
 			ClearBufferedCommands();
-			ClearBufferedRecvParams();
 			ClearSocketQueryOutputs();
+			ClearBufferedAllocatedRecvParamQueue();
+			ClearBufferedDeAllocatedRecvParamQueue();
 
 			firstExternalID = JACKIE_INET_Address_Null;
 			updateCycleIsRunning = false;
@@ -385,14 +387,21 @@ namespace JACKIE_INET
 
 
 	///////////////////////////// JISRecvParams ////////////////////////////////
-	inline void ServerApplication::OnJISRecv(JISRecvParams *recvStruct)
+	void ServerApplication::OnJISRecv(JISRecvParams *recvStruct)
 	{
 		JINFO << "Recv " << recvStruct->bytesRead << " bytes of data [" << recvStruct->data << "]";
 
-		if( incomeDatagramEventHandler != 0 && !incomeDatagramEventHandler(recvStruct) ) { return; }
+		if( incomeDatagramEventHandler != 0 )
+		{
+			if( !incomeDatagramEventHandler(recvStruct) )
+			{
+				JERROR << "Because incomeDatagramEventHandler(recvStruct) Failed, "
+					<< "this received message is ignored.";
+				return;
+			}
+		}
 
-		bufferedRecvParamQueue.PushTail(recvStruct);
-		CHECK_EQ(bufferedRecvParamQueue.PopHead(), recvStruct);
+		QUEUE_PUSH_TAIL(bufferedAllocatedRecvParamQueue, recvStruct);
 
 #ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		quitAndDataEvents.TriggerEvent();
@@ -454,60 +463,87 @@ namespace JACKIE_INET
 	void ServerApplication::ClearBufferedCommands(void)
 	{
 		BufferedCommand *bcs;
-		while( ( bcs = bufferedCommands.PopHead() ) != 0 )
+		while( bufferedCommands.PopHead(bcs) )
 		{
 			if( bcs->data != 0 ) rakFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
-			bufferedCommands.Deallocate(bcs, TRACE_FILE_AND_LINE_);
+			bufferedCommands.Deallocate(bcs);
 		}
-		bufferedCommands.Clear(TRACE_FILE_AND_LINE_);
+		bufferedCommands.Clear();
 	}
 	void ServerApplication::ClearSocketQueryOutputs(void)
 	{
-		socketQueryOutput.Clear(TRACE_FILE_AND_LINE_);
+		socketQueryOutput.Clear();
 	}
-	void ServerApplication::ClearBufferedRecvParams(void)
+	void ServerApplication::ClearBufferedAllocatedRecvParamQueue(void)
 	{
-		bufferedRecvParamQueue.Clear();
+		bufferedAllocatedRecvParamQueue.Clear();
 	}
+	void ServerApplication::ClearBufferedDeAllocatedRecvParamQueue(void)
+	{
+		bufferedDeallocatedRecvParamQueue.Clear();
+	}
+
 	////////////////////////////////////////////////////////////////////////////////////
 
 
 	//////////////////////////////////////// AllocPacket ///////////////////////////////////
-	Packet* ServerApplication::AllocPacket(unsigned int dataSize,
-		unsigned int threadType)
+	Packet* ServerApplication::AllocPacket(unsigned int dataSize, ThreadType threadType)
 	{
 		Packet *p = 0;
-		p = ( threadType == 0 ) ?
-			recvPacketAllocationPool.Allocate() :
-			sendPacketAllocationPool.Allocate();
+		p = ( threadType == RecvThreadType ) ?
+			recvThreadPacketAllocationPool.Allocate() :
+			sendThreadPacketAllocationPool.Allocate();
 
 		assert(p != 0);
-		p = new ( (void*) p ) Packet;
-		p->data = (char*) rakMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
+		//p = new ( (void*) p ) Packet; we do not need call default ctor
+
+		p->data = (unsigned char*) rakMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
 		p->deleteData = true;
 		p->guid = JACKIE_INet_GUID_Null;
 		p->wasGeneratedLocally = false;
+		p->threadType = threadType;
+
 		return p;
 	}
 	Packet* ServerApplication::AllocPacket(unsigned dataSize,
-		char *data, unsigned int threadType)
+		unsigned char *data, ThreadType threadType)
 	{
 		Packet *p = 0;
-		p = ( threadType == 0 ) ?
-			recvPacketAllocationPool.Allocate() :
-			sendPacketAllocationPool.Allocate();
+		p = ( threadType == RecvThreadType ) ?
+			recvThreadPacketAllocationPool.Allocate() :
+			sendThreadPacketAllocationPool.Allocate();
 
 		assert(p != 0);
-		p = new ( (void*) p ) Packet;
+		//p = new ( (void*) p ) Packet; no custom ctor so no need to call default ctor
+
 		p->data = data;
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
 		p->deleteData = true;
 		p->guid = JACKIE_INet_GUID_Null;
 		p->wasGeneratedLocally = false;
+		p->threadType = threadType;
+
 		return p;
+	}
+	void ServerApplication::DeallocatePacket(Packet *packet)
+	{
+		CHECK_EQ(packet, 0);
+		if( packet == 0 ) return;
+		if( packet->deleteData )
+		{
+			rakFree_Ex(packet->data, TRACE_FILE_AND_LINE_);
+			//packet->~Packet(); no custom dtor so no need to call default dtor
+			( packet->threadType == RecvThreadType ) ?
+				recvThreadPacketAllocationPool.Reclaim(packet) :
+				sendThreadPacketAllocationPool.Reclaim(packet);
+		} else
+		{
+			rakFree_Ex(packet, TRACE_FILE_AND_LINE_);
+		}
+
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////
 
@@ -546,7 +582,46 @@ namespace JACKIE_INET
 	void ServerApplication::StopSendPollingThread(void)
 	{ isSendPollingThreadActive = false; }
 
-	void ServerApplication::ProcessBufferedRecvParamQueue(JACKIE_INET_Address& systemAddress, const char *data, const int length, ServerApplication *serverApplication, JACKIE_INet_Socket* socket, BitStream &updateBitStream, TimeUS timeRead)
+	void ServerApplication::ProcessOneRecvParam(JISRecvParams* recvParams,
+		BitStream &updateBitStream)
+	{
+		/// no need to check if recvParams == 0, because we never push 0 pointer
+		bufferedAllocatedRecvParamQueue.PopHead(recvParams);
+		CHECK_NOTNULL(recvParams);
+
+#if LIBCAT_SECURITY==1
+#ifdef CAT_AUDIT
+		printf("AUDIT: RECV ");
+		for( int ii = 0; ii < length; ++ii )
+		{
+			printf("%02x", ( cat::u8 )data[ii]);
+		}
+		printf("\n");
+#endif
+#endif // LIBCAT_SECURITY
+
+		CHECK_NE(recvParams->senderINetAddress.GetPortHostOrder(), 0);
+
+		bool isOfflinerecvParams = true;
+		if( ProcessOneOfflineRecvParam(recvParams, &isOfflinerecvParams) ) return;
+
+		RemoteEndPoint* remoteEndPoint =
+			GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
+		if( remoteEndPoint != 0 ) // if this datagram comes from connected system
+		{
+			if( !isOfflinerecvParams )
+			{
+				remoteEndPoint->reliabilityLayer.ProcessJISRecvParamsFromConnectedEndPoint(this, remoteEndPoint->MTUSize, &rnr, updateBitStream);
+			}
+		} else
+		{
+			JWARNING << "Packet from unconnected sender"
+				<< recvParams->senderINetAddress;
+		}
+	}
+
+	bool ServerApplication::ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
+		bool* isOfflinerecvParams)
 	{
 
 	}
@@ -554,53 +629,339 @@ namespace JACKIE_INET
 	//////////////////////////////////////////////////////////////////////////////////////////
 
 
+	//////////////////////////////////////////////////////////////////////////
+	/// @TO-DO
+	void ServerApplication::AdjustTimestamp(Packet*& incomePacket) const
+	{
+		if( (unsigned char) incomePacket->data[0] == ID_TIMESTAMP )
+		{
+			if( incomePacket->length >= sizeof(unsigned char) + sizeof(Time) )
+			{
+				unsigned char* data = &incomePacket->data[sizeof(unsigned char)];
+				//#ifdef _DEBUG
+				//				RakAssert(IsActive());
+				//				RakAssert(data);
+				//#endif
+				//
+				//				RakNet::BitStream timeBS(data, sizeof(RakNet::Time), false);
+				//				timeBS.EndianSwapBytes(0, sizeof(RakNet::Time));
+				//				RakNet::Time encodedTimestamp;
+				//				timeBS.Read(encodedTimestamp);
+				//
+				//				encodedTimestamp = encodedTimestamp - GetBestClockDifferential(systemAddress);
+				//				timeBS.SetWriteOffset(0);
+				//				timeBS.Write(encodedTimestamp);
+			}
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JACKIE_INET_Address& senderAddress, bool neededBySendThread, bool onlyWantActiveEndPoint) const
+	{
+		if( senderAddress == JACKIE_INET_Address_Null ) return 0;
+
+		if( neededBySendThread )
+		{
+			Int32 index = GetRemoteEndPointIndex(senderAddress);
+			if( index != -1 )
+			{
+				if( !onlyWantActiveEndPoint || remoteSystemList[index].isActive )
+				{
+					CHECK_EQ(remoteSystemList[index].systemAddress, senderAddress);
+					return &remoteSystemList[index];
+				}
+			}
+		} else
+		{
+			/// Active EndPoints take priority.  But if matched end point is inactice, 
+			/// return the first EndPoint match found
+			Int32 inActiveEndPointIndex = -1;
+			for( UInt32 index = 0; index < maxConnections; index++ )
+			{
+				if( remoteSystemList[index].systemAddress == senderAddress )
+				{
+					if( remoteSystemList[index].isActive )
+						return &remoteSystemList[index];
+					else if( inActiveEndPointIndex == -1 )
+						inActiveEndPointIndex = index;
+				}
+			}
+
+			/// matched end pint was found but it is inactive
+			if( inActiveEndPointIndex != -1 && !onlyWantActiveEndPoint )
+				return &remoteSystemList[inActiveEndPointIndex];
+		}
+
+		// no matched end point found
+		return 0;
+	}
+	Int32 ServerApplication::GetRemoteEndPointIndex(const JACKIE_INET_Address &sa) const
+	{
+		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa) %
+			( maxConnections * RemoteEndPointLookupHashMutiple );
+		RemoteEndPointIndex* curr = remoteSystemLookup[hashindex];
+		while( curr != 0 )
+		{
+			if( remoteSystemList[curr->index].systemAddress == sa )
+				return curr->index;
+			curr = curr->next;
+		}
+		return  -1;
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
+	{
+		unsigned int i;
+		for( i = 0; i < pluginListTS.Size(); i++ )
+		{
+			switch( incomePacket->data[0] )
+			{
+				case ID_DISCONNECTION_NOTIFICATION:
+					pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
+					break;
+				case ID_CONNECTION_LOST:
+					pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
+					break;
+				case ID_NEW_INCOMING_CONNECTION:
+					pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
+					break;
+				case ID_CONNECTION_REQUEST_ACCEPTED:
+					pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
+					break;
+				case ID_CONNECTION_ATTEMPT_FAILED:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
+					break;
+				case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
+					break;
+				case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
+					break;
+				case ID_PUBLIC_KEY_MISMATCH:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
+					break;
+				case ID_ALREADY_CONNECTED:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
+					break;
+				case ID_NO_FREE_INCOMING_CONNECTIONS:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
+					break;
+				case ID_CONNECTION_BANNED:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
+					break;
+				case ID_INVALID_PASSWORD:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
+					break;
+				case ID_INCOMPATIBLE_PROTOCOL_VERSION:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
+					break;
+				case ID_IP_RECENTLY_CONNECTED:
+					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
+					break;
+			}
+		}
+
+		for( i = 0; i < pluginListNTS.Size(); i++ )
+		{
+			switch( incomePacket->data[0] )
+			{
+				case ID_DISCONNECTION_NOTIFICATION:
+					pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
+					break;
+				case ID_CONNECTION_LOST:
+					pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
+					break;
+				case ID_NEW_INCOMING_CONNECTION:
+					pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
+					break;
+				case ID_CONNECTION_REQUEST_ACCEPTED:
+					pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
+					break;
+				case ID_CONNECTION_ATTEMPT_FAILED:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
+					break;
+				case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
+					break;
+				case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
+					break;
+				case ID_PUBLIC_KEY_MISMATCH:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
+					break;
+				case ID_ALREADY_CONNECTED:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
+					break;
+				case ID_NO_FREE_INCOMING_CONNECTIONS:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
+					break;
+				case ID_CONNECTION_BANNED:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
+					break;
+				case ID_INVALID_PASSWORD:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
+					break;
+				case ID_INCOMPATIBLE_PROTOCOL_VERSION:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
+					break;
+				case ID_IP_RECENTLY_CONNECTED:
+					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
+					break;
+			}
+		}
+
+	}
+	void ServerApplication::PacketGoThroughPlugins(Packet*& incomePacket)
+	{
+		int i;
+		PluginActionType pluginResult;
+
+		for( i = 0; i < pluginListTS.Size(); i++ )
+		{
+			pluginResult = pluginListTS[i]->OnRecvPacket(incomePacket);
+			if( pluginResult == PROCESSED_BY_ME_THEN_DEALLOC )
+			{
+				DeallocatePacket(incomePacket);
+				// Will do the loop again and get another incomePacket
+				incomePacket = 0;
+				break; // break out of the enclosing forloop
+			} else if( pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC )
+			{
+				incomePacket = 0;
+				break;
+			}
+		}
+
+		for( i = 0; i < pluginListNTS.Size(); i++ )
+		{
+			pluginResult = pluginListNTS[i]->OnRecvPacket(incomePacket);
+			if( pluginResult == PROCESSED_BY_ME_THEN_DEALLOC )
+			{
+				DeallocatePacket(incomePacket);
+				// Will do the loop again and get another incomePacket
+				incomePacket = 0;
+				break; // break out of the enclosing forloop
+			} else if( pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC )
+			{
+				incomePacket = 0;
+				break;
+			}
+		}
+	}
+	void ServerApplication::UpdatePlugins(void)
+	{
+		int i;
+		for( i = 0; i < pluginListTS.Size(); i++ )
+		{
+			pluginListTS[i]->Update();
+		}
+		for( i = 0; i < pluginListNTS.Size(); i++ )
+		{
+			pluginListNTS[i]->Update();
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+
+
 	///////////////////////////////// DECLARATIONS //////////////////////////////
+	Packet* ServerApplication::FetchOnePacket(void)
+	{
+		if( !IsActive() ) return 0;
+
+		/// UPDATE all plugins
+		UpdatePlugins();
+
+		Packet *incomePacket = 0;
+		do
+		{
+			//////////////////////////////////////////////////////////////////////////
+			if( bufferedPacketsQueue.isEmpty() ) return 0;
+			/// Get one *incomePacket from queue
+			bufferedPacketsQueue.PopHead(incomePacket);
+			AdjustTimestamp(incomePacket);
+			//////////////////////////////////////////////////////////////////////////
+
+			//////////////////////////////////////////////////////////////////////////
+			/// Some locally generated packets need to be processed by plugins,
+			/// for example ID_FCM2_NEW_HOST. The plugin itself should intercept
+			/// these messages generated remotely
+			PacketGoThroughPluginCBs(incomePacket);
+			PacketGoThroughPlugins(incomePacket);
+			//////////////////////////////////////////////////////////////////////////
+
+		} while( incomePacket == 0 );
+
+		CHECK_NE(incomePacket->data, 0);
+		return incomePacket;
+	}
 	bool ServerApplication::RunSendCycleOnce(BitStream &updateBitStream)
 	{
+		unsigned int index;
+		static JISRecvParams recv;
+
 #if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
-		if( JISList[0]->IsBerkleySocket() )
+
+		for( index = 0; index < JISList.Size(); index++ )
 		{
-			JISBerkley* berkelySock = ( (JISBerkley*) JISList[0] );
-
-			if( berkelySock->GetSocketTransceiver() != 0 )
+			if( JISList[index]->IsBerkleySocket() )
 			{
-				int len;
-				JACKIE_INET_Address sender;
-				char dataOut[MAXIMUM_MTU_SIZE];
-
-				do
+				JISBerkley* berkelySock = ( (JISBerkley*) JISList[index] );
+				if( berkelySock->GetSocketTransceiver() != 0 )
 				{
-					len = berkelySock->GetSocketTransceiver()->
-						JackieINetRecvFrom(dataOut, &sender, true);
-
-					if( len > 0 )
+					int len;
+					char dataOut[MAXIMUM_MTU_SIZE];
+					do
 					{
-						ProcessBufferedRecvParamQueue(sender, dataOut, len,
-							this, JISList[0], updateBitStream, GetTimeUS());
-					}
-				} while( len > 0 );
+						len = berkelySock->GetSocketTransceiver()->
+							JackieINetRecvFrom(dataOut, &recv.senderINetAddress, true);
 
+						if( len > 0 )
+						{
+							ProcessOneRecvParam(&recv, updateBitStream);
+						}
+					} while( len > 0 );
+
+				}
 			}
 		}
 #endif
+
+		JISRecvParams* recvParams = 0;
+		for( unsigned int index = 0; index < bufferedAllocatedRecvParamQueue.Size();
+			index++ )
+		{
+			ProcessOneRecvParam(recvParams, updateBitStream);
+			bufferedDeallocatedRecvParamQueue.PushTail(recvParams);
+		}
 		return 0;
 	}
 	void ServerApplication::RunRecvCycleOnce(void)
 	{
 		JISRecvParams* recvParams = 0;
-		for( unsigned int index = 0; index < JISList.Size(); index++ )
+		unsigned int index;
+		for( index = 0; index < JISList.Size(); index++ )
 		{
 			recvParams = AllocJISRecvParams();
 			if( recvParams != 0 )
 			{
 				recvParams->socket = JISList[index];
-				( (JISBerkley*) JISList[index] )->RecvFrom(recvParams) >= 0 ? 				// we can recv 0 length data
+				( (JISBerkley*) JISList[index] )->RecvFrom(recvParams) > 0 ?
 					OnJISRecv(recvParams) : ReclaimJISRecvParams(recvParams);
 			} else
 			{
 				notifyOutOfMemory(TRACE_FILE_AND_LINE_);
 			}
 		}
+
+		for( index = 0; index < bufferedDeallocatedRecvParamQueue.Size();
+			index++ )
+		{
+			if( bufferedDeallocatedRecvParamQueue.PopHead(recvParams) )
+				ReclaimJISRecvParams(recvParams);
+		}
+
 	}
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{

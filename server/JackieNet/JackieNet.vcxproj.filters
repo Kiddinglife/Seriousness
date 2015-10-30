@@ -65,6 +65,9 @@
     <ClCompile Include="BitStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ReliabilityMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="JACKIE_INet_Socket.h">
@@ -92,9 +95,6 @@
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="LockFreeQueue.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="MemPoolAllocQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="CompileFeatures.h">
@@ -162,6 +162,12 @@
     </ClInclude>
     <ClInclude Include="EasyLog.h">
       <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="MemPoolAllocRingBufferQueue.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageID.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

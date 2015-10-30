@@ -3,7 +3,7 @@
 
 namespace DataStructures
 {
-	template <typename elementType, unsigned int  nSize = CLIENT_LOCKFREE_QUEUE_SIZE>
+	template <typename elementType, unsigned int  nSize = CLIENT_QUEUE_PTR_SIZE>
 	class LockFreeQueue
 	{
 		public:
@@ -29,80 +29,105 @@ namespace DataStructures
 			}
 		}
 
-		void Clear() { m_nIn = m_nOut = 0; }
-		unsigned int GetDataLen() const { return  m_nIn - m_nOut; }
-
-		void PushTail(elementType& buffer)
+		void Clear(void) { m_nIn = m_nOut = 0; }
+		unsigned int Size() const { return  ( m_nIn - m_nOut ) / sizeof(elementType); }
+		bool isEmpty(void) { return m_nOut == m_nOut; }
+		bool PushTail(const elementType& buffer)
 		{
-			unsigned int len = sizeof(elementType);
+			unsigned int len = 0;
+			while( len < sizeof(elementType) )
+			{
+				len = sizeof(elementType) - len;
+				unsigned int l = m_nSize - m_nIn + m_nOut;
+				len = len < l ? len : l;
 
-			unsigned int l = m_nSize - m_nIn + m_nOut;
-			len = len < l ? len : l;
-			/*
-			* Ensure that we sample the m_nOut index -before- we
-			* start putting bytes into the UnlockQueue.
-			*/
+				/// Ensure that we sample the m_nOut index -before- we start putting bytes into the UnlockQueue.
 #ifdef _WIN32
-			MemoryBarrier();
+				MemoryBarrier();
 #else
-			__sync_synchronize();
+				__sync_synchronize();
 #endif
 
-			/* first put the data starting from fifo->in to buffer end */
-			l = m_nSize - ( m_nIn  & ( m_nSize - 1 ) );
-			l = len < l ? len : l;
-			memcpy(m_pBuffer + ( m_nIn & ( m_nSize - 1 ) ), &buffer, l);
+				/// first put the data starting from fifo->in to buffer end 
+				l = m_nSize - ( m_nIn  & ( m_nSize - 1 ) );
+				l = len < l ? len : l;
 
-			/* then put the rest (if any) at the beginning of the buffer */
-			memcpy(m_pBuffer, &buffer + l, len - l);
+				memcpy(m_pBuffer + ( m_nIn & ( m_nSize - 1 ) ), &buffer, l);
+				/// then put the rest (if any) at the beginning of the buffer 
+				memcpy(m_pBuffer, &buffer + l, len - l);
 
-			/*
-			* Ensure that we add the bytes to the kfifo -before-
-			* we update the fifo->in index.
-			*/
+				/// Ensure that we add the bytes to the kfifo -before- we update the fifo->in index.
 #ifdef _WIN32
-			MemoryBarrier();
+				MemoryBarrier();
 #else
-			__sync_synchronize();
+				__sync_synchronize();
 #endif
+				m_nIn += len;
+			}
+			return true;
+		}
+		bool PopHead(elementType& buffer)
+		{
+			unsigned int len = 0;
+			while( len < sizeof(elementType) )
+			{
+				len = sizeof(elementType) - len;
+				unsigned int l = m_nIn - m_nOut;
+				len = len < l ? len : l;
 
-			m_nIn += len;
+				/// Ensure that we sample the fifo->in index -before- westart removing bytes from the kfifo.
+#ifdef _WIN32
+				MemoryBarrier();
+#else
+				__sync_synchronize();
+#endif
+				/// first get the data from fifo->out until the end of the buffer 
+				l = m_nSize - ( m_nOut & ( m_nSize - 1 ) );
+				l = len < l ? len : l;
+
+				memcpy(&buffer, m_pBuffer + ( m_nOut & ( m_nSize - 1 ) ), l);
+				/// then get the rest (if any) from the beginning of the buffer 
+				memcpy(&buffer + l, m_pBuffer, len - l);
+
+				/// Ensure that we remove the bytes from the kfifo -before- we update the fifo->out index.
+#ifdef _WIN32
+				MemoryBarrier();
+#else
+				__sync_synchronize();
+#endif
+				m_nOut += len;
+			}
+			return true;
 		}
 
-		elementType PopHead(void)
+		elementType operator[](unsigned int position) const
 		{
 			elementType buffer;
-			unsigned int len = sizeof(elementType);
 
+			unsigned int len = sizeof(elementType);
 			unsigned int l = m_nIn - m_nOut;
 			len = len < l ? len : l;
-			/*
-			* Ensure that we sample the fifo->in index -before- we
-			* start removing bytes from the kfifo.
-			*/
+
+			/// Ensure that we sample the fifo->in index -before- westart removing bytes from the kfifo.
 #ifdef _WIN32
 			MemoryBarrier();
 #else
 			__sync_synchronize();
 #endif
-			/* first get the data from fifo->out until the end of the buffer */
+			/// first get the data from fifo->out until the end of the buffer 
 			l = m_nSize - ( m_nOut & ( m_nSize - 1 ) );
 			l = len < l ? len : l;
+
 			memcpy(&buffer, m_pBuffer + ( m_nOut & ( m_nSize - 1 ) ), l);
-			/* then get the rest (if any) from the beginning of the buffer */
+			/// then get the rest (if any) from the beginning of the buffer 
 			memcpy(&buffer + l, m_pBuffer, len - l);
 
-			/*
-			* Ensure that we remove the bytes from the kfifo -before-
-			* we update the fifo->out index.
-			*/
+			/// Ensure that we remove the bytes from the kfifo -before- we update the fifo->out index.
 #ifdef _WIN32
 			MemoryBarrier();
 #else
 			__sync_synchronize();
 #endif
-			m_nOut += len;
-
 			return buffer;
 		}
 

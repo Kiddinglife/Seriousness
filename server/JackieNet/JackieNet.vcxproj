@@ -192,6 +192,7 @@
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="RandomSeedCreator.cpp" />
+    <ClCompile Include="ReliabilityMgr.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
@@ -201,8 +202,9 @@
     <ClInclude Include="atomic_ops.h" />
     <ClInclude Include="BitStream.h" />
     <ClInclude Include="EasyLog.h" />
+    <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />
-    <ClInclude Include="MemPoolAllocQueue.h" />
+    <ClInclude Include="MemPoolAllocRingBufferQueue.h" />
     <ClInclude Include="LockFreeQueue.h" />
     <ClInclude Include="RandomSeedCreator.h" />
     <ClInclude Include="RingBufferQueue.h" />
