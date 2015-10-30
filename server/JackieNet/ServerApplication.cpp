@@ -237,7 +237,9 @@ namespace JACKIE_INET
 
 					default:
 						assert(bindResult == JISBindResult_SUCCESS);
-						JINFO << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
+						char str[256];
+						sock->GetBoundAddress().ToString(true, str);
+						JINFO << "Bind [" << str << "] Successfully";
 						break;
 				}
 			} else
@@ -451,7 +453,6 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::DeallocJISList(void)
 	{
-		if( JISList.Size() == 0 || JISList.AllocationSize() == 0 ) return;
 		for( unsigned int index = 0; index < JISList.Size(); index++ )
 		{
 			if( JISList[index] != 0 ) JISAllocator::DeallocJIS(JISList[index]);
@@ -460,9 +461,10 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ClearBufferedCommands(void)
 	{
-		BufferedCommand *bcs;
-		while( bufferedCommands.PopHead(bcs) )
+		BufferedCommand *bcs = 0;
+		for( UInt32 i = 0; i < bufferedCommands.Size(); i++ )
 		{
+			bufferedCommands.PopHead(bcs);
 			if( bcs->data != 0 ) rakFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			bufferedCommands.Deallocate(bcs);
 		}
@@ -613,15 +615,16 @@ namespace JACKIE_INET
 			}
 		} else
 		{
-			JWARNING << "Packet from unconnected sender"
-				<< recvParams->senderINetAddress.ToString();
+			char str[256];
+			recvParams->senderINetAddress.ToString(true, str);
+			JWARNING << "Packet from unconnected sender " << str;
 		}
 	}
 
 	bool ServerApplication::ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 		bool* isOfflinerecvParams)
 	{
-		return true;
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////
@@ -933,6 +936,7 @@ namespace JACKIE_INET
 			ProcessOneRecvParam(recvParams, updateBitStream);
 			bufferedDeallocatedRecvParamQueue.PushTail(recvParams);
 		}
+
 		return 0;
 	}
 	void ServerApplication::RunRecvCycleOnce(void)

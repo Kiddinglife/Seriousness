@@ -482,11 +482,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 //
-static int testcase = CircularArrayQueueSingleThread;
-static int testfunc = Test_Queue_funcs;
+//static int testcase = CircularArrayQueueSingleThread;
+//static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
+static int testcase = ServerApplication_H;
+static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
