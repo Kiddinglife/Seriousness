@@ -10,6 +10,8 @@ namespace DataStructures
 		LockFreeQueue() :
 			m_pBuffer(0),
 			m_nSize(nSize),
+			m_ElementSize(sizeof(elementType)),
+			m_len(0),
 			m_nIn(0),
 			m_nOut(0)
 		{
@@ -30,16 +32,15 @@ namespace DataStructures
 		}
 
 		void Clear(void) { m_nIn = m_nOut = 0; }
-		unsigned int Size() const { return  ( m_nIn - m_nOut ) / sizeof(elementType); }
-		bool isEmpty(void) { return m_nOut == m_nOut; }
+		unsigned int Size() const { return  ( m_nIn - m_nOut ) / m_ElementSize; }
 		bool PushTail(const elementType& buffer)
 		{
-			unsigned int len = 0;
-			while( len < sizeof(elementType) )
+			m_len = 0;
+			while( m_len < m_ElementSize )
 			{
-				len = sizeof(elementType) - len;
+				m_len = m_ElementSize - m_len;
 				unsigned int l = m_nSize - m_nIn + m_nOut;
-				len = len < l ? len : l;
+				m_len = m_len < l ? m_len : l;
 
 				/// Ensure that we sample the m_nOut index -before- we start putting bytes into the UnlockQueue.
 #ifdef _WIN32
@@ -50,11 +51,11 @@ namespace DataStructures
 
 				/// first put the data starting from fifo->in to buffer end 
 				l = m_nSize - ( m_nIn  & ( m_nSize - 1 ) );
-				l = len < l ? len : l;
+				l = m_len < l ? m_len : l;
 
 				memcpy(m_pBuffer + ( m_nIn & ( m_nSize - 1 ) ), &buffer, l);
 				/// then put the rest (if any) at the beginning of the buffer 
-				memcpy(m_pBuffer, &buffer + l, len - l);
+				memcpy(m_pBuffer, &buffer + l, m_len - l);
 
 				/// Ensure that we add the bytes to the kfifo -before- we update the fifo->in index.
 #ifdef _WIN32
@@ -62,18 +63,18 @@ namespace DataStructures
 #else
 				__sync_synchronize();
 #endif
-				m_nIn += len;
+				m_nIn += m_len;
 			}
 			return true;
 		}
 		bool PopHead(elementType& buffer)
 		{
-			unsigned int len = 0;
-			while( len < sizeof(elementType) )
+			m_len = 0;
+			while( m_len < m_ElementSize )
 			{
-				len = sizeof(elementType) - len;
+				m_len = m_ElementSize - m_len;
 				unsigned int l = m_nIn - m_nOut;
-				len = len < l ? len : l;
+				m_len = m_len < l ? m_len : l;
 
 				/// Ensure that we sample the fifo->in index -before- westart removing bytes from the kfifo.
 #ifdef _WIN32
@@ -83,11 +84,11 @@ namespace DataStructures
 #endif
 				/// first get the data from fifo->out until the end of the buffer 
 				l = m_nSize - ( m_nOut & ( m_nSize - 1 ) );
-				l = len < l ? len : l;
+				l = m_len < l ? m_len : l;
 
 				memcpy(&buffer, m_pBuffer + ( m_nOut & ( m_nSize - 1 ) ), l);
 				/// then get the rest (if any) from the beginning of the buffer 
-				memcpy(&buffer + l, m_pBuffer, len - l);
+				memcpy(&buffer + l, m_pBuffer, m_len - l);
 
 				/// Ensure that we remove the bytes from the kfifo -before- we update the fifo->out index.
 #ifdef _WIN32
@@ -95,40 +96,14 @@ namespace DataStructures
 #else
 				__sync_synchronize();
 #endif
-				m_nOut += len;
+				m_nOut += m_len;
 			}
 			return true;
 		}
 
-		elementType operator[](unsigned int position) const
+		elementType& operator[] (unsigned int position) const
 		{
-			elementType buffer;
-
-			unsigned int len = sizeof(elementType);
-			unsigned int l = m_nIn - m_nOut;
-			len = len < l ? len : l;
-
-			/// Ensure that we sample the fifo->in index -before- westart removing bytes from the kfifo.
-#ifdef _WIN32
-			MemoryBarrier();
-#else
-			__sync_synchronize();
-#endif
-			/// first get the data from fifo->out until the end of the buffer 
-			l = m_nSize - ( m_nOut & ( m_nSize - 1 ) );
-			l = len < l ? len : l;
-
-			memcpy(&buffer, m_pBuffer + ( m_nOut & ( m_nSize - 1 ) ), l);
-			/// then get the rest (if any) from the beginning of the buffer 
-			memcpy(&buffer + l, m_pBuffer, len - l);
-
-			/// Ensure that we remove the bytes from the kfifo -before- we update the fifo->out index.
-#ifdef _WIN32
-			MemoryBarrier();
-#else
-			__sync_synchronize();
-#endif
-			return buffer;
+			return *( (elementType*) ( m_pBuffer + ( m_nOut & ( m_nSize - 1 ) ) + position*m_ElementSize ) );
 		}
 
 		private:
@@ -158,6 +133,8 @@ namespace DataStructures
 
 		char *m_pBuffer;    /* the buffer holding the data */
 		unsigned int   m_nSize;        /* the size of the allocated buffer */
+		unsigned int   m_ElementSize;
+		unsigned int   m_len;
 	};
 }
 #endif

@@ -139,9 +139,6 @@
     <ClInclude Include="JACKIE_Simple_Mutex.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Atomic.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
     <ClInclude Include="NetTime.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
@@ -168,6 +165,9 @@
     </ClInclude>
     <ClInclude Include="ReliabilityLayer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JACKIE_Atomic.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

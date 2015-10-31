@@ -2,6 +2,8 @@
  * \file ServerApplication.h
  * \author mengdi
  * \date Oct 18, 2015
+ *\ Remember we never push null pointer to any kind of queue including lockfree queue
+ *\ and normal queue so that we will never pop out a null pointer from any kind of queue
  */
 
 #ifndef SERVERAPPLICATION_H_
@@ -27,6 +29,7 @@
 #include "MemoryPool.h"
 #include "IPlugin.h"
 #include "RandomSeedCreator.h"
+#include "JACKIE_INet_Socket.h"
 
 using namespace DataStructures;
 
@@ -50,6 +53,7 @@ namespace JACKIE_INET
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		Ultils::RandomSeedCreator rnr;
+		BitStream sendBitStream;
 
 		////////////////////////////////////////////////////////////////////////////
 		JACKIE_INet_GUID myGuid;
@@ -188,7 +192,7 @@ namespace JACKIE_INET
 			bufferedPacketsQueue;
 #else
 		/// shared between recv and send thread
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedRecvParamQueue;
+		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedRecvParamQueue;
 		/// shared between recv and send thread to 
 		/// store JISRecvParams PTR that is being dellacated
 		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedRecvParamQueue;
@@ -212,7 +216,7 @@ namespace JACKIE_INET
 		void DeallocJISList(void);
 		void ResetSendReceipt(void);
 
-		Packet* FetchOnePacket(void);
+		Packet* GetPacket(void);
 		void ProcessOneRecvParam(JISRecvParams* recvParams, BitStream
 			&updateBitStream);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
@@ -231,17 +235,19 @@ namespace JACKIE_INET
 
 
 		///////////////////////////////// JISRecv DE/ALLOC ///////////////////////////////////
-		/// In multi-threads app and single- thread app,these 3 functions
-		/// are called only  by recv thread. the recvStruct will be obtained from 
-		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
+		// In multi-threads app and single- thread app,these 3 functions
+		// are called only  by recv thread. the recvStruct will be obtained from 
+		// bufferedDeallocatedRecvParamQueue, so it is thread safe
+		/// It is Caller's responsibility to make recvStruct s != 0
 		virtual void OnJISRecv(JISRecvParams *recvStruct) override;
+		/// It is Caller's responsibility to make sure s != 0
 		virtual void ReclaimJISRecvParams(JISRecvParams *s) override;
 		virtual JISRecvParams * AllocJISRecvParams() override;
 		//////////////////////////////////////////////////////////////////////////////////////////
 
 
 		///////////////////////////////// GUID /////////////////////////////////
-		// Generate and store a unique GUID
+		/// Generate and store a unique GUID
 		void GenerateGUID(void) { myGuid.g = Get64BitUniqueRandomNumber(); }
 		/// Mac address is a poor solution because 
 		/// you can't have multiple connections from the same system
@@ -270,13 +276,14 @@ namespace JACKIE_INET
 		///////////////////////// RECV SEND ONCE ////////////////////////////////
 		bool RunSendCycleOnce(BitStream &updateBitStream);
 		void RunRecvCycleOnce(void);
+		Packet* RunGetPacketCycleOnce(void);
 		///////////////////////////////////////////////////////////////////////////////
 
 
 		///////////////////////////////// Threads /////////////////////////////////
 		int CreateRecvPollingThread(int threadPriority);
 		int CreateSendPollingThread(int threadPriority);
-		void BlockOnStopRecvPollingThread(JISBerkley* sock);
+		/// you can only stop berkely sock recv thread
 		void StopRecvPollingThread(void);
 		void StopSendPollingThread(void);
 		bool IsActive(void) const { return endSendRecvThreads == false; }

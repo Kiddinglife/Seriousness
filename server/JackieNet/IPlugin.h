@@ -7,6 +7,8 @@
 
 namespace JACKIE_INET
 {
+	class TCPInterface;
+
 	/// For each message that arrives on an instance of RakPeer, the plugins get an 
 	/// opportunity to process them first. This enumeration represents what to do 
 	/// with the message
@@ -50,7 +52,6 @@ namespace JACKIE_INET
 		CAFR_PUBLIC_KEY_MISMATCH
 	};
 
-	class TCPInterface;
 	class JACKIE_EXPORT IPlugin
 	{
 		public:

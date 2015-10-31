@@ -331,12 +331,21 @@ namespace JACKIE_INET
 
 	inline JISRecvResult JISBerkley::RecvFrom(JISRecvParams *recvFromStruct)
 	{
+		JACKIE_ASSERT(recvFromStruct != 0);
+
+		if( jst != 0 )
+		{
+			return jst->JackieINetRecvFrom(recvFromStruct->data,
+				&recvFromStruct->senderINetAddress, false);
+		}
+
 #if NET_SUPPORT_IPV6 ==1
 		return RecvFromIPV4And6(recvFromStruct);
 #else
-		return RecvFromIPV4(recvFromStruct);
+		return  RecvFromIPV4(recvFromStruct);
 #endif
 	}
+
 	JISRecvResult JISBerkley::RecvFromIPV4(JISRecvParams *recvFromStruct)
 	{
 		static  sockaddr_in sa = { 0 };

@@ -159,7 +159,7 @@ static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper));
 
 	JACKIE_INET::JACKIE_INet_GUID gui(12);
-	JACKIE_INET::JACKIE_INET_Address adrr("localhost", 123456);
+	JACKIE_INET::JACKIE_INET_Address adrr("localhost", (UInt16) 123456);
 	JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper wrapper1(gui);
 	printf_s("ToString(%s)\n", wrapper1.ToString());
 	printf_s("ToHashCode(%d)\n",
@@ -342,15 +342,18 @@ static void test_Queue_funcs()
 	DataStructures::LockFreeQueue<int, 4 * 100000> lockfree;
 	TIMED_BLOCK(LockFreeQueueTimer, "LockFreeQueue")
 	{
-		for( int i = 0; i < 100000; i++ )
+		for( int i = 0; i < 10; i++ )
 		{
 			lockfree.PushTail(i);
-			lockfree[i];
 		}
-		for( int i = 0; i < 100000; i++ )
+		for( int i = 0; i < 10; i++ )
 		{
 			int t;
 			lockfree.PopHead(t);
+		}
+		for( unsigned int i = 0; i < lockfree.Size(); i++ )
+		{
+			printf_s("%d, ", lockfree[i]);
 		}
 	}
 
@@ -390,12 +393,13 @@ static void test_Queue_funcs()
 
 //////////////////////////////////////////////////////////////////////////
 #include "JackieNet/ServerApplication.h"
+
 static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::JACKIE_LOCAL_SOCKET socketDescriptor;
-	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET;
 	socketDescriptor.port = 0;
 	socketDescriptor.socketFamily = AF_INET;
 
@@ -409,6 +413,12 @@ static void test_ServerApplication_funcs()
 	sendParams.length = strlen(data) + 1;
 	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+
+	Packet* p = 0;
+	for( p = app->GetPacket(); p != 0; app->DeallocatePacket(p), p = app->GetPacket() )
+	{
+		JINFO << "FetchOnePacket";
+	}
 
 	Sleep(1001);
 	app->StopRecvPollingThread();
@@ -614,6 +624,8 @@ int main(int argc, char** argv)
 		case NetTime_h:
 			switch( testfunc )
 			{
+				case AllFuncs:
+					break;
 				default:
 					test_NetTime_h_All_funcs();
 					break;
@@ -634,6 +646,8 @@ int main(int argc, char** argv)
 		case MemoryPool_h:
 			switch( testfunc )
 			{
+				case AllFuncs:
+					break;
 				default:
 					test_MemoryPool_funcs();
 					break;

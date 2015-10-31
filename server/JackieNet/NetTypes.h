@@ -766,7 +766,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// @internal
 		/// Indicates whether to delete the data, or to simply delete the packet.
 		/// if true, this packet is allocated by pool if false, by rakAllloc_Ex function
-		bool deleteData;
+		bool isAllocatedFromPool;
 
 		/// @internal  If true, this message is meant for the user, not for the plugins,
 		/// so do not process it through plugins

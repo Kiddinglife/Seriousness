@@ -171,17 +171,12 @@ namespace JACKIE_INET
 	class JACKIE_EXPORT JISBerkley : public JACKIE_INet_Socket
 	{
 		protected:
-		JISSocket rns2Socket;
+
 		JISBerkleyBindParams binding;
 		JACKIE_ISocketTransceiver *jst;
 		JACKIE_ATOMIC_LONG isRecvFromLoopThreadActive;
 
-#ifdef USE_SINGLE_THREAD_TO_SEND_AND_RECV
-		volatile bool endThreads;
-#else
-		bool endThreads;
-#endif
-
+		JISSocket rns2Socket;
 #if defined(__APPLE__)
 		// http://sourceforge.net/p/open-dis/discussion/683284/thread/0929d6a0
 		CFSocketRef             _cfSocket;
@@ -190,12 +185,6 @@ namespace JACKIE_INET
 		public:
 		JISBerkley();
 		virtual ~JISBerkley();
-
-
-		/// Use these three functions when you want a duplicate thread . to poll recvfrom(...)
-		//int CreateRecvPollingThread(int threadPriority);
-		//void BlockOnStopRecvPollingThread(void);
-		//inline void SignalStopRecvPollingThread(void) { endThreads = true; }
 
 		const JISBerkleyBindParams *GetBindingParams(void) const { return &binding; }
 		inline JISSocket GetSocket(void) const { return rns2Socket; }

@@ -22,9 +22,7 @@ JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
 #endif
 #endif
 
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
-inline
-#endif
+
 void JACKIE_Simple_Mutex::Lock(void)
 {
 #if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
@@ -38,9 +36,7 @@ void JACKIE_Simple_Mutex::Lock(void)
 #endif
 }
 
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
-inline
-#endif
+
 void JACKIE_Simple_Mutex::Unlock(void)
 {
 #if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0

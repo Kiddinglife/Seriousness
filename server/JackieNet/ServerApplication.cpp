@@ -35,7 +35,11 @@ namespace JACKIE_INET
 
 
 	//////////////////////////////////////////////////////////////////////////
-	ServerApplication::ServerApplication()
+	ServerApplication::ServerApplication() : sendBitStream(MAXIMUM_MTU_SIZE
+#if LIBCAT_SECURITY==1
+		+ cat::AuthenticatedEncryption::OVERHEAD_BYTES
+#endif
+		)
 	{
 #if LIBCAT_SECURITY == 1
 		// Encryption and security
@@ -340,7 +344,6 @@ namespace JACKIE_INET
 			//	return FAILED_TO_CREATE_NETWORK_THREAD;
 			//}
 			//}
-
 			if( CreateRecvPollingThread(threadPriority) != 0 )
 			{
 				End(0);
@@ -349,6 +352,8 @@ namespace JACKIE_INET
 			}
 			/// Wait for the threads to activate. When they are active they will set these variables to true
 			while( !isRecvPollingThreadActive ) JACKIE_Sleep(10);
+#else
+			isRecvPollingThreadActive = false;
 #endif
 #endif
 
@@ -364,6 +369,9 @@ namespace JACKIE_INET
 				}
 				/// Wait for the threads to activate. When they are active they will set these variables to true
 				while( !isSendPollingThreadActive ) JACKIE_Sleep(10);
+#else
+				/// we only have one thread to handle recv and send so just simply set it to true
+				isSendPollingThreadActive = true;
 #endif
 			}
 		}
@@ -389,7 +397,9 @@ namespace JACKIE_INET
 	///////////////////////////// JISRecvParams ////////////////////////////////
 	void ServerApplication::OnJISRecv(JISRecvParams *recvStruct)
 	{
-		JINFO << "Recv " << recvStruct->bytesRead << " bytes of data [" << recvStruct->data << "]";
+		CHECK_NOTNULL(recvStruct);
+
+		JDEBUG << "Recv " << recvStruct->bytesRead << " bytes of data [" << recvStruct->data << "]";
 
 		if( incomeDatagramEventHandler != 0 )
 		{
@@ -401,7 +411,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		QUEUE_PUSH_TAIL(bufferedAllocatedRecvParamQueue, recvStruct);
+		CHECK_EQ(bufferedAllocatedRecvParamQueue.PushTail(recvStruct), true);
 
 #if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 		quitAndDataEvents.TriggerEvent();
@@ -410,15 +420,16 @@ namespace JACKIE_INET
 	}
 	inline void ServerApplication::ReclaimJISRecvParams(JISRecvParams *s)
 	{
-		assert(s != 0);
+		JDEBUG << "ReclaimJISRecvParams";
+		CHECK_NOTNULL(s);
 		JISRecvParamsPool.Reclaim(s);
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams()
 	{
-		JISRecvParams *s = 0;
-		do { s = JISRecvParamsPool.Allocate(); } while( s == 0 );
-		assert(s != 0);
-		return s;
+		JDEBUG << "AllocJISRecvParams";
+		JISRecvParams* ptr = JISRecvParamsPool.Allocate();
+		CHECK_NOTNULL(ptr);
+		return ptr;
 	}
 	//////////////////////////////////////////////////////////////////////////
 
@@ -494,13 +505,18 @@ namespace JACKIE_INET
 			recvThreadPacketAllocationPool.Allocate() :
 			sendThreadPacketAllocationPool.Allocate();
 
-		assert(p != 0);
+		CHECK_NOTNULL(p);
+		//if( p == 0 )
+		//{
+		//	JERROR << "ServerApplication::AllocPacket() shoudnot return NULL !";
+		//	return p;
+		//}
 		//p = new ( (void*) p ) Packet; we do not need call default ctor
 
 		p->data = (unsigned char*) rakMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
-		p->deleteData = true;
+		p->isAllocatedFromPool = true;
 		p->guid = JACKIE_INet_GUID_Null;
 		p->wasGeneratedLocally = false;
 		p->threadType = threadType;
@@ -515,13 +531,19 @@ namespace JACKIE_INET
 			recvThreadPacketAllocationPool.Allocate() :
 			sendThreadPacketAllocationPool.Allocate();
 
-		assert(p != 0);
+		CHECK_NOTNULL(p);
+		//if( p == 0 )
+		//{
+		//	JERROR << "ServerApplication::AllocPacket() shoudnot return NULL !";
+		//	return p;
+		//}
+		//p = new ( (void*) p ) Packet; we do not need call default ctor
 		//p = new ( (void*) p ) Packet; no custom ctor so no need to call default ctor
 
 		p->data = data;
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
-		p->deleteData = true;
+		p->isAllocatedFromPool = true;
 		p->guid = JACKIE_INet_GUID_Null;
 		p->wasGeneratedLocally = false;
 		p->threadType = threadType;
@@ -530,9 +552,15 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::DeallocatePacket(Packet *packet)
 	{
-		CHECK_EQ(packet, 0);
-		if( packet == 0 ) return;
-		if( packet->deleteData )
+		CHECK_NOTNULL(packet);
+
+		if( packet == 0 )
+		{
+			JERROR << "ServerApplication::DeallocatePacket() packet shouldnot be NULL !";
+			return;
+		}
+
+		if( packet->isAllocatedFromPool )
 		{
 			rakFree_Ex(packet->data, TRACE_FILE_AND_LINE_);
 			//packet->~Packet(); no custom dtor so no need to call default dtor
@@ -548,7 +576,7 @@ namespace JACKIE_INET
 	//////////////////////////////////////////////////////////////////////////////////////////
 
 
-	///////////////////////////////////////// thread //////////////////////////////////////
+	///////////////////////////////////////// thread ///////////////////////////////////////////////
 	int ServerApplication::CreateRecvPollingThread(int threadPriority)
 	{
 		JINFO << "Start to Create Recv Polling Thread ......";
@@ -559,36 +587,42 @@ namespace JACKIE_INET
 		JINFO << "Start to Create Send Polling Thread ......";
 		return JACKIE_Thread::Create(JACKIE_INET::RunSendCycleLoop, this, threadPriority);
 	}
-	void ServerApplication::BlockOnStopRecvPollingThread(JISBerkley* sock)
+	void ServerApplication::StopRecvPollingThread()
 	{
-		endSendRecvThreads = true;
+		isRecvPollingThreadActive = false;
+		if( isSendPollingThreadActive == false ) endSendRecvThreads = true;
 
-		/// Change recvfrom to unbloking
-		unsigned int zero = 0;
-		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0,
-			sock->GetBoundAddress(), 0 };
-		sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
-
-		TimeMS timeout = ::GetTimeMS() + 1000;
-		while( isRecvPollingThreadActive && GetTimeMS() < timeout )
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+		for( UInt32 i = 0; i < JISList.Size(); i++ )
 		{
-			// Get recvfrom to unblock
-			sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
-			JACKIE_Sleep(30);
+			if( JISList[i]->IsBerkleySocket() )
+			{
+				JISBerkley* sock = (JISBerkley*) JISList[i];
+				if( sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET )
+				{
+					/// try to send 0 data to let recv thread keep running
+					/// to detect the isRecvPollingThreadActive === false so that stop the thread
+					unsigned int zero = 0;
+					JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0,
+						sock->GetBoundAddress(), 0 };
+					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
+				}
+			}
 		}
+#endif
 	}
-	void ServerApplication::StopRecvPollingThread(void)
-	{ isRecvPollingThreadActive = false; }
-	void ServerApplication::StopSendPollingThread(void)
-	{ isSendPollingThreadActive = false; }
+	void ServerApplication::StopSendPollingThread()
+	{
+		isSendPollingThreadActive = false;
+		if( isRecvPollingThreadActive == false ) endSendRecvThreads = true;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	void ServerApplication::ProcessOneRecvParam(JISRecvParams* recvParams,
 		BitStream &updateBitStream)
 	{
-		/// no need to check if recvParams == 0, because we never push 0 pointer
-		bufferedAllocatedRecvParamQueue.PopHead(recvParams);
-		CHECK_NOTNULL(recvParams);
-
 #if LIBCAT_SECURITY==1
 #ifdef CAT_AUDIT
 		printf("AUDIT: RECV ");
@@ -620,14 +654,12 @@ namespace JACKIE_INET
 			JWARNING << "Packet from unconnected sender " << str;
 		}
 	}
-
 	bool ServerApplication::ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 		bool* isOfflinerecvParams)
 	{
 		return false;
 	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -698,8 +730,8 @@ namespace JACKIE_INET
 	}
 	Int32 ServerApplication::GetRemoteEndPointIndex(const JACKIE_INET_Address &sa) const
 	{
-		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa) %
-			( maxConnections * RemoteEndPointLookupHashMutiple );
+		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa);
+		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 		RemoteEndPointIndex* curr = remoteSystemLookup[hashindex];
 		while( curr != 0 )
 		{
@@ -867,76 +899,95 @@ namespace JACKIE_INET
 
 
 	///////////////////////////////// DECLARATIONS //////////////////////////////
-	Packet* ServerApplication::FetchOnePacket(void)
+	Packet* ServerApplication::GetPacket(void)
 	{
-		if( !IsActive() ) return 0;
-
-		/// UPDATE all plugins
-		UpdatePlugins();
-
-		Packet *incomePacket = 0;
-		do
-		{
-			//////////////////////////////////////////////////////////////////////////
-			if( bufferedPacketsQueue.isEmpty() ) return 0;
-			/// Get one *incomePacket from queue
-			bufferedPacketsQueue.PopHead(incomePacket);
-			AdjustTimestamp(incomePacket);
-			//////////////////////////////////////////////////////////////////////////
-
-			//////////////////////////////////////////////////////////////////////////
-			/// Some locally generated packets need to be processed by plugins,
-			/// for example ID_FCM2_NEW_HOST. The plugin itself should intercept
-			/// these messages generated remotely
-			PacketGoThroughPluginCBs(incomePacket);
-			PacketGoThroughPlugins(incomePacket);
-			//////////////////////////////////////////////////////////////////////////
-
-		} while( incomePacket == 0 );
-
-		CHECK_NE(incomePacket->data, 0);
-		return incomePacket;
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+		if( !IsActive() ) return incomePacket;
+#else
+		RunRecvCycleOnce();
+		RunSendCycleOnce(sendBitStream);
+#endif
+		return RunGetPacketCycleOnce();
 	}
 	bool ServerApplication::RunSendCycleOnce(BitStream &updateBitStream)
 	{
+
+		//// @NOTICE I moved this code to JISbEKELY::RecvFrom()
+		//// unsigned int index;
+		//static JISRecvParams recv;
+		//#if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
+		//
+		//		for( index = 0; index < JISList.Size(); index++ )
+		//		{
+		//			if( JISList[index]->IsBerkleySocket() )
+		//			{
+		//				JISBerkley* berkelySock = ( (JISBerkley*) JISList[index] );
+		//				if( berkelySock->GetSocketTransceiver() != 0 )
+		//				{
+		//					int len;
+		//					char dataOut[MAXIMUM_MTU_SIZE];
+		//					do
+		//					{
+		//						len = berkelySock->GetSocketTransceiver()->
+		//							JackieINetRecvFrom(dataOut, &recv.senderINetAddress, true);
+		//
+		//						if( len > 0 )
+		//						{
+		//							ProcessOneRecvParam(&recv, updateBitStream);
+		//						}
+		//					} while( len > 0 );
+		//
+		//				}
+		//			}
+		//		}
+		//#endif
+
 		unsigned int index;
-		static JISRecvParams recv;
-
-#if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
-
-		for( index = 0; index < JISList.Size(); index++ )
-		{
-			if( JISList[index]->IsBerkleySocket() )
-			{
-				JISBerkley* berkelySock = ( (JISBerkley*) JISList[index] );
-				if( berkelySock->GetSocketTransceiver() != 0 )
-				{
-					int len;
-					char dataOut[MAXIMUM_MTU_SIZE];
-					do
-					{
-						len = berkelySock->GetSocketTransceiver()->
-							JackieINetRecvFrom(dataOut, &recv.senderINetAddress, true);
-
-						if( len > 0 )
-						{
-							ProcessOneRecvParam(&recv, updateBitStream);
-						}
-					} while( len > 0 );
-
-				}
-			}
-		}
-#endif
-
 		JISRecvParams* recvParams = 0;
-		for( unsigned int index = 0; index < bufferedAllocatedRecvParamQueue.Size();
-			index++ )
+
+		for( index = 0; index < bufferedAllocatedRecvParamQueue.Size(); index++ )
 		{
+			/// no need to check if recvParams == 0, because we never push 0 pointer
+			CHECK_EQ(bufferedAllocatedRecvParamQueue.PopHead(recvParams), true);
+			CHECK_NOTNULL(recvParams);
 			ProcessOneRecvParam(recvParams, updateBitStream);
 			bufferedDeallocatedRecvParamQueue.PushTail(recvParams);
 		}
 
+		TimeUS timeUS = 0;
+		TimeMS timeMS = 0;
+		BufferedCommand* bufferedCommand = 0;
+
+		for( index = 0; index < bufferedCommands.Size(); index++ )
+		{
+			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
+			CHECK_EQ(bufferedCommands.PopHead(bufferedCommand), true);
+			CHECK_NOTNULL(bufferedCommand);
+			CHECK_NOTNULL(bufferedCommand->data);
+
+			switch( bufferedCommand->command )
+			{
+				case BufferedCommand::BCS_SEND:
+					/// GetTime is a very slow call so do it once and as late as possible
+					if( timeUS == 0 )
+					{
+						timeUS = GetTimeUS();
+						timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
+					}
+					break;
+				case BufferedCommand::BCS_CLOSE_CONNECTION:
+					break;
+				case BufferedCommand::BCS_CHANGE_SYSTEM_ADDRESS:
+					break;
+				case BufferedCommand::BCS_GET_SOCKET:
+					break;
+				default:
+					JERROR << "Not Found Matched BufferedCommand";
+					break;
+			}
+
+			bufferedCommands.Deallocate(bufferedCommand);
+		}
 		return 0;
 	}
 	void ServerApplication::RunRecvCycleOnce(void)
@@ -953,6 +1004,8 @@ namespace JACKIE_INET
 					OnJISRecv(recvParams) : ReclaimJISRecvParams(recvParams);
 			} else
 			{
+				JWARNING <<
+					"ServerApplication::AllocJISRecvParams() Failed for OutOfMemory !";
 				notifyOutOfMemory(TRACE_FILE_AND_LINE_);
 			}
 		}
@@ -960,10 +1013,39 @@ namespace JACKIE_INET
 		for( index = 0; index < bufferedDeallocatedRecvParamQueue.Size();
 			index++ )
 		{
-			if( bufferedDeallocatedRecvParamQueue.PopHead(recvParams) )
-				ReclaimJISRecvParams(recvParams);
+			CHECK_EQ(bufferedDeallocatedRecvParamQueue.PopHead(recvParams), true);
+			CHECK_NOTNULL(recvParams);
+			ReclaimJISRecvParams(recvParams);
 		}
 
+	}
+	Packet* ServerApplication::RunGetPacketCycleOnce(void)
+	{
+		Packet *incomePacket = 0;
+
+		/// UPDATE all plugins
+		UpdatePlugins();
+
+		/// Pop out one Packet from queue
+		if( bufferedPacketsQueue.Size() > 0 )
+		{
+			//////////////////////////////////////////////////////////////////////////
+			/// Get one income packet from bufferedPacketsQueue
+			CHECK_EQ(bufferedPacketsQueue.PopHead(incomePacket), true);
+			CHECK_NOTNULL(incomePacket);
+			CHECK_NE(incomePacket->data, 0);
+			//////////////////////////////////////////////////////////////////////////
+			AdjustTimestamp(incomePacket);
+			//////////////////////////////////////////////////////////////////////////
+			/// Some locally generated packets need to be processed by plugins,
+			/// for example ID_FCM2_NEW_HOST. The plugin itself should intercept
+			/// these messages generated remotely
+			PacketGoThroughPluginCBs(incomePacket);
+			PacketGoThroughPlugins(incomePacket);
+			//////////////////////////////////////////////////////////////////////////
+		}
+
+		return incomePacket;
 	}
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
@@ -985,17 +1067,17 @@ namespace JACKIE_INET
 		ServerApplication *serv = (ServerApplication*) arguments;
 		if( !serv->isSendPollingThreadActive ) serv->isSendPollingThreadActive = true;
 
-		BitStream sendBitStream(MAXIMUM_MTU_SIZE
-#if LIBCAT_SECURITY==1
-			+ cat::AuthenticatedEncryption::OVERHEAD_BYTES
-#endif
-			);
+		//		BitStream sendBitStream(MAXIMUM_MTU_SIZE
+		//#if LIBCAT_SECURITY==1
+		//			+ cat::AuthenticatedEncryption::OVERHEAD_BYTES
+		//#endif
+		//			);
 
 		JINFO << "Send polling thread is running in backend....";
 		/// Normally, buffered sending packets go out every other 10 ms.
 		/// or TriggerEvent() is called by recv thread
 		while( !serv->endSendRecvThreads && serv->isSendPollingThreadActive )
-		{ serv->RunSendCycleOnce(sendBitStream); serv->quitAndDataEvents.WaitEvent(10); }
+		{ serv->RunSendCycleOnce(serv->sendBitStream); serv->quitAndDataEvents.WaitEvent(10); }
 		JINFO << "Send polling thread Stops....";
 
 		if( serv->isSendPollingThreadActive ) serv->isSendPollingThreadActive = false;
