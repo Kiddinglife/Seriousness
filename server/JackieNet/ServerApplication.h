@@ -228,17 +228,22 @@ namespace JACKIE_INET
 		virtual ~ServerApplication();
 
 		void InitIPAddress(void);
+
 		void DeallocJISList(void);
+
 		void ResetSendReceipt(void);
 
 		Packet* GetPacket(void);
+
+		//////////////////////////////////////////////////////////////////////////////////////////////
 		void ProcessOneRecvParam(JISRecvParams* recvParams, BitStream
 			&updateBitStream);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
-		void ProcessBufferedCommand(JISRecvParams* recvParams,
-			BitStream &updateBitStream);
+		void ProcessBufferedCommand(JISRecvParams* recvParams, BitStream &updateBitStream);
 		void AdjustTimestamp(Packet*& incomePacket) const;
+		///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 		////////////////////////////////////// PUBLIC INTERFACES /////////////////////////////////////////
 		virtual StartupResult Start(UInt32 maxConnections,
