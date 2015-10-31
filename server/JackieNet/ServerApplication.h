@@ -161,6 +161,7 @@ namespace JACKIE_INET
 		/// in Multi-threads app, used only by recv thread to alloc and dealloc JISRecvParams
 		/// via anpothe
 		MemoryPool<JISRecvParams, 512, 8> JISRecvParamsPool;
+		MemoryPool<BufferedCommand, 512, 8> bufferedCommandPool;
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -170,36 +171,50 @@ namespace JACKIE_INET
 		MemPoolAllocRingBufferQueueCtorDtor <RingBufferQueue<JACKIE_INet_Socket*>,
 			8, 4, 8> socketQueryOutput;
 		/// used only by send thread to alloc BufferedCommand
-		MemPoolAllocRingBufferQueue<BufferedCommand, 512, 8, 512>
-			bufferedCommands;
+		//MemPoolAllocRingBufferQueue<BufferedCommand, 512, 8, 512>
+		//	bufferedCommands;
+
 
 #if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
-		/// it works in this way:
-		/// recv thread uses pool to allocate JISRecvParams* ptr and push it to  
-		/// bufferedAllocatedRecvParamQueue while send thread pops ptr out from 
-		/// bufferedAllocatedRecvParamQueue and use it do something, when finished, 
-		/// send thread . then push this ptr into bufferedDeallocatedRecvParamQueue
-		/// then recv thread will pop this ptr out from bufferedDeallocatedRecvParamQueue
-		/// and use this ptr to deallocate. In this way, we do not need locks the pool but using 
-		/// lockfree queue
+		// it works in this way:
+		// recv thread uses pool to allocate JISRecvParams* ptr and push it to  
+		// bufferedAllocatedRecvParamQueue while send thread pops ptr out from 
+		// bufferedAllocatedRecvParamQueue and use it do something, when finished, 
+		// send thread . then push this ptr into bufferedDeallocatedRecvParamQueue
+		// then recv thread will pop this ptr out from bufferedDeallocatedRecvParamQueue
+		// and use this ptr to deallocate. In this way, we do not need locks the pool but using 
+		// lockfree queue
+		///////////////////////////////////////////////////////////////////////////////////////////////
 		/// shared  between recv and send thread to store allocated JISRecvParams PTR
 		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedRecvParamQueue;
 		/// shared between recv and send thread to 
 		/// store JISRecvParams PTR that is being dellacated
 		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedRecvParamQueue;
+		//////////////////////////////////////////////////////////////////////////
+		LockFreeQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedCommandQueue;
+		LockFreeQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedCommandQueue;
+		//////////////////////////////////////////////////////////////////////////
 		/// shared by recv thread and send thread
 		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE>
 			bufferedPacketsQueue;
 #else
+		//////////////////////////////////////////////////////////////////////////
 		/// shared between recv and send thread
 		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedRecvParamQueue;
 		/// shared between recv and send thread to 
 		/// store JISRecvParams PTR that is being dellacated
 		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedRecvParamQueue;
+		//////////////////////////////////////////////////////////////////////////
+		RingBufferQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedCommandQueue;
+		RingBufferQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedCommandQueue;
+		//////////////////////////////////////////////////////////////////////////
 		/// shared by user thread and send thread
 		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE>
 			bufferedPacketsQueue;
 #endif
+
+
+
 		/// only user thread pushtail into the queue, other threads only read it so no need lock
 		RingBufferQueue<JACKIE_INet_Socket*, 8 > JISList;
 		// Threadsafe, and not thread safe
@@ -271,6 +286,12 @@ namespace JACKIE_INET
 		/// user thread will take charge of dealloc packet in multi-threads env
 		void DeallocatePacket(Packet *packet);
 		///////////////////////////////////////////////////////////////////////////////////////////
+
+
+		//////////////////////////////////////////////////////////////////////////
+		void ReclaimBufferedCommand(BufferedCommand* bufferedCommand);
+		BufferedCommand* AllocBufferedCommand();
+		//////////////////////////////////////////////////////////////////////////
 
 
 		///////////////////////// RECV SEND ONCE ////////////////////////////////

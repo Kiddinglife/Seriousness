@@ -434,7 +434,23 @@ namespace JACKIE_INET
 	//////////////////////////////////////////////////////////////////////////
 
 
-	/////////////////////////////// Clear and Allocate ////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	inline void ServerApplication::ReclaimBufferedCommand(BufferedCommand* s)
+	{
+		JDEBUG << "ReclaimBufferedCommand";
+		CHECK_NOTNULL(s);
+		bufferedCommandPool.Reclaim(s);
+	}
+	inline BufferedCommand* ServerApplication::AllocBufferedCommand()
+	{
+		JDEBUG << "AllocBufferedCommand";
+		BufferedCommand* ptr = bufferedCommandPool.Allocate();
+		CHECK_NOTNULL(ptr);
+		return ptr;
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/////////////////////////////// Clear and Allocate ////////////////////////////////////////////////
 	void ServerApplication::InitIPAddress(void)
 	{
 		assert(IPAddress[0] == JACKIE_INET_Address_Null);
@@ -493,7 +509,6 @@ namespace JACKIE_INET
 	{
 		bufferedDeallocatedRecvParamQueue.Clear();
 	}
-
 	////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -951,17 +966,17 @@ namespace JACKIE_INET
 			CHECK_EQ(bufferedAllocatedRecvParamQueue.PopHead(recvParams), true);
 			CHECK_NOTNULL(recvParams);
 			ProcessOneRecvParam(recvParams, updateBitStream);
-			bufferedDeallocatedRecvParamQueue.PushTail(recvParams);
+			CHECK_EQ(bufferedDeallocatedRecvParamQueue.PushTail(recvParams), true);
 		}
 
 		TimeUS timeUS = 0;
 		TimeMS timeMS = 0;
 		BufferedCommand* bufferedCommand = 0;
 
-		for( index = 0; index < bufferedCommands.Size(); index++ )
+		for( index = 0; index < bufferedAllocatedCommandQueue.Size(); index++ )
 		{
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
-			CHECK_EQ(bufferedCommands.PopHead(bufferedCommand), true);
+			CHECK_EQ(bufferedAllocatedCommandQueue.PopHead(bufferedCommand), true);
 			CHECK_NOTNULL(bufferedCommand);
 			CHECK_NOTNULL(bufferedCommand->data);
 
@@ -986,7 +1001,9 @@ namespace JACKIE_INET
 					break;
 			}
 
-			bufferedCommands.Deallocate(bufferedCommand);
+			CHECK_EQ(bufferedDeallocatedCommandQueue.PushTail(bufferedCommand),
+				true);
+			//bufferedCommands.Deallocate(bufferedCommand);
 		}
 		return 0;
 	}
@@ -1016,6 +1033,17 @@ namespace JACKIE_INET
 			CHECK_EQ(bufferedDeallocatedRecvParamQueue.PopHead(recvParams), true);
 			CHECK_NOTNULL(recvParams);
 			ReclaimJISRecvParams(recvParams);
+		}
+
+		BufferedCommand* bufferedCommand = 0;
+		for( index = 0; index < bufferedDeallocatedCommandQueue.Size();
+			index++ )
+		{
+			CHECK_EQ(
+				bufferedDeallocatedCommandQueue.PopHead(bufferedCommand),
+				true);
+			CHECK_NOTNULL(bufferedCommand);
+			ReclaimBufferedCommand(bufferedCommand);
 		}
 
 	}
@@ -1116,4 +1144,6 @@ namespace JACKIE_INET
 		}
 		return g;
 	}
+
+
 }
