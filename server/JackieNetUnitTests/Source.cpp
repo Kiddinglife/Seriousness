@@ -390,13 +390,12 @@ static void test_Queue_funcs()
 
 //////////////////////////////////////////////////////////////////////////
 #include "JackieNet/ServerApplication.h"
-
 static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::JACKIE_LOCAL_SOCKET socketDescriptor;
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET;
+	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
 	socketDescriptor.port = 0;
 	socketDescriptor.socketFamily = AF_INET;
 
@@ -411,12 +410,18 @@ static void test_ServerApplication_funcs()
 	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
-	Packet* p = 0;
-	for( p = app->GetPacket(); p != 0; app->ReclaimOnePacket(p), p = app->GetPacket() )
+	// Loop for input
+	while( 1 )
 	{
-		JINFO << "FetchOnePacket";
-	}
 
+		// This sleep keeps RakNet responsive
+		Packet* p = app->GetPacket();
+		Command* c = app->AllocCommand();
+		c->command = Command::BCS_SEND;
+		app->ExecuteComand(c);
+		if( p != 0 ) app->ReclaimOnePacket(p);
+		Sleep(3000);
+	}
 	Sleep(1001);
 	app->StopRecvPollingThread();
 	Sleep(1001);
@@ -516,6 +521,7 @@ int main(int argc, char** argv)
 	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
 	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] Call[%func] AtLine[%line]\n%msg\n====================================================");
 	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n====================================================");
+	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\n%msg\n====================================================");
 
 
 	/// reconfigureLogger will create new logger if ir does not exists

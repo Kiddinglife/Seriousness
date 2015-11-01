@@ -308,6 +308,7 @@ namespace JACKIE_INET
 		void ReclaimAllCommands();
 		/// only recv thread will take charge of alloc packet in multi-threads env
 		Command* AllocCommand();
+		void ExecuteComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
 		//////////////////////////////////////////////////////////////////////////
 
 

@@ -343,14 +343,20 @@ namespace JACKIE_INET
 			//	return FAILED_TO_CREATE_NETWORK_THREAD;
 			//}
 			//}
-			if( CreateRecvPollingThread(threadPriority) != 0 )
-			{
-				End(0);
-				JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
-				return FAILED_TO_CREATE_RECV_THREAD;
-			}
-			/// Wait for the threads to activate. When they are active they will set these variables to true
-			while( !isRecvPollingThreadActive ) JACKIE_Sleep(10);
+
+			/// this will create another thread for recv
+			//if( CreateRecvPollingThread(threadPriority) != 0 )
+			//{
+			//	End(0);
+			//	JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
+			//	return FAILED_TO_CREATE_RECV_THREAD;
+			//}
+			///// Wait for the threads to activate. When they are active they will set these variables to true
+			//while( !isRecvPollingThreadActive ) JACKIE_Sleep(10);
+
+			/// we handle recv in this thread, that is we only have two threads in the app this recv thread and th other send thread
+			isRecvPollingThreadActive = true;
+			JINFO << "Recv polling thread " << "is running in backend....";
 #else
 			isRecvPollingThreadActive = false;
 #endif
@@ -396,12 +402,12 @@ namespace JACKIE_INET
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s)
 	{
-		JDEBUG << "Reclaim One JISRecvParams";
+		JINFO << "Reclaim One JISRecvParams";
 		CHECK_EQ(deAllocRecvParamQ.PushTail(s), true);
 	}
 	inline void ServerApplication::ReclaimAllJISRecvParams()
 	{
-		JDEBUG << "Reclaim All JISRecvParams";
+		JINFO << "Reclaim All JISRecvParams";
 		JISRecvParams* recvParams = 0;
 		for( UInt32 index = 0; index < deAllocRecvParamQ.Size(); index++ )
 		{
@@ -411,7 +417,7 @@ namespace JACKIE_INET
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams()
 	{
-		JDEBUG << "AllocJISRecvParams";
+		JINFO << "AllocJISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool.Allocate(); } while( ptr == 0 );
 		return ptr;
@@ -443,12 +449,12 @@ namespace JACKIE_INET
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneCommand(Command* s)
 	{
-		JDEBUG << "Reclaim One Command";
+		JINFO << "Reclaim One Command";
 		CHECK_EQ(deAllocCommandQ.PushTail(s), true);
 	}
 	void ServerApplication::ReclaimAllCommands()
 	{
-		JDEBUG << "Reclaim All Commands";
+		JINFO << "Reclaim All Commands";
 
 		Command* bufferedCommand = 0;
 		for( UInt32 index = 0; index < deAllocCommandQ.Size(); index++ )
@@ -460,12 +466,11 @@ namespace JACKIE_INET
 			commandPool.Reclaim(bufferedCommand);
 		}
 	}
-	inline Command* ServerApplication::AllocCommand()
+	Command* ServerApplication::AllocCommand()
 	{
-		JDEBUG << "AllocBufferedCommand";
+		JINFO << "AllocBufferedCommand";
 		Command* ptr = 0;
 		do { ptr = commandPool.Allocate(); } while( ptr == 0 );
-		CHECK_EQ(allocCommandQ.PushTail(ptr), true);
 		return ptr;
 	}
 	void ServerApplication::ClearBufferedCommands(void)
@@ -540,7 +545,7 @@ namespace JACKIE_INET
 	//////////////////////////////////////// AllocPacket ///////////////////////////////////////////////
 	Packet* ServerApplication::AllocPacket(unsigned int dataSize)
 	{
-		//JDEBUG << "Alloc Packet";
+		//JINFO << "Alloc Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -557,7 +562,7 @@ namespace JACKIE_INET
 	}
 	Packet* ServerApplication::AllocPacket(unsigned dataSize, unsigned char *data)
 	{
-		//JDEBUG << "Alloc Packet";
+		//JINFO << "Alloc Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -574,7 +579,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ReclaimAllPackets()
 	{
-		//JDEBUG << "Reclaim All Packets";
+		//JINFO << "Reclaim All Packets";
 
 		Packet* packet;
 		for( UInt32 index = 0; index < deAllocPacketQ.Size(); index++ )
@@ -593,7 +598,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ReclaimOnePacket(Packet *packet)
 	{
-		//JDEBUG << "Reclaim One Packet";
+		//JINFO << "Reclaim One Packet";
 		CHECK_EQ(deAllocPacketQ.PushTail(packet), true);
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -721,6 +726,8 @@ namespace JACKIE_INET
 		/// process command queue
 		for( UInt32 index = 0; index < allocCommandQ.Size(); index++ )
 		{
+			JINFO << "ProcessAllocCommandQ in loop";
+
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
 			CHECK_EQ(allocCommandQ.PopHead(bufferedCommand), true);
 			CHECK_NOTNULL(bufferedCommand);
@@ -1234,11 +1241,9 @@ namespace JACKIE_INET
 	///////////////////////////////// DECLARATIONS ///////////////////////////////////////////////////
 	Packet* ServerApplication::GetPacket(void)
 	{
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
-		if( !IsActive() ) return 0;
-#else
 		RunRecvCycleOnce();
-		RunSendCycleOnce(sendBitStream);
+#if USE_SINGLE_THREAD_TO_SEND_AND_RECV != 0
+		RunSendCycleOnce();
 #endif
 		return RunGetPacketCycleOnce();
 	}
@@ -1359,9 +1364,6 @@ namespace JACKIE_INET
 	{
 		ServerApplication *serv = (ServerApplication*) arguments;
 		if( !serv->isRecvPollingThreadActive ) serv->isRecvPollingThreadActive = true;
-
-		unsigned int count = serv->JISList.Size();
-		JISRecvParams* recvParams = 0;
 
 		JINFO << "Recv polling thread " << "is running in backend....";
 		while( !serv->endSendRecvThreads && serv->isRecvPollingThreadActive ) { serv->RunRecvCycleOnce(); }
