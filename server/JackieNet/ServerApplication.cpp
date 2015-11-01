@@ -713,7 +713,7 @@ namespace JACKIE_INET
 			connReqQMutex.Unlock();
 		}
 	}
-	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS)
+	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		Command* bufferedCommand = 0;
 		RemoteEndPoint* remoteEndPoint = 0;
@@ -789,7 +789,7 @@ namespace JACKIE_INET
 		}
 	}
 	/// @TO-DO
-	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS)
+	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		if( !connReqQ.IsEmpty() )
 		{
@@ -1314,7 +1314,8 @@ namespace JACKIE_INET
 		/// process buffered commands
 		ProcessAllocCommandQ(timeUS, timeMS);
 
-		/// process buffered connection request and cancel 
+		/// process buffered connection request and cance
+		/// Cancel certain conn req before process Connection Request Q 
 		ProcessConnectionRequestCancelQ();
 		ProcessConnectionRequestQ(timeUS, timeMS);
 
