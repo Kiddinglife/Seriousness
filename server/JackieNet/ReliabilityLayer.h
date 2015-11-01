@@ -23,8 +23,8 @@ namespace JACKIE_INET
 		//connected.  The game should not use that data directly
 		// because some data is used internally, such as packet acknowledgment and
 		//split packets
-		bool ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication& serverApp,
-			int MTUSize, BitStream &updateBitStream);
+		bool ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication* serverApp,
+			int MTUSize);
 	};
 }
 

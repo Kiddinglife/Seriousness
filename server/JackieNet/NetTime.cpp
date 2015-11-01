@@ -36,7 +36,7 @@ static TimeUS lastNormalizedInputValue = 0;
 TimeUS NormalizeTime(TimeUS timeIn)
 {
 	TimeUS diff, lastNormalizedReturnedValueCopy;
-	static JACKIE_Simple_Mutex mutex;
+	static JackieSimpleMutex mutex;
 
 	mutex.Lock();
 	if( timeIn >= lastNormalizedInputValue )

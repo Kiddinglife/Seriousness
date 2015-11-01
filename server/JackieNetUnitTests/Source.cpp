@@ -197,7 +197,7 @@ static void test_NetTime_h_All_funcs()
 
 ///////////////////////////// JACKIE_INet_Socket_h /////////////////////////////
 using namespace JACKIE_INET;
-#include "JackieNet/JACKIE_INet_Socket.h"
+#include "JackieNet/JackieINetSocket.h"
 static void test_GetMyIP_Wins_Linux_funcs()
 {
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
@@ -213,17 +213,14 @@ static void test_GetMyIP_Wins_Linux_funcs()
 class myhandler : public JISEventHandler
 {
 	public:
-	virtual  void OnJISRecv(JISRecvParams *recvStruct) { }
-	virtual  void ReclaimJISRecvParams(JISRecvParams *s)
-	{
-	}
+	virtual  void ReclaimOneJISRecvParams(JISRecvParams *s) { }
 	virtual JISRecvParams *AllocJISRecvParams() { static JISRecvParams recv; return &recv; }
 };
 static void test_JISBerkley_All_funcs()
 {
 	std::cout << "test_JISBerkley_All_funcs starts...\n";
 
-	JACKIE_INet_Socket* sock = JISAllocator::AllocJIS();
+	JackieINetSocket* sock = JISAllocator::AllocJIS();
 	sock->SetUserConnectionSocketIndex(0);
 
 	JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR];
@@ -415,7 +412,7 @@ static void test_ServerApplication_funcs()
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
 	Packet* p = 0;
-	for( p = app->GetPacket(); p != 0; app->DeallocatePacket(p), p = app->GetPacket() )
+	for( p = app->GetPacket(); p != 0; app->ReclaimOnePacket(p), p = app->GetPacket() )
 	{
 		JINFO << "FetchOnePacket";
 	}

@@ -15,7 +15,7 @@
 #include "DLLExport.h"
 //#include "DS_List.h"
 #include "OverrideMemory.h"
-#include "JACKIE_INet_Socket.h"
+#include "JackieINetSocket.h"
 
 namespace JACKIE_INET
 {

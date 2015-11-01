@@ -59,12 +59,12 @@ namespace DataStructures
 		{
 			UInt32 i = 0;
 
-			if( ( page->block = (MemoryWithPage*) rakMalloc_Ex(memoryPoolPageSize, TRACE_FILE_AND_LINE_) )
+			if( ( page->block = (MemoryWithPage*) jackieMalloc_Ex(memoryPoolPageSize, TRACE_FILE_AND_LINE_) )
 				== 0 ) return false;
 
-			if( ( page->availableStack = (MemoryWithPage**) rakMalloc_Ex(sizeof(MemoryWithPage*)*blocksCountPerPage, TRACE_FILE_AND_LINE_) ) == 0 )
+			if( ( page->availableStack = (MemoryWithPage**) jackieMalloc_Ex(sizeof(MemoryWithPage*)*blocksCountPerPage, TRACE_FILE_AND_LINE_) ) == 0 )
 			{
-				rakFree_Ex(page->block, TRACE_FILE_AND_LINE_);
+				jackieFree_Ex(page->block, TRACE_FILE_AND_LINE_);
 				return false;
 			}
 
@@ -96,7 +96,7 @@ namespace DataStructures
 		MemoryBlockType* Allocate(void)
 		{
 #if _DISABLE_MEMORY_POOL != 0
-			return(MemoryBlockType*) rakMalloc_Ex(sizeof(MemoryBlockType), TRACE_FILE_AND_LINE_);
+			return(MemoryBlockType*) jackieMalloc_Ex(sizeof(MemoryBlockType), TRACE_FILE_AND_LINE_);
 #endif
 			if( availablePagesSize > 0 )
 			{
@@ -125,7 +125,7 @@ namespace DataStructures
 				assert(availablePagesSize == 0 || availablePage->availableStackSize > 0);
 				return retValue;
 			}
-			if( ( availablePage = (Page *) rakMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
+			if( ( availablePage = (Page *) jackieMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
 			availablePagesSize = 1;
 			if( !InitPage(availablePage, availablePage) ) return 0;
 			assert(availablePage->availableStackSize > 1);
@@ -134,7 +134,7 @@ namespace DataStructures
 		void Reclaim(MemoryBlockType *m)
 		{
 #if _DISABLE_MEMORY_POOL != 0
-			rakFree_Ex(m, TRACE_FILE_AND_LINE_);
+			jackieFree_Ex(m, TRACE_FILE_AND_LINE_);
 			return;
 #endif
 			/// find the page where this block is in and return it
@@ -190,9 +190,9 @@ namespace DataStructures
 					currentPage->prev->next = currentPage->next;
 					currentPage->next->prev = currentPage->prev;
 					availablePagesSize--;
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage, TRACE_FILE_AND_LINE_);
 				}
 			}
 		}
@@ -208,13 +208,13 @@ namespace DataStructures
 				currentPage = availablePage;
 				while( true )
 				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
 					freedPage = currentPage;
 					currentPage = currentPage->next;
 					if( currentPage == availablePage )
 					{
-						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
 						availablePagesSize = 0;
 						break;
 					}
@@ -226,13 +226,13 @@ namespace DataStructures
 				currentPage = unavailablePage;
 				while( true )
 				{
-					rakFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					rakFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
 					freedPage = currentPage;
 					currentPage = currentPage->next;
 					if( currentPage == availablePage )
 					{
-						rakFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
+						jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
 						unavailablePagesSize = 0;
 						break;
 					}

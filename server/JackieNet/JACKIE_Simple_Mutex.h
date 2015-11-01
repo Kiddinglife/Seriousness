@@ -26,11 +26,11 @@
 /// theblazing performance of everything else, so switched to single producer / consumer 
 /// everywhere.  Now the user thread of RakNet is not threadsafe, but it's 100X faster than 
 /// before.
-class JACKIE_EXPORT JACKIE_Simple_Mutex
+class JACKIE_EXPORT JackieSimpleMutex
 {
 	public:
-	JACKIE_Simple_Mutex();
-	~JACKIE_Simple_Mutex();
+	JackieSimpleMutex();
+	~JackieSimpleMutex();
 
 	// Locks the mutex.  Slow!
 	void Lock(void);

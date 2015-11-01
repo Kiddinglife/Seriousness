@@ -25,7 +25,7 @@
     <ClInclude Include="GlobalFunctions.h" />
     <ClInclude Include="JACKIE_Atomic.h" />
     <ClInclude Include="JACKIE_INet_Socket.h" />
-    <ClInclude Include="JACKIE_Simple_Mutex.h" />
+    <ClInclude Include="JackieSimpleMutex.h" />
     <ClInclude Include="JACKIE_Thread.h" />
     <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="NetTime.h" />
@@ -41,7 +41,7 @@
     <ClCompile Include="GlobalFunctions.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
     <ClCompile Include="JACKIE_INet_Socket.cpp" />
-    <ClCompile Include="JACKIE_Simple_Mutex.cpp" />
+    <ClCompile Include="JackieSimpleMutex.cpp" />
     <ClCompile Include="JACKIE_Thread.cpp" />
     <ClCompile Include="NetTime.cpp" />
     <ClCompile Include="NetTypes.cpp" />

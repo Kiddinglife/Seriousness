@@ -12,8 +12,7 @@ namespace JACKIE_INET
 
 	}
 
-	bool ReliabilityLayer::ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication& 
-		serverApp, int MTUSize,BitStream &updateBitStream)
+	bool ReliabilityLayer::ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication* serverApp, int MTUSize)
 	{
 		return true;
 	}

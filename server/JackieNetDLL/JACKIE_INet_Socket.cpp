@@ -51,9 +51,9 @@ namespace JACKIE_INET
 	}
 
 	/////////////////////////////// JISAllocator starts /////////////////////////////////
-	inline JACKIE_INet_Socket*  JISAllocator::AllocJIS(void)
+	inline JackieINetSocket*  JISAllocator::AllocJIS(void)
 	{
-		JACKIE_INet_Socket* s2;
+		JackieINetSocket* s2;
 #if defined(WINDOWS_STORE_RT)
 		s2 = JACKIE_INET::OP_NEW<JISWINSTROE8>(TRACE_FILE_AND_LINE_);
 		s2->SetSocketType(JISType_WINDOWS_STORE_8);
@@ -69,14 +69,14 @@ namespace JACKIE_INET
 #endif
 		return s2;
 	}
-	inline void  JISAllocator::DeallocJIS(JACKIE_INet_Socket *s)
+	inline void  JISAllocator::DeallocJIS(JackieINetSocket *s)
 	{
 		JACKIE_INET::OP_DELETE(s, TRACE_FILE_AND_LINE_);
 	}
 	//////////////////////////////// JISAllocator ends  ///////////////////////
 
 	/////////////////////////////// JACKIE_INet_Socket Implementations /////////////////////////////////
-	void JACKIE_INet_Socket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JackieINetSocket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 #if defined(WINDOWS_STORE_RT)
 		JISWINSTROE8::GetMyIP(addresses);
@@ -88,7 +88,7 @@ namespace JACKIE_INET
 		JISBerkley::GetMyIPBerkley(addresses);
 #endif
 	}
-	void JACKIE_INet_Socket::Print(void)
+	void JackieINetSocket::Print(void)
 	{
 		const char* addrStr = boundAddress.ToString();
 		const char* socketTypeStr = JISTypeToString(socketType);
@@ -721,7 +721,7 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void JISBerkley::Print(void)
 	{
-		JACKIE_INet_Socket::Print();
+		JackieINetSocket::Print();
 		/// @TO-DO
 	}
 	////////////////////////////// JISBerkley implementations ////////////////////////////

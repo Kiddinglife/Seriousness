@@ -8,7 +8,7 @@
 
 #if defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
 // __sync_fetch_and_add not supported apparently
-#include "JACKIE_Simple_Mutex.h"
+#include "JackieSimpleMutex.h"
 #endif
 
 class JACKIE_EXPORT JACKIE_ATOMIC_LONG
@@ -18,7 +18,7 @@ class JACKIE_EXPORT JACKIE_ATOMIC_LONG
 	volatile LONG value;
 #elif defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
 	// __sync_fetch_and_add not supported apparently
-	JACKIE_Simple_Mutex mutex;
+	JackieSimpleMutex mutex;
 	UInt32 value;
 #else
 	volatile UInt32 value;

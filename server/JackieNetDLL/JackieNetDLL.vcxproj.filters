@@ -32,9 +32,6 @@
     <ClInclude Include="JACKIE_INet_Socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Simple_Mutex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="JACKIE_Thread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,6 +62,9 @@
     <ClInclude Include="MemoryPool.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="JackieSimpleMutex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GlobalFunctions.cpp">
@@ -74,9 +74,6 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="JACKIE_INet_Socket.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JACKIE_Simple_Mutex.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="JACKIE_Thread.cpp">
@@ -92,6 +89,9 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="WSAStartupSingleton.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieSimpleMutex.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>

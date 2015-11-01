@@ -21,31 +21,31 @@
 // These pointers are statically and globally defined in RakMemoryOverride.cpp
 // Change them to point to your own allocators if you want.
 // Use the functions for a DLL, or just reassign the variable if using source
-typedef void * ( *RakMalloc ) ( size_t size );
-typedef void * ( *RakRealloc ) ( void *p, size_t size );
-typedef void(*RakFree) ( void *p );
-extern JACKIE_EXPORT RakMalloc rakMalloc;
-extern JACKIE_EXPORT RakRealloc rakRealloc;
-extern JACKIE_EXPORT RakFree rakFree;
-void JACKIE_EXPORT SetMalloc(RakMalloc userFunction);
-void JACKIE_EXPORT SetRealloc(RakRealloc userFunction);
-void JACKIE_EXPORT SetFree(RakFree userFunction);
-extern JACKIE_EXPORT RakMalloc GetMalloc();
-extern JACKIE_EXPORT RakRealloc GetRealloc();
-extern JACKIE_EXPORT RakFree GetFree();
+typedef void * ( *JackieMalloc ) ( size_t size );
+typedef void * ( *JackieRealloc ) ( void *p, size_t size );
+typedef void(*JackieFree) ( void *p );
+extern JACKIE_EXPORT JackieMalloc jackieMalloc;
+extern JACKIE_EXPORT JackieRealloc jackieRealloc;
+extern JACKIE_EXPORT JackieFree jackieFree;
+void JACKIE_EXPORT SetMalloc(JackieMalloc userFunction);
+void JACKIE_EXPORT SetRealloc(JackieRealloc userFunction);
+void JACKIE_EXPORT SetFree(JackieFree userFunction);
+extern JACKIE_EXPORT JackieMalloc GetMalloc();
+extern JACKIE_EXPORT JackieRealloc GetRealloc();
+extern JACKIE_EXPORT JackieFree GetFree();
 
-typedef  void * ( *RakMalloc_Ex ) ( size_t size, const char *file, unsigned int line );
-typedef  void * ( *RakRealloc_Ex ) ( void *p, size_t size, const char *file, unsigned int line );
-typedef  void(*RakFree_Ex) ( void *p, const char *file, unsigned int line );
-extern JACKIE_EXPORT RakMalloc_Ex rakMalloc_Ex;
-extern JACKIE_EXPORT RakRealloc_Ex rakRealloc_Ex;
-extern JACKIE_EXPORT RakFree_Ex rakFree_Ex;
-void JACKIE_EXPORT SetMalloc_Ex(RakMalloc_Ex userFunction);
-void JACKIE_EXPORT SetRealloc_Ex(RakRealloc_Ex userFunction);
-void JACKIE_EXPORT SetFree_Ex(RakFree_Ex userFunction);
-extern JACKIE_EXPORT RakMalloc_Ex GetMalloc_Ex();
-extern JACKIE_EXPORT RakRealloc_Ex GetRealloc_Ex();
-extern JACKIE_EXPORT RakFree_Ex GetFree_Ex();
+typedef  void * ( *JackieMalloc_Ex ) ( size_t size, const char *file, unsigned int line );
+typedef  void * ( *JackieRealloc_Ex ) ( void *p, size_t size, const char *file, unsigned int line );
+typedef  void(*JackieFree_Ex) ( void *p, const char *file, unsigned int line );
+extern JACKIE_EXPORT JackieMalloc_Ex jackieMalloc_Ex;
+extern JACKIE_EXPORT JackieRealloc_Ex jackieRealloc_Ex;
+extern JACKIE_EXPORT JackieFree_Ex jackieFree_Ex;
+void JACKIE_EXPORT SetMalloc_Ex(JackieMalloc_Ex userFunction);
+void JACKIE_EXPORT SetRealloc_Ex(JackieRealloc_Ex userFunction);
+void JACKIE_EXPORT SetFree_Ex(JackieFree_Ex userFunction);
+extern JACKIE_EXPORT JackieMalloc_Ex GetMalloc_Ex();
+extern JACKIE_EXPORT JackieRealloc_Ex GetRealloc_Ex();
+extern JACKIE_EXPORT JackieFree_Ex GetFree_Ex();
 
 typedef void(*NotifyOutOfMemory) ( const char *file, const long line );
 typedef void* ( *DlMallocMMap ) ( size_t size );
@@ -238,12 +238,12 @@ namespace JACKIE_INET
 
 	}
 
-	void JACKIE_EXPORT * _RakMalloc(size_t size);
-	void JACKIE_EXPORT * _RakRealloc(void *p, size_t size);
-	void JACKIE_EXPORT _RakFree(void *p);
-	void JACKIE_EXPORT * _RakMalloc_Ex(size_t size, const char *file, unsigned int line);
-	void JACKIE_EXPORT * _RakRealloc_Ex(void *p, size_t size, const char *file, unsigned int line);
-	void JACKIE_EXPORT _RakFree_Ex(void *p, const char *file, unsigned int line);
+	void JACKIE_EXPORT * _DefaultMalloc(size_t size);
+	void JACKIE_EXPORT * _DefaultRealloc(void *p, size_t size);
+	void JACKIE_EXPORT _DefaultFree(void *p);
+	void JACKIE_EXPORT * _DefaultMalloc_Ex(size_t size, const char *file, unsigned int line);
+	void JACKIE_EXPORT * _DefaultRealloc_Ex(void *p, size_t size, const char *file, unsigned int line);
+	void JACKIE_EXPORT _DefaultFree_Ex(void *p, const char *file, unsigned int line);
 	void JACKIE_EXPORT * _DLMallocMMap(size_t size);
 	void JACKIE_EXPORT * _DLMallocDirectMMap(size_t size);
 	int JACKIE_EXPORT _DLMallocMUnmap(void *p, size_t size);

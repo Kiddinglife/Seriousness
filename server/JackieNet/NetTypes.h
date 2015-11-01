@@ -28,7 +28,7 @@ namespace JACKIE_INET
 	struct  Packet;
 	struct  JACKIE_INET_Address;
 	struct  JACKIE_INet_GUID;
-	class JACKIE_INet_Socket;
+	class JackieINetSocket;
 
 	//////////////////////////////////////////////////////////////////////////
 	/// @Internal Defines the default maximum transfer unit.
@@ -773,7 +773,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		bool wasGeneratedLocally;
 
 		///which pool it belongs to only 
-		ThreadType threadType;
+		//ThreadType threadType;
 	};
 
 	/// for internally use
@@ -812,7 +812,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JACKIE_INet_GUID guid;
 		int MTUSize;
 		// Reference counted socket to send back on
-		JACKIE_INet_Socket* rakNetSocket;
+		JackieINetSocket* rakNetSocket;
 		SystemIndex remoteSystemIndex;
 
 #if LIBCAT_SECURITY==1
@@ -824,7 +824,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Valid after connectMode reaches HANDLING_CONNECTION_REQUEST
 		char client_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 #endif
-		enum ConnectMode
+		enum Status
 		{
 			NO_ACTION,
 			DISCONNECT_ASAP,
@@ -834,7 +834,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			HANDLING_CONNECTION_REQUEST,
 			UNVERIFIED_SENDER,
 			CONNECTED
-		} connectMode;
+		} status;
 	};
 	struct JACKIE_EXPORT RemoteEndPointIndex
 	{
@@ -842,7 +842,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		RemoteEndPointIndex *next;
 	};
 
-	struct JACKIE_EXPORT BufferedCommand
+	struct JACKIE_EXPORT Command
 	{
 		BitSize numberOfBitsToSend;
 		PacketReliability priority;
@@ -850,7 +850,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		char orderingChannel;
 		JACKIE_INET_Address_GUID_Wrapper systemIdentifier;
 		bool broadcast;
-		RemoteEndPoint::ConnectMode connectionMode;
+		RemoteEndPoint::Status repStatus;
 		NetworkID networkID;
 		bool blockingCommand; // Only used for RPC
 		char *data;
@@ -858,7 +858,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned connectionSocketIndex;
 		unsigned short remotePortRakNetWasStartedOn_PS3;
 		unsigned int extraSocketOptions;
-		JACKIE_INet_Socket* socket;
+		JackieINetSocket* socket;
 		unsigned short port;
 		UInt32 receipt;
 		enum
@@ -870,6 +870,36 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			/* BCS_USE_USER_SOCKET, BCS_REBIND_SOCKET_ADDRESS, BCS_RPC, BCS_RPC_SHIFT,*/
 			BCS_DO_NOTHING
 		} command;
+	};
+
+	struct JACKIE_EXPORT ConnectionRequest
+	{
+		JACKIE_INET_Address receiverAddr;
+		Time nextRequestTime;
+		unsigned char requestsMade;
+		char *data;
+		unsigned short dataLength;
+		char outgoingPassword[256];
+		unsigned char outgoingPasswordLength;
+		unsigned socketIndex;
+		unsigned int extraData;
+		unsigned sendConnectionAttemptCount;
+		unsigned timeoutReqConn;
+		TimeMS timeoutTime;
+		PublicKeyMode publicKeyMode;
+		JackieINetSocket* socket;
+		enum
+		{
+			CONNECT = 1,
+			PING = 2,
+			PING_OPEN_CONNECTIONS = 4,
+			ADVERTISE_SYSTEM = 2
+		} actionToTake;
+#if LIBCAT_SECURITY==1
+		char handshakeChallenge[cat::EasyHandshake::CHALLENGE_BYTES];
+		cat::ClientEasyHandshake *client_handshake;
+		char remote_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+#endif
 	};
 }
 #endif

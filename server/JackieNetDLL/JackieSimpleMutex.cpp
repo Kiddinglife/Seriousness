@@ -1,13 +1,13 @@
-#include "JACKIE_Simple_Mutex.h"
+#include "JackieSimpleMutex.h"
 #include "DefaultNetDefines.h"
 
-JACKIE_Simple_Mutex::JACKIE_Simple_Mutex() //: isInitialized(false)
+JackieSimpleMutex::JackieSimpleMutex() //: isInitialized(false)
 {
 	// Prior implementation of Initializing in Lock() was not threadsafe
 	Init();
 }
 
-JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
+JackieSimpleMutex::~JackieSimpleMutex()
 {
 #ifdef _WIN32
 	DeleteCriticalSection(&criticalSection);
@@ -22,7 +22,7 @@ JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
 #endif
 #endif
 
-void JACKIE_Simple_Mutex::Lock(void)
+void JackieSimpleMutex::Lock(void)
 {
 #ifdef _WIN32
 	EnterCriticalSection(&criticalSection);
@@ -33,7 +33,7 @@ void JACKIE_Simple_Mutex::Lock(void)
 #endif
 }
 
-void JACKIE_Simple_Mutex::Unlock(void)
+void JackieSimpleMutex::Unlock(void)
 {
 #ifdef _WIN32
 	LeaveCriticalSection(&criticalSection);
@@ -44,7 +44,7 @@ void JACKIE_Simple_Mutex::Unlock(void)
 #endif
 }
 
-void JACKIE_Simple_Mutex::Init(void)
+void JackieSimpleMutex::Init(void)
 {
 #if defined(WINDOWS_PHONE_8) || defined(WINDOWS_STORE_RT)
 	InitializeCriticalSectionEx(&criticalSection, 0, CRITICAL_SECTION_NO_DEBUG_INFO);

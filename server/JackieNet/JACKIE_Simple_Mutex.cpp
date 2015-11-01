@@ -1,13 +1,13 @@
 #include "JACKIE_Simple_Mutex.h"
 #include "DefaultNetDefines.h"
 
-JACKIE_Simple_Mutex::JACKIE_Simple_Mutex() //: isInitialized(false)
+JackieSimpleMutex::JackieSimpleMutex() //: isInitialized(false)
 {
 	// Prior implementation of Initializing in Lock() was not threadsafe
 	Init();
 }
 
-JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
+JackieSimpleMutex::~JackieSimpleMutex()
 {
 #ifdef _WIN32
 	DeleteCriticalSection(&criticalSection);
@@ -23,9 +23,8 @@ JACKIE_Simple_Mutex::~JACKIE_Simple_Mutex()
 #endif
 
 
-void JACKIE_Simple_Mutex::Lock(void)
+void JackieSimpleMutex::Lock(void)
 {
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #ifdef _WIN32
 	EnterCriticalSection(&criticalSection);
 #else
@@ -33,13 +32,11 @@ void JACKIE_Simple_Mutex::Lock(void)
 	(void) error;
 	assert(error == 0);
 #endif
-#endif
 }
 
 
-void JACKIE_Simple_Mutex::Unlock(void)
+void JackieSimpleMutex::Unlock(void)
 {
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #ifdef _WIN32
 	LeaveCriticalSection(&criticalSection);
 #else
@@ -47,15 +44,10 @@ void JACKIE_Simple_Mutex::Unlock(void)
 	(void) error;
 	assert(error == 0);
 #endif
-#endif
 }
 
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 1
-inline
-#endif
-void JACKIE_Simple_Mutex::Init(void)
+void JackieSimpleMutex::Init(void)
 {
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
 #if defined(WINDOWS_PHONE_8) || defined(WINDOWS_STORE_RT)
 	InitializeCriticalSectionEx(&criticalSection, 0, CRITICAL_SECTION_NO_DEBUG_INFO);
 #elif defined(_WIN32)
@@ -64,7 +56,6 @@ void JACKIE_Simple_Mutex::Init(void)
 	int error = pthread_mutex_init(&hMutex, 0);
 	(void) error;
 	assert(error == 0);
-#endif
 #endif
 }
 

@@ -29,7 +29,7 @@
 #include "MemoryPool.h"
 #include "IPlugin.h"
 #include "RandomSeedCreator.h"
-#include "JACKIE_INet_Socket.h"
+#include "JackieINetSocket.h"
 
 using namespace DataStructures;
 
@@ -144,31 +144,28 @@ namespace JACKIE_INET
 		/// This number will be returned back with ID_SND_RECEIPT_ACKED
 		/// or ID_SND_RECEIPT_LOSS and is only returned with the reliability 
 		/// types that DOES NOT contain 'NOT' in the name
-		JACKIE_Simple_Mutex sendReceiptSerialMutex;
+		JackieSimpleMutex sendReceiptSerialMutex;
 		UInt32 sendReceiptSerial;
 		//////////////////////////////////////////////////////////////////////////////////////////////
 
 
 		////////////////////////////////// MEMPOOLS ///////////////////////////////////////////
-		/// in single thread app, default packet pool is recvThreadPacketAllocationPool
-		/// in Multi-threads app, used only by recv thread to alloc packet
-		MemoryPool<Packet, 512, 8> recvThreadPacketAllocationPool;
 		/// in Multi-threads app, used only by send thread to alloc packet
-		MemoryPool<Packet, 512, 8> sendThreadPacketAllocationPool;
+		MemoryPool<Packet, 512, 8> packetPool;
 		/// used only by ? thread to alloc RemoteEndPointIndex
 		MemoryPool<RemoteEndPointIndex, 1024, 8> remoteSystemIndexPool;
 		/// in single thread app, default JISRecvParams pool is JISRecvParamsPool
 		/// in Multi-threads app, used only by recv thread to alloc and dealloc JISRecvParams
 		/// via anpothe
 		MemoryPool<JISRecvParams, 512, 8> JISRecvParamsPool;
-		MemoryPool<BufferedCommand, 512, 8> bufferedCommandPool;
+		MemoryPool<Command, 512, 8> commandPool;
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 		///////////////////////////////////////// QUEUES /////////////////////////////////////////
 		struct PacketFollowedByData { Packet p; unsigned char data[1]; };
 		//struct SocketQueryOutput{	RingBufferQueue<JACKIE_INet_Socket*> sockets;};
-		MemPoolAllocRingBufferQueueCtorDtor <RingBufferQueue<JACKIE_INet_Socket*>,
+		MemPoolAllocRingBufferQueueCtorDtor <RingBufferQueue<JackieINetSocket*>,
 			8, 4, 8> socketQueryOutput;
 		/// used only by send thread to alloc BufferedCommand
 		//MemPoolAllocRingBufferQueue<BufferedCommand, 512, 8, 512>
@@ -185,38 +182,47 @@ namespace JACKIE_INET
 		// and use this ptr to deallocate. In this way, we do not need locks the pool but using 
 		// lockfree queue
 		///////////////////////////////////////////////////////////////////////////////////////////////
-		/// shared  between recv and send thread to store allocated JISRecvParams PTR
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedRecvParamQueue;
-		/// shared between recv and send thread to 
-		/// store JISRecvParams PTR that is being dellacated
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedRecvParamQueue;
+		/// shared between recv and send thread to store allocated JISRecvParams PTR
+		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> allocRecvParamQ;
+		/// shared by recv and send thread to store JISRecvParams PTR that is being dellacated
+		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> deAllocRecvParamQ;
 		//////////////////////////////////////////////////////////////////////////
-		LockFreeQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedCommandQueue;
-		LockFreeQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedCommandQueue;
+		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
+		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
 		//////////////////////////////////////////////////////////////////////////
 		/// shared by recv thread and send thread
-		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE>
-			bufferedPacketsQueue;
+		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE> allocPacketQ;
+		/// shared by recv thread and send thread
+		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE> deAllocPacketQ;
+		//////////////////////////////////////////////////////////////////////////
+		LockFreeQueue<JACKIE_INET_Address> connReqCancelQ;
+		//////////////////////////////////////////////////////////////////////////
 #else
 		//////////////////////////////////////////////////////////////////////////
 		/// shared between recv and send thread
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedRecvParamQueue;
-		/// shared between recv and send thread to 
-		/// store JISRecvParams PTR that is being dellacated
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedRecvParamQueue;
+		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> allocRecvParamQ;
+		/// shared by recv and send thread to  store JISRecvParams PTR that is being dellacated
+		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> deAllocRecvParamQ;
 		//////////////////////////////////////////////////////////////////////////
-		RingBufferQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedAllocatedCommandQueue;
-		RingBufferQueue<BufferedCommand*, SERVER_QUEUE_PTR_SIZE> bufferedDeallocatedCommandQueue;
+		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
+		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
 		//////////////////////////////////////////////////////////////////////////
-		/// shared by user thread and send thread
-		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE>
-			bufferedPacketsQueue;
+		/// shared by recv thread and send thread
+		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE> allocPacketQ;
+		/// shared by recv thread and send thread
+		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE> deAllocPacketQ;
+		//////////////////////////////////////////////////////////////////////////
+		RingBufferQueue<JACKIE_INET_Address, SERVER_QUEUE_PTR_SIZE> connReqCancelQ;
+		//////////////////////////////////////////////////////////////////////////
 #endif
 
-
+		/// thread unsafe we cannot use lockfree because we have to 
+		/// do removeAt(index) operation on this queue
+		RingBufferQueue<ConnectionRequest*, SERVER_QUEUE_PTR_SIZE> connReqQ;
+		JackieSimpleMutex connReqQMutex;
 
 		/// only user thread pushtail into the queue, other threads only read it so no need lock
-		RingBufferQueue<JACKIE_INet_Socket*, 8 > JISList;
+		RingBufferQueue<JackieINetSocket*, 8 > JISList;
 		// Threadsafe, and not thread safe
 		LockFreeQueue<IPlugin*, 16> pluginListTS;
 		RingBufferQueue<IPlugin*, 16> pluginListNTS;
@@ -228,19 +234,19 @@ namespace JACKIE_INET
 		virtual ~ServerApplication();
 
 		void InitIPAddress(void);
-
 		void DeallocJISList(void);
-
 		void ResetSendReceipt(void);
-
 		Packet* GetPacket(void);
 
 		//////////////////////////////////////////////////////////////////////////////////////////////
-		void ProcessOneRecvParam(JISRecvParams* recvParams, BitStream
-			&updateBitStream);
+		void ProcessOneRecvParam(JISRecvParams* recvParams);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
 		void ProcessBufferedCommand(JISRecvParams* recvParams, BitStream &updateBitStream);
+		void ProcessConnectionRequestCancelQ(void);
+		void ProcessAllocJISRecvParamsQ(void);
+		void ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS);
+		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);
 		void AdjustTimestamp(Packet*& incomePacket) const;
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -258,10 +264,9 @@ namespace JACKIE_INET
 		// In multi-threads app and single- thread app,these 3 functions
 		// are called only  by recv thread. the recvStruct will be obtained from 
 		// bufferedDeallocatedRecvParamQueue, so it is thread safe
-		/// It is Caller's responsibility to make recvStruct s != 0
-		virtual void OnJISRecv(JISRecvParams *recvStruct) override;
 		/// It is Caller's responsibility to make sure s != 0
-		virtual void ReclaimJISRecvParams(JISRecvParams *s) override;
+		virtual void ReclaimOneJISRecvParams(JISRecvParams *s) override;
+		void ReclaimAllJISRecvParams();
 		virtual JISRecvParams * AllocJISRecvParams() override;
 		//////////////////////////////////////////////////////////////////////////////////////////
 
@@ -279,28 +284,35 @@ namespace JACKIE_INET
 		//////////////////////////////// CLEAR QUEUE /////////////////////////////////
 		void ClearBufferedCommands(void);
 		void ClearSocketQueryOutputs(void);
-		void ClearBufferedAllocatedRecvParamQueue(void);
-		void ClearBufferedDeAllocatedRecvParamQueue(void);
+		void ClearBufferedRecvParams(void);
 		////////////////////////////////////////////////////////////////////////////////////
 
 
 		/////////////////////////////////// PACKET DE/ALLOC /////////////////////////////////
-		/// recv thread type = 0, send thread type = 1
-		Packet* AllocPacket(unsigned int dataSize, ThreadType threadType);
-		Packet* AllocPacket(unsigned dataSize, unsigned  char *data, ThreadType threadType);
-		/// user thread will take charge of dealloc packet in multi-threads env
-		void DeallocatePacket(Packet *packet);
+		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
+		/// for the furture use of recv thread by popout
+		Packet* AllocPacket(unsigned int dataSize);
+		Packet* AllocPacket(unsigned dataSize, unsigned  char *data);
+		/// send thread will take charge of dealloc packet in multi-threads env
+		void ReclaimAllPackets(void);
+		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
+		void ReclaimOnePacket(Packet *packet);
 		///////////////////////////////////////////////////////////////////////////////////////////
 
 
 		//////////////////////////////////////////////////////////////////////////
-		void ReclaimBufferedCommand(BufferedCommand* bufferedCommand);
-		BufferedCommand* AllocBufferedCommand();
+		/// send thread will push trail this command PTR  to buffered command
+		/// dealloc queue in multi-threads env
+		void ReclaimOneCommand(Command* bufferedCommand);
+		/// recv thread will reclaim all commands  into command pool in multi-threads env
+		void ReclaimAllCommands();
+		/// only recv thread will take charge of alloc packet in multi-threads env
+		Command* AllocCommand();
 		//////////////////////////////////////////////////////////////////////////
 
 
 		///////////////////////// RECV SEND ONCE ////////////////////////////////
-		bool RunSendCycleOnce(BitStream &updateBitStream);
+		bool RunSendCycleOnce(void);
 		void RunRecvCycleOnce(void);
 		Packet* RunGetPacketCycleOnce(void);
 		///////////////////////////////////////////////////////////////////////////////
@@ -330,10 +342,27 @@ namespace JACKIE_INET
 
 		/////////////////////////////GETTERS/////////////////////////////////////
 		const JACKIE_INet_GUID& GetMyGUID(void) const { return myGuid; }
-		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address& senderAddress,
+		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address& sa,
 			bool neededBySendThread, bool onlyWantActiveEndPoint) const;
+		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address& sa)
+			const;
+		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address_GUID_Wrapper&
+			senderWrapper, bool neededBySendThread,
+			bool onlyWantActiveEndPoint) const;
+		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INet_GUID& senderGUID,
+			bool onlyWantActiveEndPoint) const;
 		Int32 GetRemoteEndPointIndex(const JACKIE_INET_Address &sa) const;
+		void RefRemoteEndPoint(const JACKIE_INET_Address &sa, UInt32 index);
+		void DeRefRemoteEndPoint(const JACKIE_INET_Address &sa);
 		//////////////////////////////////////////////////////////////////////////
+
+
+		/////////////////////////////////// SEND FUNCS //////////////////////////////////
+		bool SendRightNow(TimeUS currentTime, bool useCallerAlloc,
+			Command* bufferedCommand);
+		void CloseConnectionInternally(bool sendDisconnectionNotification,
+			bool performImmediate, Command* bufferedCommand);
+		//////////////////////////////////////////////////////////////////////////////////////
 
 
 		////////////////////////////// FRIEND FUNCS ////////////////////////
@@ -341,6 +370,8 @@ namespace JACKIE_INET
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);
 		//////////////////////////////////////////////////////////////////////////
+
+
 	};
 }
 

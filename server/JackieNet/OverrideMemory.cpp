@@ -33,61 +33,62 @@ void DefaultOutOfMemoryHandler(const char *file, const long line)
 	JACKIE_ASSERT(0);
 }
 
-RakMalloc rakMalloc = JACKIE_INET::_RakMalloc;
-RakRealloc rakRealloc = JACKIE_INET::_RakRealloc;
-RakFree rakFree = JACKIE_INET::_RakFree;
+JackieMalloc jackieMalloc = JACKIE_INET::_DefaultMalloc;
+JackieRealloc jackieRealloc = JACKIE_INET::_DefaultRealloc;
+JackieFree jackieFree = JACKIE_INET::_DefaultFree;
+
 void SetMalloc(void* ( *userFunction )( size_t size ))
 {
-	rakMalloc = userFunction;
+	jackieMalloc = userFunction;
 }
 void SetRealloc(void* ( *userFunction )( void *p, size_t size ))
 {
-	rakRealloc = userFunction;
+	jackieRealloc = userFunction;
 }
 void SetFree(void(*userFunction)( void *p ))
 {
-	rakFree = userFunction;
+	jackieFree = userFunction;
 }
-RakMalloc GetMalloc()
+JackieMalloc GetMalloc()
 {
-	return rakMalloc;
+	return jackieMalloc;
 }
-RakRealloc GetRealloc()
+JackieRealloc GetRealloc()
 {
-	return rakRealloc;
+	return jackieRealloc;
 }
-RakFree GetFree()
+JackieFree GetFree()
 {
-	return rakFree;
+	return jackieFree;
 }
 
 
-RakMalloc_Ex rakMalloc_Ex = JACKIE_INET::_RakMalloc_Ex;
-RakRealloc_Ex  rakRealloc_Ex = JACKIE_INET::_RakRealloc_Ex;
-RakFree_Ex rakFree_Ex = JACKIE_INET::_RakFree_Ex;
-void SetMalloc_Ex(RakMalloc_Ex userFunction)
+JackieMalloc_Ex jackieMalloc_Ex = JACKIE_INET::_DefaultMalloc_Ex;
+JackieRealloc_Ex  jackieRealloc_Ex = JACKIE_INET::_DefaultRealloc_Ex;
+JackieFree_Ex jackieFree_Ex = JACKIE_INET::_DefaultFree_Ex;
+void SetMalloc_Ex(JackieMalloc_Ex userFunction)
 {
-	rakMalloc_Ex = userFunction;
+	jackieMalloc_Ex = userFunction;
 }
-void  SetRealloc_Ex(RakRealloc_Ex userFunction)
+void  SetRealloc_Ex(JackieRealloc_Ex userFunction)
 {
-	rakRealloc_Ex = userFunction;
+	jackieRealloc_Ex = userFunction;
 }
-void  SetFree_Ex(RakFree_Ex userFunction)
+void  SetFree_Ex(JackieFree_Ex userFunction)
 {
-	rakFree_Ex = userFunction;
+	jackieFree_Ex = userFunction;
 }
-RakMalloc_Ex GetMalloc_Ex()
+JackieMalloc_Ex GetMalloc_Ex()
 {
-	return rakMalloc_Ex;
+	return jackieMalloc_Ex;
 }
-RakRealloc_Ex GetRealloc_Ex()
+JackieRealloc_Ex GetRealloc_Ex()
 {
-	return rakRealloc_Ex;
+	return jackieRealloc_Ex;
 }
-RakFree_Ex GetFree_Ex()
+JackieFree_Ex GetFree_Ex()
 {
-	return rakFree_Ex;
+	return jackieFree_Ex;
 }
 
 NotifyOutOfMemory notifyOutOfMemory = DefaultOutOfMemoryHandler;
@@ -98,7 +99,7 @@ void SetNotifyOutOfMemory(NotifyOutOfMemory userFunction)
 {
 	notifyOutOfMemory = userFunction;
 }
-void SetDLMallocMMap(DlMallocMMap userFunction) 
+void SetDLMallocMMap(DlMallocMMap userFunction)
 {
 	dlMallocMMap = userFunction;
 }
@@ -123,36 +124,36 @@ DlMallocMUnmap GetDLMallocMUnmap()
 	return dlMallocMUnmap;
 }
 
-void* JACKIE_INET::_RakMalloc(size_t size)
+void* JACKIE_INET::_DefaultMalloc(size_t size)
 {
 	return malloc(size);
 }
 
-void* JACKIE_INET::_RakRealloc(void *p, size_t size)
+void* JACKIE_INET::_DefaultRealloc(void *p, size_t size)
 {
 	return realloc(p, size);
 }
 
-void JACKIE_INET::_RakFree(void *p)
+void JACKIE_INET::_DefaultFree(void *p)
 {
 	free(p);
 }
 
-void* JACKIE_INET::_RakMalloc_Ex(size_t size, const char *file, unsigned int line)
+void* JACKIE_INET::_DefaultMalloc_Ex(size_t size, const char *file, unsigned int line)
 {
 	(void) file;
 	(void) line;
 	return malloc(size);
 }
 
-void* JACKIE_INET::_RakRealloc_Ex(void *p, size_t size, const char *file, unsigned int line)
+void* JACKIE_INET::_DefaultRealloc_Ex(void *p, size_t size, const char *file, unsigned int line)
 {
 	(void) file;
 	(void) line;
 	return realloc(p, size);
 }
 
-void JACKIE_INET::_RakFree_Ex(void *p, const char *file, unsigned int line)
+void JACKIE_INET::_DefaultFree_Ex(void *p, const char *file, unsigned int line)
 {
 	(void) file;
 	(void) line;
@@ -240,12 +241,12 @@ void FreeRakNetFixedHeap(void)
 		rakNetFixedHeapMSpace = 0;
 	}
 
-	SetMalloc(_RakMalloc);
-	SetRealloc(_RakRealloc);
-	SetFree(_RakFree);
-	SetMalloc_Ex(_RakMalloc_Ex);
-	SetRealloc_Ex(_RakRealloc_Ex);
-	SetFree_Ex(_RakFree_Ex);
+	SetMalloc(_DefaultMalloc);
+	SetRealloc(_DefaultRealloc);
+	SetFree(_DefaultFree);
+	SetMalloc_Ex(_DefaultMalloc_Ex);
+	SetRealloc_Ex(_DefaultRealloc_Ex);
+	SetFree_Ex(_DefaultFree_Ex);
 }
 #else
 void * JACKIE_INET::_DLMallocMMap(size_t size) { (void) size; return 0; }

@@ -18,7 +18,7 @@ namespace JACKIE_INET
 #ifdef _WIN32
 		HANDLE eventList;
 #else
-		JACKIE_Simple_Mutex isSignaledMutex;
+		JackieSimpleMutex isSignaledMutex;
 		bool isSignaled;
 #if !defined(ANDROID)
 		pthread_condattr_t condAttr;

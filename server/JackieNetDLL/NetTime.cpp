@@ -27,7 +27,7 @@ TimeUS initialTime;
 static bool initialized = false;
 
 #if defined(GET_TIME_SPIKE_LIMIT)&&GET_TIME_SPIKE_LIMIT > 0
-#include "JACKIE_Simple_Mutex.h"
+#include "JackieSimpleMutex.h"
 static TimeUS lastNormalizedReturnedValue = 0;
 static TimeUS lastNormalizedInputValue = 0;
 /// This constraints timer forward jumps to 1 second, and does not let it jump backwards
@@ -36,7 +36,7 @@ static TimeUS lastNormalizedInputValue = 0;
 TimeUS NormalizeTime(TimeUS timeIn)
 {
 	TimeUS diff, lastNormalizedReturnedValueCopy;
-	static JACKIE_Simple_Mutex mutex;
+	static JackieSimpleMutex mutex;
 
 	mutex.Lock();
 	if( timeIn >= lastNormalizedInputValue )

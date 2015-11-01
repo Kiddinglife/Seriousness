@@ -18,7 +18,7 @@ typedef int PP_Resource;
 namespace JACKIE_INET
 {
 	/// JIS is short name for JACKIE_INet_Socket 
-	class  JACKIE_INet_Socket;
+	class  JackieINetSocket;
 	struct JIS_BerkleyBindParams;
 	struct JIS_SendParams;
 
@@ -64,27 +64,25 @@ namespace JACKIE_INET
 		JISRecvResult bytesRead;
 		JACKIE_INET_Address senderINetAddress;
 		TimeUS timeRead;
-		JACKIE_INet_Socket *socket;
+		JackieINetSocket *socket;
 	};
 
 	class JACKIE_EXPORT JISEventHandler
 	{
 		public:
-		JISEventHandler() { }
 		virtual ~JISEventHandler() { }
-		virtual void OnJISRecv(JISRecvParams *recvStruct) = 0;
-		virtual void ReclaimJISRecvParams(JISRecvParams *s) = 0;
+		virtual void ReclaimOneJISRecvParams(JISRecvParams *s) = 0;
 		virtual JISRecvParams *AllocJISRecvParams() = 0;
 	};
 
 	class JACKIE_EXPORT JISAllocator
 	{
 		public:
-		static JACKIE_INet_Socket* AllocJIS(void);
-		static void DeallocJIS(JACKIE_INet_Socket *s);
+		static JackieINetSocket* AllocJIS(void);
+		static void DeallocJIS(JackieINetSocket *s);
 	};
 
-	class JACKIE_EXPORT JACKIE_INet_Socket
+	class JACKIE_EXPORT JackieINetSocket
 	{
 		protected:
 		JISEventHandler *eventHandler;
@@ -93,8 +91,8 @@ namespace JACKIE_INET
 		JISType socketType;
 
 		public:
-		JACKIE_INet_Socket() : eventHandler(0) { }
-		virtual ~JACKIE_INet_Socket() { }
+		JackieINetSocket() : eventHandler(0) { }
+		virtual ~JackieINetSocket() { }
 
 
 		// In order for the handler to trigger, some platforms must call PollRecvFrom, 
@@ -168,7 +166,7 @@ namespace JACKIE_INET
 		virtual bool IsFork(const JACKIE_INET_Address &systemAddress) const = 0;
 	};
 
-	class JACKIE_EXPORT JISBerkley : public JACKIE_INet_Socket
+	class JACKIE_EXPORT JISBerkley : public JackieINetSocket
 	{
 		protected:
 

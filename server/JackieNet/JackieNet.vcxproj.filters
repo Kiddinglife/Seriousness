@@ -29,9 +29,6 @@
     <ClCompile Include="JACKIE_Thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JACKIE_INet_Socket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OverrideMemory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,11 +65,11 @@
     <ClCompile Include="ReliabilityLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JackieINetSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="JACKIE_INet_Socket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NetTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -168,6 +165,9 @@
     </ClInclude>
     <ClInclude Include="JACKIE_Atomic.h">
       <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieINetSocket.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
