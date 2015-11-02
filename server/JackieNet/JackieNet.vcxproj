@@ -181,7 +181,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BitStream.cpp" />
+    <ClCompile Include="JackieStream.cpp" />
     <ClCompile Include="GlobalFunctions.cpp" />
     <ClCompile Include="IPlugin.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
@@ -200,7 +200,7 @@
   <ItemGroup>
     <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="atomic_ops.h" />
-    <ClInclude Include="BitStream.h" />
+    <ClInclude Include="JackieStream.h" />
     <ClInclude Include="EasyLog.h" />
     <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />

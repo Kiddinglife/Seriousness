@@ -74,8 +74,8 @@ namespace JACKIE_INET
 		virtual ~JISEventHandler() { }
 
 		virtual void OnJISRecv(JISRecvParams *recvStruct) = 0;
-		virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, UInt32 line) = 0;
-		virtual JISRecvParams *AllocJISRecvParams(const char *file, UInt32 line) = 0;
+		virtual void DeallocJISRecvParams(JISRecvParams *s, const char *file, unsigned int line) = 0;
+		virtual JISRecvParams *AllocJISRecvParams(const char *file, unsigned int line) = 0;
 	};
 
 	class JACKIE_EXPORT JISAllocator
@@ -90,7 +90,7 @@ namespace JACKIE_INET
 		protected:
 		JISEventHandler *eventHandler;
 		JACKIE_INET_Address boundAddress;
-		UInt32 userConnectionSocketIndex;
+		unsigned int userConnectionSocketIndex;
 		JISType socketType;
 
 		public:
@@ -106,8 +106,8 @@ namespace JACKIE_INET
 		inline JISType GetSocketType(void) const { return socketType; }
 		inline void SetSocketType(JISType t) { socketType = t; }
 
-		inline UInt32 GetUserConnectionSocketIndex(void) const { return userConnectionSocketIndex; }
-		inline void SetUserConnectionSocketIndex(UInt32 i) { userConnectionSocketIndex = i; }
+		inline unsigned int GetUserConnectionSocketIndex(void) const { return userConnectionSocketIndex; }
+		inline void SetUserConnectionSocketIndex(unsigned int i) { userConnectionSocketIndex = i; }
 
 		inline JACKIE_INET_Address GetBoundAddress(void) const { return boundAddress; }
 
@@ -204,10 +204,10 @@ namespace JACKIE_INET
 		/// 2. by sending a char to itself and receive it, only if send and receive both succeed, 
 		/// 3. binded is finally considered as successful
 		//////////////////////////////////////////////////////////////////////////
-		JISBindResult Bind(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
-		JISBindResult BindShared(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
-		JISBindResult BindSharedIPV4(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
-		JISBindResult BindSharedIPV4And6(JISBerkleyBindParams *bindParameters, const char *file, UInt32 line);
+		JISBindResult Bind(JISBerkleyBindParams *bindParameters, const char *file, unsigned int line);
+		JISBindResult BindShared(JISBerkleyBindParams *bindParameters, const char *file, unsigned int line);
+		JISBindResult BindSharedIPV4(JISBerkleyBindParams *bindParameters, const char *file, unsigned int line);
+		JISBindResult BindSharedIPV4And6(JISBerkleyBindParams *bindParameters, const char *file, unsigned int line);
 
 		//////////////////////////////////////////////////////////////////////////
 		/// 1. Used internally in @mtd JISBindResult Bind(...)
@@ -303,7 +303,7 @@ namespace JACKIE_INET
 		/// 2. Returns value is either > 0(send succeeds) or <0 (send error)
 		/// 3. ! WILL NEVER return 0 because we never send empty msg to the receiver
 		//////////////////////////////////////////////////////////////////////////
-		JISSendResult Send(JISSendParams *sendParameters, const char *file, UInt32 line);
+		JISSendResult Send(JISSendParams *sendParameters, const char *file, unsigned int line);
 		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
 
 		/// Constructor not called at this monment !

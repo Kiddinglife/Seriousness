@@ -1,6 +1,6 @@
 #include "ReliabilityLayer.h"
 #include "ServerApplication.h"
-#include "BitStream.h"
+#include "JackieStream.h"
 
 namespace JACKIE_INET
 {

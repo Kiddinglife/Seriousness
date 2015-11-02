@@ -128,7 +128,7 @@ unsigned long SuperFastHashFilePtr(FILE *fp)
 ///////////////////////// DomainIPAddr ///////////////////////////
 bool isDomainIPAddr(const char *host)
 {
-	UInt32 i = 0;
+	unsigned int i = 0;
 	while( host[i] )
 	{
 		// IPV4: natpunch.jenkinssoftware.com

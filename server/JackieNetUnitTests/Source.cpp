@@ -410,27 +410,43 @@ static void test_ServerApplication_funcs()
 	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
+	Packet* packet;
+
 	// Loop for input
 	while( 1 )
 	{
-
+		TIMED_SCOPE(GetPacketOnce, "GetPacketOnce");
 		// This sleep keeps RakNet responsive
-		Packet* p = app->GetPacket();
-		Command* c = app->AllocCommand();
-		c->command = Command::BCS_SEND;
-		app->ExecuteComand(c);
-		if( p != 0 ) app->ReclaimOnePacket(p);
+		for( packet = app->GetPacketOnce(); packet != 0;
+			app->ReclaimOnePacket(packet), packet = 0 )
+		{
+			Command* c = app->AllocCommand();
+			c->command = Command::BCS_SEND;
+			app->ExecuteComand(c);
+		}
+		/// another way to use
+		//packet = app->GetPacketOnce();
+		//Command* c = app->AllocCommand();
+		//c->command = Command::BCS_SEND;
+		//app->ExecuteComand(c);
+		//if(packet != 0) app->ReclaimOnePacket(packet);
 		Sleep(3000);
 	}
+
 	Sleep(1001);
 	app->StopRecvPollingThread();
 	Sleep(1001);
-	app->StopSendPollingThread();
+	app->StopNetworkUpdateThread();
 	Sleep(1001);
 }
 //////////////////////////////////////////////////////////////////////////
 
+#include "JackieNet/JackieStream.h"
+static void test_JackieStream__funcs()
+{
+	JackieStream::GetInstance();
 
+}
 enum
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -467,6 +483,7 @@ enum
 	Test_Queue_funcs,
 	//////////////////////////////////////////////////////////////////////////
 	ServerApplication_H,
+	JackieStream_H,
 	Start,
 	AllClass,
 	AllFuncs
@@ -497,7 +514,10 @@ enum
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
+//static int testcase = ServerApplication_H;
+//static int testfunc = AllFuncs;
+
+static int testcase = JackieStream_H;
 static int testfunc = AllFuncs;
 
 
@@ -515,19 +535,20 @@ int main(int argc, char** argv)
 	//// To set GLOBAL configurations you may use including all levels 
 	//defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
 	//defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "1");
-	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n====================================================");
+	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n");
 
 	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
 	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] Call[%func] AtLine[%line]\n%msg\n====================================================");
-	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n====================================================");
-	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\n%msg\n====================================================");
+	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] AtLine[%line]\n%msg\n");
+	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n");
+	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread]\n%msg\n");
 
 
 	/// reconfigureLogger will create new logger if ir does not exists
 	/// just simply add wahtever logger you want, best way is using class name as logger name
 	el::Loggers::reconfigureLogger("default", defaultConf);
 	el::Loggers::reconfigureLogger(JackieNetName, defaultConf);
+	el::Loggers::reconfigureLogger("performance", defaultConf);
 
 	// Clears everything because configurations uses heap so we want to retain it.
 	// otherwise it is retained by internal memory management at the end of program
@@ -567,7 +588,6 @@ int main(int argc, char** argv)
 					break;
 			}
 			break;
-
 		case JACKIE_INET_Address_h:
 			switch( testfunc )
 			{
@@ -599,84 +619,29 @@ int main(int argc, char** argv)
 					break;
 			}
 			break;
-
 		case JACKIE_INet_GUID_h:
-			switch( testfunc )
-			{
-				case JACKIE_INet_GUID_ToString_func:
-					test_JACKIE_INet_GUID_ToString_func();
-					break;
-				default:
-					test_JACKIE_INet_GUID_ToString_func();
-					break;
-			}
+			test_JACKIE_INet_GUID_ToString_func();
 			break;
-
 		case CLASS_JACKIE_INET_Address_GUID_Wrapper:
-			switch( testfunc )
-			{
-				case JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func:
-					test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
-					break;
-				default:
-					test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
-					break;
-			}
+			test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
 			break;
-
 		case NetTime_h:
-			switch( testfunc )
-			{
-				case AllFuncs:
-					break;
-				default:
-					test_NetTime_h_All_funcs();
-					break;
-			}
+			test_NetTime_h_All_funcs();
 			break;
-
 		case JACKIE_INet_Socket_h:
-			switch( testfunc )
-			{
-				case ClassJISBerkley:
-					test_JISBerkley_All_funcs();
-					break;
-				default:
-					test_JISBerkley_All_funcs();
-					break;
-			}
+			test_JISBerkley_All_funcs();
 			break;
 		case MemoryPool_h:
-			switch( testfunc )
-			{
-				case AllFuncs:
-					break;
-				default:
-					test_MemoryPool_funcs();
-					break;
-			}
+			test_MemoryPool_funcs();
 			break;
 		case CircularArrayQueueSingleThread:
-			switch( testfunc )
-			{
-				case Test_Queue_funcs:
-					test_Queue_funcs();
-					break;
-				default:
-					test_Queue_funcs();
-					break;
-			}
+			test_Queue_funcs();
 			break;
 		case ServerApplication_H:
-			switch( testfunc )
-			{
-				case Test_Queue_funcs:
-					test_ServerApplication_funcs();
-					break;
-				default:
-					test_ServerApplication_funcs();
-					break;
-			}
+			test_ServerApplication_funcs();
+			break;
+		case JackieStream_H:
+				test_JackieStream__funcs();
 			break;
 		default:
 			break;

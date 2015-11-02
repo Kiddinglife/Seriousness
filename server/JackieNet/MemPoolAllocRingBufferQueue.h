@@ -19,9 +19,9 @@ namespace DataStructures
 
 	/// will call dtor and ctor for each of element
 	template <typename structureType,
-		UInt32 MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256,
-		UInt32 MEMORY_POOL_MAX_FREE_PAGES = 4,
-		UInt32 QUEUE_INIT_SIZE = 32>
+		unsigned int MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256,
+		unsigned int MEMORY_POOL_MAX_FREE_PAGES = 4,
+		unsigned int QUEUE_INIT_SIZE = 32>
 	class JACKIE_EXPORT MemPoolAllocRingBufferQueueCtorDtor
 	{
 		protected:
@@ -80,9 +80,9 @@ namespace DataStructures
 
 	/// will not  call dtor and ctor for each of element, faster
 	template <typename structureType,
-		UInt32 MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256,
-		UInt32 MEMORY_POOL_MAX_FREE_PAGES = 4,
-		UInt32 QUEUE_INIT_SIZE = 32>
+		unsigned int MEMPOOL_BLOCKS_COUNT_PER_PAGE = 256,
+		unsigned int MEMORY_POOL_MAX_FREE_PAGES = 4,
+		unsigned int QUEUE_INIT_SIZE = 32>
 	class JACKIE_EXPORT MemPoolAllocRingBufferQueue
 	{
 		protected:

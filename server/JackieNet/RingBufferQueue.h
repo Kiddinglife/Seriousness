@@ -12,7 +12,7 @@
 namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
-	template <typename queue_type, UInt32 QUEUE_INIT_SIZE = 32>
+	template <typename queue_type, unsigned int QUEUE_INIT_SIZE = 32>
 	class JACKIE_EXPORT RingBufferQueue
 	{
 		private:

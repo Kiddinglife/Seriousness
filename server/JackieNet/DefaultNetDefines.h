@@ -31,8 +31,8 @@
 /// Threshold at which to do a malloc / free rather than pushing data onto a fixed stack
 /// for the bitstream class. 256 is an arbitrary size, just picking something likely to be larger 
 /// than  most packets
-#ifndef BITSTREAM_STACK_ALLOCATION_SIZE
-#define BITSTREAM_STACK_ALLOCATION_SIZE 256
+#ifndef JACKIESTREAM_STACK_ALLOC_SIZE
+#define JACKIESTREAM_STACK_ALLOC_SIZE 256
 #endif
 
 // Redefine if you want to disable or change the target for debug RAKNET_DEBUG_PRINTF
@@ -210,14 +210,10 @@
 #define USE_STACK_ALLOCA 1
 #endif
 
-/// Define in OverrideDefines.h to enable (non-zero) or disable (0)
-#ifndef USE_THREADED_SEND
-#define USE_THREADED_SEND 0
-#endif
-
-/// Define in OverrideDefines.h to enable (non-zero) or disable (0)
-#ifndef USE_SINGLE_THREAD_TO_SEND_AND_RECV
-#define USE_SINGLE_THREAD_TO_SEND_AND_RECV 0
+/// Define in OverrideDefines.h to override the define
+/// 0 = single app, 1= multi-threads app
+#ifndef USE_SINGLE_THREAD
+#define USE_SINGLE_THREAD 0
 #endif
 
 #ifndef JACKIE_SO_SNDBUF_SIZE

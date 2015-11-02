@@ -151,7 +151,7 @@ namespace JACKIE_INET
 
 	//////////////////////////////////////////////////////////////////////////
 	JISBindResult JISBerkley::Bind(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+		const char *file, unsigned int line)
 	{
 		JISBindResult bindResult = BindShared(bindParameters, file, line);
 		/// we do not test bindResult == JISBindResult_FAILED_SEND_TEST here 
@@ -193,7 +193,7 @@ namespace JACKIE_INET
 		return br;
 	}
 	JISBindResult JISBerkley::BindSharedIPV4(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+		const char *file, unsigned int line)
 	{
 		memset(&boundAddress.address.addr4, 0, sizeof(sockaddr_in));
 		boundAddress.address.addr4.sin_port = htons(bindParameters->port);
@@ -245,7 +245,7 @@ namespace JACKIE_INET
 		return JISBindResult_SUCCESS;
 	}
 	JISBindResult JISBerkley::BindSharedIPV4And6(JISBerkleyBindParams *bindParameters,
-		const char *file, UInt32 line)
+		const char *file, unsigned int line)
 	{
 #if NET_SUPPORT_IPV6 ==1
 
@@ -460,7 +460,7 @@ namespace JACKIE_INET
 	//////////////////////////////////////////////////////////////////////////
 
 	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
-		const char *file, UInt32 line)
+		const char *file, unsigned int line)
 	{
 		/// we will nevwer send o len data
 		JACKIE_ASSERT(sendParameters->length > 0);
@@ -611,7 +611,7 @@ namespace JACKIE_INET
 			memcpy(&systemAddressOut->address.addr4, (sockaddr_in *) &ss, sizeof(sockaddr_in));
 			systemAddressOut->debugPort = ntohs(systemAddressOut->address.addr4.sin_port);
 
-			UInt32 zero = 0;
+			unsigned int zero = 0;
 			if( memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
 				sizeof(zero)) == 0 )
 				systemAddressOut->SetToLoopBack(4);

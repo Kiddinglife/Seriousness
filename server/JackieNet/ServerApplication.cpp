@@ -103,7 +103,7 @@ namespace JACKIE_INET
 
 		limitConnectionFrequencyFromTheSameIP = false;
 
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD == 0
 		quitAndDataEvents.Init();
 #endif
 
@@ -115,9 +115,9 @@ namespace JACKIE_INET
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	JACKIE_INET::StartupResult ServerApplication::Start(UInt32 maxConn,
+	JACKIE_INET::StartupResult ServerApplication::Start(unsigned int maxConn,
 		JACKIE_LOCAL_SOCKET *bindLocalSockets,
-		UInt32 bindLocalSocketsCount,
+		unsigned int bindLocalSocketsCount,
 		Int32 threadPriority /*= -99999*/)
 	{
 
@@ -153,7 +153,7 @@ namespace JACKIE_INET
 		assert(maxConn > 0); if( maxConn <= 0 ) return INVALID_MAX_CONNECTIONS;
 
 		/////////////////////////////// Start to bind given sockets ///////////////////////////////////
-		UInt32 index;
+		unsigned int index;
 		JackieINetSocket* sock;
 		JISBerkleyBindParams berkleyBindParams;
 		JISBindResult bindResult;
@@ -199,7 +199,7 @@ namespace JACKIE_INET
 				berkleyBindParams.remotePortJackieNetWasStartedOn_PS3_PS4_PSP2 =
 					bindLocalSockets[index].remotePortWasStartedOn_PS3_PSP2;
 
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD == 0
 				/// multi-threads app can use either non-blobk or blobk socket
 				/// false = blobking, true = non-blocking
 				berkleyBindParams.isBlocKing = bindLocalSockets[index].blockingSocket;
@@ -318,9 +318,9 @@ namespace JACKIE_INET
 
 
 		///////////////////////////////////////// setup thread things //////////////////////////////////////
-		endSendRecvThreads = true;
+		endThreads = true;
 		isRecvPollingThreadActive = isSendPollingThreadActive = false;
-		if( endSendRecvThreads )
+		if( endThreads )
 		{
 			ClearBufferedCommands();
 			ClearBufferedRecvParams();
@@ -328,10 +328,10 @@ namespace JACKIE_INET
 
 			firstExternalID = JACKIE_INET_Address_Null;
 			updateCycleIsRunning = false;
-			endSendRecvThreads = false;
+			endThreads = false;
 
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD == 0
 			// this will create bindLocalSocketsCount of recv threads which is wrong
 			// we only need one recv thread to recv data from all binded sockets
 			//for( index = 0; index < bindLocalSocketsCount; index++ )
@@ -358,15 +358,15 @@ namespace JACKIE_INET
 			isRecvPollingThreadActive = true;
 			JINFO << "Recv polling thread " << "is running in backend....";
 #else
-			isRecvPollingThreadActive = false;
+			isRecvPollingThreadActive = true;
 #endif
 #endif
 
 			/// use another thread to charge of sending
 			if( !isSendPollingThreadActive )
 			{
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
-				if( CreateSendPollingThread(threadPriority) != 0 )
+#if USE_SINGLE_THREAD == 0
+				if( CreateNetworkUpdateThread(threadPriority) != 0 )
 				{
 					End(0);
 					JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
@@ -387,7 +387,6 @@ namespace JACKIE_INET
 		//#endif
 
 		JINFO << "Startup Application Succeeds....";
-
 		return ALREADY_STARTED;
 	}
 	void ServerApplication::End(unsigned int blockDuration,
@@ -402,14 +401,14 @@ namespace JACKIE_INET
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s)
 	{
-		JINFO << "Reclaim One JISRecvParams";
+		//JINFO << "Reclaim One JISRecvParams";
 		CHECK_EQ(deAllocRecvParamQ.PushTail(s), true);
 	}
 	inline void ServerApplication::ReclaimAllJISRecvParams()
 	{
-		JINFO << "Reclaim All JISRecvParams";
+		//JINFO << "Reclaim All JISRecvParams";
 		JISRecvParams* recvParams = 0;
-		for( UInt32 index = 0; index < deAllocRecvParamQ.Size(); index++ )
+		for( unsigned int index = 0; index < deAllocRecvParamQ.Size(); index++ )
 		{
 			CHECK_EQ(deAllocRecvParamQ.PopHead(recvParams), true);
 			JISRecvParamsPool.Reclaim(recvParams);
@@ -417,7 +416,7 @@ namespace JACKIE_INET
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams()
 	{
-		JINFO << "AllocJISRecvParams";
+		//JINFO << "AllocJISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool.Allocate(); } while( ptr == 0 );
 		return ptr;
@@ -425,14 +424,14 @@ namespace JACKIE_INET
 	void ServerApplication::ClearBufferedRecvParams(void)
 	{
 		JISRecvParams *recvParams = 0;
-		for( UInt32 i = 0; i < allocRecvParamQ.Size(); i++ )
+		for( unsigned int i = 0; i < allocRecvParamQ.Size(); i++ )
 		{
 			CHECK_EQ(allocRecvParamQ.PopHead(recvParams), true);
 			CHECK_NOTNULL(recvParams);
 			if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 			JISRecvParamsPool.Reclaim(recvParams);
 		}
-		for( UInt32 i = 0; i < deAllocRecvParamQ.Size(); i++ )
+		for( unsigned int i = 0; i < deAllocRecvParamQ.Size(); i++ )
 		{
 			CHECK_EQ(deAllocRecvParamQ.PopHead(recvParams), true);
 			CHECK_NOTNULL(recvParams);
@@ -449,15 +448,15 @@ namespace JACKIE_INET
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneCommand(Command* s)
 	{
-		JINFO << "Reclaim One Command";
+		//JINFO << "Reclaim One Command";
 		CHECK_EQ(deAllocCommandQ.PushTail(s), true);
 	}
 	void ServerApplication::ReclaimAllCommands()
 	{
-		JINFO << "Reclaim All Commands";
+		//JINFO << "Reclaim All Commands";
 
 		Command* bufferedCommand = 0;
-		for( UInt32 index = 0; index < deAllocCommandQ.Size(); index++ )
+		for( unsigned int index = 0; index < deAllocCommandQ.Size(); index++ )
 		{
 			CHECK_EQ(
 				deAllocCommandQ.PopHead(bufferedCommand),
@@ -478,14 +477,14 @@ namespace JACKIE_INET
 		Command *bcs = 0;
 
 		/// first reclaim the elem in 
-		for( UInt32 i = 0; i < allocCommandQ.Size(); i++ )
+		for( unsigned int i = 0; i < allocCommandQ.Size(); i++ )
 		{
 			CHECK_EQ(allocCommandQ.PopHead(bcs), true);
 			CHECK_NOTNULL(bcs);
 			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
-		for( UInt32 i = 0; i < deAllocCommandQ.Size(); i++ )
+		for( unsigned int i = 0; i < deAllocCommandQ.Size(); i++ )
 		{
 			CHECK_EQ(deAllocCommandQ.PopHead(bcs), true);
 			CHECK_NOTNULL(bcs);
@@ -582,7 +581,7 @@ namespace JACKIE_INET
 		//JINFO << "Reclaim All Packets";
 
 		Packet* packet;
-		for( UInt32 index = 0; index < deAllocPacketQ.Size(); index++ )
+		for( unsigned int index = 0; index < deAllocPacketQ.Size(); index++ )
 		{
 			CHECK_EQ(deAllocPacketQ.PopHead(packet), true);
 			if( packet->isAllocatedFromPool )
@@ -610,41 +609,41 @@ namespace JACKIE_INET
 		JINFO << "Start to Create Recv Polling Thread ......";
 		return JACKIE_Thread::Create(JACKIE_INET::RunRecvCycleLoop, this, threadPriority);
 	}
-	int ServerApplication::CreateSendPollingThread(int threadPriority)
+	int ServerApplication::CreateNetworkUpdateThread(int threadPriority)
 	{
-		JINFO << "Start to Create Send Polling Thread ......";
-		return JACKIE_Thread::Create(JACKIE_INET::RunSendCycleLoop, this, threadPriority);
+		return JACKIE_Thread::Create(JACKIE_INET::RunNetworkUpdateCycleLoop, this, threadPriority);
 	}
 	void ServerApplication::StopRecvPollingThread()
 	{
 		isRecvPollingThreadActive = false;
-		if( isSendPollingThreadActive == false ) endSendRecvThreads = true;
+		if( isSendPollingThreadActive == false ) endThreads = true;
 
-
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
-		for( UInt32 i = 0; i < JISList.Size(); i++ )
-		{
-			if( JISList[i]->IsBerkleySocket() )
-			{
-				JISBerkley* sock = (JISBerkley*) JISList[i];
-				if( sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET )
-				{
-					/// try to send 0 data to let recv thread keep running
-					/// to detect the isRecvPollingThreadActive === false so that stop the thread
-					char zero[ ] = "This is used to Stop Recv Thread";
-					JISSendParams sendParams = { zero, sizeof(zero), 0,
-						sock->GetBoundAddress(), 0
-					};
-					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
-				}
-			}
-		}
-#endif
+		/// because we use app main thread as recv thread, it will never block
+		/// so no need to use this
+		//#if USE_SINGLE_THREAD == 0
+		//		for( UInt32 i = 0; i < JISList.Size(); i++ )
+		//		{
+		//			if( JISList[i]->IsBerkleySocket() )
+		//			{
+		//				JISBerkley* sock = (JISBerkley*) JISList[i];
+		//				if( sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET )
+		//				{
+		//					/// try to send 0 data to let recv thread keep running
+		//					/// to detect the isRecvPollingThreadActive === false so that stop the thread
+		//					char zero[ ] = "This is used to Stop Recv Thread";
+		//					JISSendParams sendParams = { zero, sizeof(zero), 0,
+		//						sock->GetBoundAddress(), 0
+		//					};
+		//					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
+		//				}
+		//			}
+		//		}
+		//#endif
 	}
-	void ServerApplication::StopSendPollingThread()
+	void ServerApplication::StopNetworkUpdateThread()
 	{
 		isSendPollingThreadActive = false;
-		if( isRecvPollingThreadActive == false ) endSendRecvThreads = true;
+		if( isRecvPollingThreadActive == false ) endThreads = true;
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -696,13 +695,13 @@ namespace JACKIE_INET
 	{
 		JACKIE_INET_Address connReqCancelAddr;
 		ConnectionRequest* connReq = 0;
-		for( UInt32 index = 0; index < connReqCancelQ.Size(); index++ )
+		for( unsigned int index = 0; index < connReqCancelQ.Size(); index++ )
 		{
 			CHECK_EQ(connReqCancelQ.PopHead(connReqCancelAddr), true);
 
 			connReqQMutex.Lock();
 			/// Cancel pending connection attempt, if there is one
-			for( UInt32 i = 0; i < connReqQ.Size(); i++ )
+			for( unsigned int i = 0; i < connReqQ.Size(); i++ )
 			{
 				if( connReqQ[i]->receiverAddr == connReqCancelAddr )
 				{
@@ -724,7 +723,7 @@ namespace JACKIE_INET
 		RemoteEndPoint* remoteEndPoint = 0;
 
 		/// process command queue
-		for( UInt32 index = 0; index < allocCommandQ.Size(); index++ )
+		for( unsigned int index = 0; index < allocCommandQ.Size(); index++ )
 		{
 			JINFO << "ProcessAllocCommandQ in loop";
 
@@ -786,7 +785,7 @@ namespace JACKIE_INET
 	void ServerApplication::ProcessAllocJISRecvParamsQ(void)
 	{
 		JISRecvParams* recvParams = 0;
-		for( UInt32 index = 0; index < allocRecvParamQ.Size(); index++ )
+		for( unsigned int index = 0; index < allocRecvParamQ.Size(); index++ )
 		{
 			/// no need to check if recvParams == 0, because we never push 0 pointer
 			CHECK_EQ(allocRecvParamQ.PopHead(recvParams), true);
@@ -812,7 +811,7 @@ namespace JACKIE_INET
 			bool isNllAdress;
 
 			connReqQMutex.Lock();
-			for( UInt32 index = 0; index < connReqQ.Size(); index++ )
+			for( unsigned int index = 0; index < connReqQ.Size(); index++ )
 			{
 				connReq = connReqQ[index];
 				if( connReq->nextRequestTime < timeMS )
@@ -867,7 +866,7 @@ namespace JACKIE_INET
 						connReq->nextRequestTime = timeUS + connReq->timeoutReqConn;
 
 						/// @TO-DO
-						BitStream bitStream;
+						JackieStream bitStream;
 						//bitStream.Write((MessageID) ID_OPEN_CONNECTION_REQUEST_1);
 						//bitStream.WriteAlignedBytes((const unsigned char*) OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
 						//bitStream.Write((MessageID) RAKNET_PROTOCOL_VERSION);
@@ -936,7 +935,7 @@ namespace JACKIE_INET
 			/// Active EndPoints take priority.  But if matched end point is inactice, 
 			/// return the first EndPoint match found
 			Int32 inActiveEndPointIndex = -1;
-			for( UInt32 index = 0; index < maxConnections; index++ )
+			for( unsigned int index = 0; index < maxConnections; index++ )
 			{
 				if( remoteSystemList[index].systemAddress == sa )
 				{
@@ -969,7 +968,7 @@ namespace JACKIE_INET
 		senderGUID, bool onlyWantActiveEndPoint) const
 	{
 		if( senderGUID == JACKIE_INet_GUID_Null ) return 0;
-		for( UInt32 i = 0; i < maxConnections; i++ )
+		for( unsigned int i = 0; i < maxConnections; i++ )
 		{
 			if( remoteSystemList[i].guid == senderGUID &&
 				( onlyWantActiveEndPoint == false || remoteSystemList[i].isActive ) )
@@ -988,7 +987,7 @@ namespace JACKIE_INET
 
 	Int32 ServerApplication::GetRemoteEndPointIndex(const JACKIE_INET_Address &sa) const
 	{
-		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa);
+		unsigned int hashindex = JACKIE_INET_Address::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 		RemoteEndPointIndex* curr = remoteSystemLookup[hashindex];
 		while( curr != 0 )
@@ -1001,7 +1000,7 @@ namespace JACKIE_INET
 	}
 
 
-	void ServerApplication::RefRemoteEndPoint(const JACKIE_INET_Address &sa, UInt32 index)
+	void ServerApplication::RefRemoteEndPoint(const JACKIE_INET_Address &sa, unsigned int index)
 	{
 		RemoteEndPoint* remote = remoteSystemList + index;
 		JACKIE_INET_Address old = remote->systemAddress;
@@ -1019,7 +1018,7 @@ namespace JACKIE_INET
 		DeRefRemoteEndPoint(sa);
 		remoteSystemList[index].systemAddress = sa;
 
-		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa);
+		unsigned int hashindex = JACKIE_INET_Address::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 
 		RemoteEndPointIndex *rsi = 0;
@@ -1043,7 +1042,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::DeRefRemoteEndPoint(const JACKIE_INET_Address &sa)
 	{
-		UInt32 hashindex = JACKIE_INET_Address::ToHashCode(sa);
+		unsigned int hashindex = JACKIE_INET_Address::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 
 		RemoteEndPointIndex *cur = remoteSystemLookup[hashindex];
@@ -1188,7 +1187,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::PacketGoThroughPlugins(Packet*& incomePacket)
 	{
-		UInt32 i;
+		unsigned int i;
 		PluginActionType pluginResult;
 
 		for( i = 0; i < pluginListTS.Size(); i++ )
@@ -1225,7 +1224,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::UpdatePlugins(void)
 	{
-		UInt32 i;
+		unsigned int i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
 			pluginListTS[i]->Update();
@@ -1239,16 +1238,18 @@ namespace JACKIE_INET
 
 
 	///////////////////////////////// DECLARATIONS ///////////////////////////////////////////////////
-	Packet* ServerApplication::GetPacket(void)
+	Packet* ServerApplication::GetPacketOnce(void)
 	{
 		RunRecvCycleOnce();
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV != 0
-		RunSendCycleOnce();
+#if USE_SINGLE_THREAD != 0
+		RunNetworkUpdateCycleOnce();
 #endif
 		return RunGetPacketCycleOnce();
 	}
 	Packet* ServerApplication::RunGetPacketCycleOnce(void)
 	{
+		TIMED_FUNC();
+
 		Packet *incomePacket = 0;
 
 		/// UPDATE all plugins
@@ -1275,8 +1276,9 @@ namespace JACKIE_INET
 
 		return incomePacket;
 	}
-	bool ServerApplication::RunSendCycleOnce()
+	bool ServerApplication::RunNetworkUpdateCycleOnce()
 	{
+		TIMED_FUNC();
 		//// @NOTICE I moved this code to JISbEKELY::RecvFrom()
 		//// unsigned int index;
 		//static JISRecvParams recv;
@@ -1306,8 +1308,6 @@ namespace JACKIE_INET
 		//			}
 		//		}
 		//#endif
-
-
 		/// who alloc who dealloc
 		ReclaimAllPackets();
 
@@ -1324,10 +1324,14 @@ namespace JACKIE_INET
 		ProcessConnectionRequestCancelQ();
 		ProcessConnectionRequestQ(timeUS, timeMS);
 
+
+
 		return 0;
 	}
 	void ServerApplication::RunRecvCycleOnce(void)
 	{
+		TIMED_FUNC();
+
 		JISRecvParams* recvParams = 0;
 		unsigned int index;
 
@@ -1350,7 +1354,7 @@ namespace JACKIE_INET
 						continue;
 					}
 				}
-#if USE_SINGLE_THREAD_TO_SEND_AND_RECV == 0
+#if USE_SINGLE_THREAD == 0
 				quitAndDataEvents.TriggerEvent();
 #endif
 			} else
@@ -1366,13 +1370,13 @@ namespace JACKIE_INET
 		if( !serv->isRecvPollingThreadActive ) serv->isRecvPollingThreadActive = true;
 
 		JINFO << "Recv polling thread " << "is running in backend....";
-		while( !serv->endSendRecvThreads && serv->isRecvPollingThreadActive ) { serv->RunRecvCycleOnce(); }
+		while( !serv->endThreads && serv->isRecvPollingThreadActive ) { serv->RunRecvCycleOnce(); }
 		JINFO << "Recv polling thread Stops....";
 
 		if( serv->isRecvPollingThreadActive ) serv->isRecvPollingThreadActive = false;
 		return 0;
 	}
-	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunSendCycleLoop)
+	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunNetworkUpdateCycleLoop)
 	{
 		ServerApplication *serv = (ServerApplication*) arguments;
 		if( !serv->isSendPollingThreadActive ) serv->isSendPollingThreadActive = true;
@@ -1386,8 +1390,12 @@ namespace JACKIE_INET
 		JINFO << "Send polling thread is running in backend....";
 		/// Normally, buffered sending packets go out every other 10 ms.
 		/// or TriggerEvent() is called by recv thread
-		while( !serv->endSendRecvThreads && serv->isSendPollingThreadActive )
-		{ serv->RunSendCycleOnce(); serv->quitAndDataEvents.WaitEvent(10); }
+		while( !serv->endThreads && serv->isSendPollingThreadActive )
+		{
+			serv->RunNetworkUpdateCycleOnce();
+			serv->quitAndDataEvents.WaitEvent(10);
+			JACKIE_Sleep(3000);
+		}
 		JINFO << "Send polling thread Stops....";
 
 		if( serv->isSendPollingThreadActive ) serv->isSendPollingThreadActive = false;

@@ -7,7 +7,7 @@ namespace JACKIE_INET
 {
 
 	class ServerApplication;
-	class BitStream;
+	class JackieStream;
 
 	class JACKIE_EXPORT ReliabilityLayer
 	{

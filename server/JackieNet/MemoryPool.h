@@ -18,8 +18,8 @@
 namespace DataStructures
 {
 	template <typename MemoryBlockType,
-		UInt32 BLOCKS_COUNT_PER_PAGE = 256,
-		UInt32 DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
+		unsigned int BLOCKS_COUNT_PER_PAGE = 256,
+		unsigned int DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
@@ -50,14 +50,14 @@ namespace DataStructures
 		//////////////////////////////////////////////////////////////////////////
 		Page *availablePage;
 		Page *unavailablePage;
-		UInt32 availablePagesSize;
-		UInt32 unavailablePagesSize;
-		UInt32 memoryPoolPageSize;
-		UInt32 blocksCountPerPage;
+		unsigned int availablePagesSize;
+		unsigned int unavailablePagesSize;
+		unsigned int memoryPoolPageSize;
+		unsigned int blocksCountPerPage;
 
 		bool InitPage(Page *page, Page *prev)
 		{
-			UInt32 i = 0;
+			unsigned int i = 0;
 
 			if( ( page->block = (MemoryWithPage*) jackieMalloc_Ex(memoryPoolPageSize, TRACE_FILE_AND_LINE_) )
 				== 0 ) return false;

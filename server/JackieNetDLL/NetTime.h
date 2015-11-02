@@ -39,11 +39,11 @@ extern int JACKIE_EXPORT JackieGettimeofday(JackieTimeVal *tv, JackieTimeZone *t
 /// to overflow the millisecond counter (over a month)
 #if USE_TIME_MS_64BITS ==1
 typedef UInt64 Time;
-typedef UInt32 TimeMS;
+typedef unsigned int TimeMS;
 typedef UInt64 TimeUS;
 #else
-typedef UInt32 Time;
-typedef UInt32 TimeMS;
+typedef unsigned int Time;
+typedef unsigned int TimeMS;
 typedef UInt64 TimeUS;
 #endif
 

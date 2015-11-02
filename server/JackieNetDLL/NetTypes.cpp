@@ -48,12 +48,12 @@ namespace JACKIE_INET
 #if NET_SUPPORT_IPV6==1
 		return sizeof(sockaddr_in6) + sizeof(Int8);
 #else
-		return sizeof(UInt32) + sizeof(UInt16) + sizeof(Int8);
+		return sizeof(unsigned int) + sizeof(UInt16) + sizeof(Int8);
 #endif
 	}
-	UInt32 JACKIE_INET_Address::ToHashCode(const JACKIE_INET_Address &sa)
+	unsigned int JACKIE_INET_Address::ToHashCode(const JACKIE_INET_Address &sa)
 	{
-		UInt32 lastHash = SuperFastHashIncremental((const char*) & sa.address.addr4.sin_port,
+		unsigned int lastHash = SuperFastHashIncremental((const char*) & sa.address.addr4.sin_port,
 			sizeof(sa.address.addr4.sin_port), sizeof(sa.address.addr4.sin_port));
 
 #if NET_SUPPORT_IPV6==1
@@ -142,7 +142,7 @@ namespace JACKIE_INET
 		return address.addr4.sin_port < right.address.addr4.sin_port;
 	}
 
-	UInt8 JACKIE_INET_Address::GetIPVersion(void) const
+	unsigned char JACKIE_INET_Address::GetIPVersion(void) const
 	{
 		if( address.addr4.sin_family == AF_INET )
 		{
@@ -152,7 +152,7 @@ namespace JACKIE_INET
 			return 6;
 		}
 	}
-	UInt8 JACKIE_INET_Address::GetIPProtocol(void) const
+	unsigned char JACKIE_INET_Address::GetIPProtocol(void) const
 	{
 #if NET_SUPPORT_IPV6==1
 		if( address.addr4.sin_family == AF_INET )
@@ -192,7 +192,7 @@ namespace JACKIE_INET
 	{
 		SetToLoopBack(4);
 	}
-	void JACKIE_INET_Address::SetToLoopBack(UInt8 ipVersion)
+	void JACKIE_INET_Address::SetToLoopBack(unsigned char ipVersion)
 	{
 		if( ipVersion == 4 )
 		{
@@ -305,7 +305,7 @@ namespace JACKIE_INET
 		return true;
 	}
 	bool JACKIE_INET_Address::FromString(const char *str, char portDelineator,
-		UInt8 ipVersion)
+		unsigned char ipVersion)
 	{
 #if NET_SUPPORT_IPV6 != 1
 		return SetIP4Address(str, portDelineator);
@@ -424,7 +424,7 @@ namespace JACKIE_INET
 #endif // #if NET_SUPPORT_IPV6!=1
 		return true;
 	}
-	bool JACKIE_INET_Address::FromString(const char *str, UInt16 port, UInt8 ipVersion)
+	bool JACKIE_INET_Address::FromString(const char *str, UInt16 port, unsigned char ipVersion)
 	{
 		bool b = FromString(str, '\0', ipVersion);
 		if( b == false )

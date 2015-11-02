@@ -20,7 +20,7 @@
 namespace JACKIE_INET
 {
 	// Forward declarations
-	class BitStream;
+	class JackieStream;
 	class PluginInterface2;
 	struct RPCMap;
 	struct RakNetStatistics;
@@ -65,9 +65,9 @@ namespace JACKIE_INET
 		/// ports under 1024 are restricted for everything but the root user. Use a higher port 
 		/// for maximum compatibility. 
 		//////////////////////////////////////////////////////////////////////////
-		virtual StartupResult Start(UInt32 maxConnections,
+		virtual StartupResult Start(unsigned int maxConnections,
 			JACKIE_LOCAL_SOCKET *socketDescriptors,
-			UInt32 socketDescriptorCount,
+			unsigned int socketDescriptorCount,
 			Int32 threadPriority = -99999) = 0;
 
 		virtual const JACKIE_INet_GUID& GetMyGUID(void) const = 0;

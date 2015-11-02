@@ -59,13 +59,13 @@
     <ClCompile Include="IPlugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BitStream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ReliabilityLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JackieINetSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -145,9 +145,6 @@
     <ClInclude Include="IPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BitStream.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
     <ClInclude Include="980easylogging++.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
@@ -168,6 +165,9 @@
     </ClInclude>
     <ClInclude Include="JackieINetSocket.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieStream.h">
+      <Filter>Header Files\Ultils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

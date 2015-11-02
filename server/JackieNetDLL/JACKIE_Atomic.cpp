@@ -2,37 +2,37 @@
 
 
 JACKIE_ATOMIC_LONG::JACKIE_ATOMIC_LONG() : value(0) { }
-JACKIE_ATOMIC_LONG::JACKIE_ATOMIC_LONG(UInt32 initial) : value(initial) { }
+JACKIE_ATOMIC_LONG::JACKIE_ATOMIC_LONG(unsigned int initial) : value(initial) { }
 JACKIE_ATOMIC_LONG::~JACKIE_ATOMIC_LONG() { }
 
-UInt32 JACKIE_ATOMIC_LONG::Increment(void)
+unsigned int JACKIE_ATOMIC_LONG::Increment(void)
 {
 #ifdef _WIN32
-	return (UInt32) InterlockedIncrement(&value);
+	return (unsigned int) InterlockedIncrement(&value);
 #elif defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
-	UInt32 v;
+	unsigned int v;
 	mutex.Lock();
 	++value;
 	v = value;
 	mutex.Unlock();
 	return v;
 #else
-	return __sync_fetch_and_add(&value, (UInt32) 1);
+	return __sync_fetch_and_add(&value, (unsigned int) 1);
 #endif
 }
-UInt32 JACKIE_ATOMIC_LONG::Decrement(void)
+unsigned int JACKIE_ATOMIC_LONG::Decrement(void)
 {
 #ifdef _WIN32
-	return (UInt32) InterlockedDecrement(&value);
+	return (unsigned int) InterlockedDecrement(&value);
 #elif defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
-	UInt32 v;
+	unsigned int v;
 	mutex.Lock();
 	--value;
 	v = value;
 	mutex.Unlock();
 	return v;
 #else
-	return __sync_fetch_and_add(&value, (UInt32) -1);
+	return __sync_fetch_and_add(&value, (unsigned int) -1);
 #endif
 }
 

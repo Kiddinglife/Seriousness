@@ -24,7 +24,7 @@ namespace JACKIE_INET
 {
 	/// Forward declarations
 	class   INetApplication;
-	class   BitStream;
+	class   JackieStream;
 	struct  Packet;
 	struct  JACKIE_INET_Address;
 	struct  JACKIE_INet_GUID;
@@ -72,14 +72,14 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #endif
 
 	/// \sa NetworkIDObject.h
-	typedef UInt8   UniqueIDType;
-	typedef UInt8   RPCIndex;
+	typedef unsigned char   UniqueIDType;
+	typedef unsigned char   RPCIndex;
 	typedef UInt16 SystemIndex;
 	typedef UInt64 NetworkID;
 
 	/// First byte of a network message
-	typedef UInt8 MessageID;
-	typedef UInt32 BitSize;
+	typedef unsigned char MessageID;
+	typedef unsigned int BitSize;
 
 	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
@@ -224,7 +224,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		/// XBOX only: set IPPROTO_VDP if you want to use VDP.
 		/// If enabled, this socket does not support broadcast to 255.255.255.255
-		UInt32 extraSocketOptions;
+		unsigned int extraSocketOptions;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -276,13 +276,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		static Int32 size(void);
 
 		/// Hash the JACKIE_INET_Address
-		static UInt32 ToHashCode(const JACKIE_INET_Address &sa);
+		static unsigned int ToHashCode(const JACKIE_INET_Address &sa);
 
 		/// Return the IP version, either IPV4 or IPV6
-		UInt8 JACKIE_INET_Address::GetIPVersion(void) const;
+		unsigned char JACKIE_INET_Address::GetIPVersion(void) const;
 
 		/// @internal Returns either IPPROTO_IP or IPPROTO_IPV6
-		UInt8 GetIPProtocol(void) const;
+		unsigned char GetIPProtocol(void) const;
 
 		/// Returns the port in host order (this is what you normally use)
 		UInt16 GetPortHostOrder(void) const;
@@ -306,7 +306,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		/// Call SetToLoopback() with a specific IP version
 		/// @param[in ipVersion] Either 4 for IPV4 or 6 for IPV6
-		void SetToLoopBack(UInt8 ipVersion);
+		void SetToLoopBack(unsigned char ipVersion);
 
 		/// \return If was set to 127.0.0.1 or ::1
 		bool IsLoopback(void) const;
@@ -330,10 +330,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		//
 		/// @note The current port is unchanged if a port is not specified in \a str
 		/// @return True on success, false on ipVersion does not match type of passed string
-		bool FromString(const char *str, char portDelineator = '|', UInt8 ipVersion = 0);
+		bool FromString(const char *str, char portDelineator = '|', unsigned char ipVersion = 0);
 
 		/// Same as FromString(), but you explicitly set a port at the same time
-		bool FromString(const char *str, UInt16 port, UInt8 ipVersion = 0);
+		bool FromString(const char *str, UInt16 port, unsigned char ipVersion = 0);
 
 		// Return the systemAddress as a string in the format <IP>|<Port>
 		// Returns a static string
@@ -469,11 +469,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	struct JACKIE_EXPORT UInt24
 	{
-		UInt32 val;
+		unsigned int val;
 
 		UInt24() { }
-		operator UInt32() { return val; }
-		operator UInt32() const { return val; }
+		operator unsigned int() { return val; }
+		operator unsigned int() const { return val; }
 
 		UInt24(const UInt24& a) { val = a.val; }
 		UInt24 operator++( ) { ++val; val &= 0x00FFFFFF; return *this; }
@@ -493,24 +493,24 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		const UInt24 operator/( const UInt24 &other ) const { return UInt24(val / other.val); }
 		const UInt24 operator*( const UInt24 &other ) const { return UInt24(val*other.val); }
 
-		UInt24(const UInt32& a) { val = a; val &= 0x00FFFFFF; }
-		UInt24 operator&( const UInt32& a ) { return UInt24(val&a); }
-		UInt24& operator=( const UInt32& a ) { val = a; val &= 0x00FFFFFF; return *this; }
-		UInt24& operator+=( const UInt32& a ) { val += a; val &= 0x00FFFFFF; return *this; }
-		UInt24& operator-=( const UInt32& a ) { val -= a; val &= 0x00FFFFFF; return *this; }
-		bool operator==( const UInt32& right ) const { return val == ( right & 0x00FFFFFF ); }
-		bool operator!=( const UInt32& right ) const { return val != ( right & 0x00FFFFFF ); }
-		bool operator > ( const UInt32& right ) const { return val > ( right & 0x00FFFFFF ); }
-		bool operator < ( const UInt32& right ) const { return val < ( right & 0x00FFFFFF ); }
-		const UInt24 operator+( const UInt32 &other ) const { return UInt24(val + other); }
-		const UInt24 operator-( const UInt32 &other ) const { return UInt24(val - other); }
-		const UInt24 operator/( const UInt32 &other ) const { return UInt24(val / other); }
-		const UInt24 operator*( const UInt32 &other ) const { return UInt24(val*other); }
+		UInt24(const unsigned int& a) { val = a; val &= 0x00FFFFFF; }
+		UInt24 operator&( const unsigned int& a ) { return UInt24(val&a); }
+		UInt24& operator=( const unsigned int& a ) { val = a; val &= 0x00FFFFFF; return *this; }
+		UInt24& operator+=( const unsigned int& a ) { val += a; val &= 0x00FFFFFF; return *this; }
+		UInt24& operator-=( const unsigned int& a ) { val -= a; val &= 0x00FFFFFF; return *this; }
+		bool operator==( const unsigned int& right ) const { return val == ( right & 0x00FFFFFF ); }
+		bool operator!=( const unsigned int& right ) const { return val != ( right & 0x00FFFFFF ); }
+		bool operator > ( const unsigned int& right ) const { return val > ( right & 0x00FFFFFF ); }
+		bool operator < ( const unsigned int& right ) const { return val < ( right & 0x00FFFFFF ); }
+		const UInt24 operator+( const unsigned int &other ) const { return UInt24(val + other); }
+		const UInt24 operator-( const unsigned int &other ) const { return UInt24(val - other); }
+		const UInt24 operator/( const unsigned int &other ) const { return UInt24(val / other); }
+		const UInt24 operator*( const unsigned int &other ) const { return UInt24(val*other); }
 	};
 
 
 	typedef UInt16 SplitPacketId;
-	typedef UInt32 SplitPacketIndex;
+	typedef unsigned int SplitPacketIndex;
 
 	//////////////////////////////////////////////////////////////////////////
 	/// This is the counter used for holding packet numbers,
@@ -733,7 +733,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		PacketSendPriority priority;
 		/// If the reliability type requires a receipt, then return this number with it
-		UInt32 sendReceiptSerial;
+		unsigned int sendReceiptSerial;
 		// Used for the resend queue
 		// Linked list implementation so I can remove from the list via a pointer, 
 		/// without finding it in the list
@@ -755,7 +755,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JACKIE_INet_GUID guid;
 
 		/// The length of the data in bytes
-		UInt32 length;
+		unsigned int length;
 
 		/// The length of the data in bits
 		BitSize bitSize;
@@ -838,7 +838,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 	struct JACKIE_EXPORT RemoteEndPointIndex
 	{
-		UInt32 index;
+		unsigned int index;
 		RemoteEndPointIndex *next;
 	};
 
@@ -860,7 +860,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned int extraSocketOptions;
 		JackieINetSocket* socket;
 		unsigned short port;
-		UInt32 receipt;
+		unsigned int receipt;
 		enum
 		{
 			BCS_SEND,
