@@ -13,7 +13,7 @@ namespace JACKIE_INET
 	const JACKIE_INet_GUID JACKIE_INet_GUID_Null;
 #endif
 
-	JACKIE_LOCAL_SOCKET::JACKIE_LOCAL_SOCKET()
+	BindSocket::BindSocket()
 	{
 #ifdef __native_client__
 		blockingSocket=false;
@@ -26,7 +26,7 @@ namespace JACKIE_INET
 		extraSocketOptions = 0;
 		socketFamily = AF_INET;
 	}
-	JACKIE_LOCAL_SOCKET::JACKIE_LOCAL_SOCKET(const char *_hostAddress, UInt16 _port)
+	BindSocket::BindSocket(const char *_hostAddress, UInt16 _port)
 	{
 #ifdef __native_client__
 		blockingSocket = false;

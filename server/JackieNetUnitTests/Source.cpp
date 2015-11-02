@@ -394,7 +394,7 @@ static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
-	JACKIE_INET::JACKIE_LOCAL_SOCKET socketDescriptor;
+	JACKIE_INET::BindSocket socketDescriptor;
 	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
 	socketDescriptor.port = 0;
 	socketDescriptor.socketFamily = AF_INET;
@@ -444,8 +444,24 @@ static void test_ServerApplication_funcs()
 #include "JackieNet/JackieStream.h"
 static void test_JackieStream__funcs()
 {
-	JackieStream::GetInstance();
+	int a = 12;
+	JackieStream s0((char*) &a, sizeof(a), true);
+	s0.PrintHex();
 
+	printf_s("\n");
+	JackieStream s1;
+	s1.PrintHex();
+
+	printf_s("\n");
+	char buf[1024] = { 0 };
+	JackieStream s3(buf, 24, false);
+	s3.PrintHex();
+
+	printf_s("\n");
+	char str[] = "Jackie";
+	JackieStream s4(str, sizeof(str), false);
+	s4.WritePosBits(54);
+	s4.PrintBit();
 }
 enum
 {
@@ -641,7 +657,7 @@ int main(int argc, char** argv)
 			test_ServerApplication_funcs();
 			break;
 		case JackieStream_H:
-				test_JackieStream__funcs();
+			test_JackieStream__funcs();
 			break;
 		default:
 			break;

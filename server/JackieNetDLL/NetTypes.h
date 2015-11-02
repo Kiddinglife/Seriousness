@@ -58,7 +58,6 @@ namespace JACKIE_INET
 
 	/// First byte of a network message
 	typedef unsigned char MessageID;
-	typedef unsigned int BitSize;
 
 	/// Index of an invalid JACKIE_INET_Address
 #ifndef SWIG
@@ -165,10 +164,10 @@ namespace JACKIE_INET
 
 	/// SocketDescriptor
 	/// Describes the local socket to use for RakPeer::Startup
-	struct JACKIE_EXPORT JACKIE_LOCAL_SOCKET
+	struct JACKIE_EXPORT BindSocket
 	{
-		JACKIE_LOCAL_SOCKET();
-		JACKIE_LOCAL_SOCKET(const char *_hostAddress, UInt16 _port);
+		BindSocket();
+		BindSocket(const char *_hostAddress, UInt16 _port);
 		/// The local port to bind to.  Pass 0 to have an OS auto-assigned port.
 		UInt16 port;
 
@@ -462,7 +461,7 @@ namespace JACKIE_INET
 		unsigned int length;
 
 		/// The length of the data in bits
-		BitSize bitSize;
+		unsigned int bitSize;
 
 		/// The data from the sender
 		char *data;

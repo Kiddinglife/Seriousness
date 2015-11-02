@@ -111,12 +111,10 @@ namespace JACKIE_INET
 		ResetSendReceipt();
 	}
 	ServerApplication::~ServerApplication() { }
-	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	JACKIE_INET::StartupResult ServerApplication::Start(unsigned int maxConn,
-		JACKIE_LOCAL_SOCKET *bindLocalSockets,
+		BindSocket *bindLocalSockets,
 		unsigned int bindLocalSocketsCount,
 		Int32 threadPriority /*= -99999*/)
 	{
@@ -152,7 +150,7 @@ namespace JACKIE_INET
 
 		assert(maxConn > 0); if( maxConn <= 0 ) return INVALID_MAX_CONNECTIONS;
 
-		/////////////////////////////// Start to bind given sockets ///////////////////////////////////
+		/// Start to bind given sockets 
 		unsigned int index;
 		JackieINetSocket* sock;
 		JISBerkleyBindParams berkleyBindParams;
@@ -267,9 +265,8 @@ namespace JACKIE_INET
 			}
 		}
 #endif
-		/////////////////////////////////////////////////////////////////////////////////////////
 
-		/////////////////////////////// setup connections list ///////////////////////////////
+		/// setup connections list
 		if( maxConnections == 0 )
 		{
 			// Don't allow more incoming connections than we have peers.
@@ -302,10 +299,9 @@ namespace JACKIE_INET
 				activeSystemList[index] = &remoteSystemList[index];
 			}
 		}
-		//////////////////////////////////////////////////////////////////////////
 
 
-		////////////////////////////// Setup Plugins ///////////////////////////////
+		/// Setup Plugins 
 		for( index = 0; index < pluginListTS.Size(); index++ )
 		{
 			pluginListTS[index]->OnRakPeerStartup();
@@ -314,10 +310,9 @@ namespace JACKIE_INET
 		{
 			pluginListNTS[index]->OnRakPeerStartup();
 		}
-		//////////////////////////////////////////////////////////////////////////
 
 
-		///////////////////////////////////////// setup thread things //////////////////////////////////////
+		///  setup thread things
 		endThreads = true;
 		isRecvPollingThreadActive = isSendPollingThreadActive = false;
 		if( endThreads )
@@ -332,27 +327,29 @@ namespace JACKIE_INET
 
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
 #if USE_SINGLE_THREAD == 0
+			/*
 			// this will create bindLocalSocketsCount of recv threads which is wrong
 			// we only need one recv thread to recv data from all binded sockets
-			//for( index = 0; index < bindLocalSocketsCount; index++ )
-			//{
-			//	if( JISList[index]->IsBerkleySocket() )
-			// if( CreateRecvPollingThread(threadPriority) != 0 )
-			//{
-			//	End(0);
-			//	return FAILED_TO_CREATE_NETWORK_THREAD;
-			//}
-			//}
+			for( index = 0; index < bindLocalSocketsCount; index++ )
+			{
+				if( JISList[index]->IsBerkleySocket() )
+			 if( CreateRecvPollingThread(threadPriority) != 0 )
+			{
+				End(0);
+				return FAILED_TO_CREATE_NETWORK_THREAD;
+			}
+			}
+			 this will create another thread for recv
+			if( CreateRecvPollingThread(threadPriority) != 0 )
+			{
+				End(0);
+				JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
+				return FAILED_TO_CREATE_RECV_THREAD;
+			}
+			*/
 
-			/// this will create another thread for recv
-			//if( CreateRecvPollingThread(threadPriority) != 0 )
-			//{
-			//	End(0);
-			//	JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
-			//	return FAILED_TO_CREATE_RECV_THREAD;
-			//}
-			///// Wait for the threads to activate. When they are active they will set these variables to true
-			//while( !isRecvPollingThreadActive ) JACKIE_Sleep(10);
+			/// Wait for the threads to activate. When they are active they will set these variables to true
+			while( !isRecvPollingThreadActive ) JACKIE_Sleep(10);
 
 			/// we handle recv in this thread, that is we only have two threads in the app this recv thread and th other send thread
 			isRecvPollingThreadActive = true;
@@ -380,7 +377,6 @@ namespace JACKIE_INET
 #endif
 			}
 		}
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		//#ifdef USE_THREADED_SEND
 		//		RakNet::SendToThread::AddRef();
@@ -389,6 +385,7 @@ namespace JACKIE_INET
 		JINFO << "Startup Application Succeeds....";
 		return ALREADY_STARTED;
 	}
+
 	void ServerApplication::End(unsigned int blockDuration,
 		unsigned char orderingChannel,
 		PacketSendPriority disconnectionNotificationPriority)

@@ -79,7 +79,6 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	/// First byte of a network message
 	typedef unsigned char MessageID;
-	typedef unsigned int BitSize;
 
 	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
@@ -185,13 +184,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		char *myPrivateKey;
 	};
 
-	//////////////////////////////////////////////////////////////////////////
-	/// SocketDescriptor that escribes the local socket to use for ServerApplication::Run()
-	//////////////////////////////////////////////////////////////////////////
-	struct JACKIE_EXPORT JACKIE_LOCAL_SOCKET
+	/// BindSocket is used to bind socket
+	struct JACKIE_EXPORT BindSocket
 	{
-		JACKIE_LOCAL_SOCKET();
-		JACKIE_LOCAL_SOCKET(const char *_hostAddress, UInt16 _port);
+		BindSocket();
+		BindSocket(const char *_hostAddress, UInt16 _port);
 		/// The local port to bind to.  Pass 0 to have an OS auto-assigned port.
 		UInt16 port;
 
@@ -679,7 +676,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// The size of the array of subsplit packets
 		SplitPacketIndex splitPacketCount;
 		/// How many bits long the data is
-		BitSize dataBitLength;
+		unsigned int dataBitLength;
 		/// What type of reliability algorithm to use with this packet
 		PacketReliability reliability;
 	};
@@ -704,7 +701,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		// For debugging
 		TimeUS retransmissionTime;
 		// Size of the header when encoded into a bitstream
-		BitSize headerLength;
+		unsigned int headerLength;
 		/// Buffer is a pointer to the actual data, assuming this packet has data at all
 		unsigned char *data;
 		/// How to alloc and delete the data member
@@ -758,7 +755,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned int length;
 
 		/// The length of the data in bits
-		BitSize bitSize;
+		unsigned int bitSize;
 
 		/// The data from the sender
 		unsigned char *data;
@@ -844,7 +841,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	struct JACKIE_EXPORT Command
 	{
-		BitSize numberOfBitsToSend;
+		unsigned int numberOfBitsToSend;
 		PacketReliability priority;
 		PacketReliability reliability;
 		char orderingChannel;

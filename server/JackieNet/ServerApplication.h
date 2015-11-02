@@ -230,7 +230,7 @@ namespace JACKIE_INET
 
 
 		virtual StartupResult Start(unsigned int maxConnections,
-			JACKIE_LOCAL_SOCKET *socketDescriptors,
+			BindSocket *socketDescriptors,
 			unsigned int socketDescriptorCount, Int32 threadPriority = -99999) override;
 		void End(unsigned int blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);

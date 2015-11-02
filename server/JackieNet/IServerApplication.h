@@ -65,8 +65,34 @@ namespace JACKIE_INET
 		/// ports under 1024 are restricted for everything but the root user. Use a higher port 
 		/// for maximum compatibility. 
 		//////////////////////////////////////////////////////////////////////////
+
+		///========================================
+		/// @Function Start 
+		/// @Brief
+		/// @Access virtual  public  
+		/// @Param [in] [unsigned int maxConnections] 
+		/// Required so the network can preallocate and for thread safety. 
+		/// A pure client would set this to 1.  
+		/// A pure server would set it to the number of allowed clients. 
+		/// A mixture would set it to the sum of both types of connections
+		/// @Param [in] [JACKIE_LOCAL_SOCKET * socketDescriptors]  
+		/// An array of SocketDescriptor structures to force RakNet to 
+		/// listen on a particular IP address or port (or both).  
+		/// Each SocketDescriptor will represent one unique socket.  
+		/// Do not pass redundant structures.  
+		/// To listen on a specific port, you can pass SocketDescriptor(myPort,0) such as for a server.  
+		/// For a client, it is usually OK to just pass SocketDescriptor(); 
+		/// However, on the XBOX be sure to use IPPROTO_VDP
+		/// @Param [in] [unsigned int socketDescriptorCount]  
+		/// The size of the @socketDescriptors array.
+		/// @Param [in] [Int32 threadPriority]  
+		/// @Returns [JACKIE_INET::StartupResult]
+		/// @Remarks
+		/// @Notice
+		/// @Author mengdi[Jackie]
+		///========================================
 		virtual StartupResult Start(unsigned int maxConnections,
-			JACKIE_LOCAL_SOCKET *socketDescriptors,
+			BindSocket *bindSockets,
 			unsigned int socketDescriptorCount,
 			Int32 threadPriority = -99999) = 0;
 
