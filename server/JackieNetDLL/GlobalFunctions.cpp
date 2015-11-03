@@ -292,7 +292,7 @@ pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
 #include "../DependentExtensions/WinPhone8/ThreadEmulation.h"
 using namespace ThreadEmulation;
 #endif
-void  JACKIE_Sleep(unsigned int ms)
+void  JackieSleep(unsigned int ms)
 {
 #if defined(_WIN32)
 	Sleep(ms);

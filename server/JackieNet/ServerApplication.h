@@ -14,12 +14,11 @@
 #include "IServerApplication.h"
 #include "JackieStream.h"
 //#include "SingleProducerConsumer.h"
-#include "JACKIE_Simple_Mutex.h"
+#include "JackieSimpleMutex.h"
 //#include "DS_OrderedList.h"
 //#include "RakString.h"
 #include "JACKIE_Thread.h"
 //#include "RakNetSmartPtr.h"
-#include "MemPoolAllocRingBufferQueue.h"
 #include "ThreadConditionSignalEvent.h"
 #include "CompileFeatures.h"
 //#include "SecureHandshake.h"
@@ -30,7 +29,6 @@
 #include "IPlugin.h"
 #include "RandomSeedCreator.h"
 #include "JackieINetSocket.h"
-
 using namespace DataStructures;
 
 namespace JACKIE_INET
@@ -94,8 +92,8 @@ namespace JACKIE_INET
 		bool(*incomeDatagramEventHandler)( JISRecvParams * );
 		bool updateCycleIsRunning;
 		volatile bool endThreads; ///Set this to true to terminate threads execution 
-		volatile bool isSendPollingThreadActive; ///true if the send thread is active. 
-		volatile bool isRecvPollingThreadActive; ///true if the recv thread is active. 
+		volatile bool isNetworkUpdateThreadActive; ///true if the send thread is active. 
+		JACKIE_ATOMIC_LONG isRecvPollingThreadActive; ///true if the recv thread is active. 
 		ThreadConditionSignalEvent quitAndDataEvents;
 
 
@@ -141,14 +139,14 @@ namespace JACKIE_INET
 		/// in single thread app, default JISRecvParams pool is JISRecvParamsPool
 		/// in Multi-threads app, used only by recv thread to alloc and dealloc JISRecvParams
 		/// via anpothe
-		MemoryPool<JISRecvParams, 512, 8> JISRecvParamsPool;
+		MemoryPool<JISRecvParams, 512, 8>* JISRecvParamsPool;
+		//MemoryPool<JISRecvParams, 512, 8> JISRecvParamsPool;
 		MemoryPool<Command, 512, 8> commandPool;
 
 
 		struct PacketFollowedByData { Packet p; unsigned char data[1]; };
 		//struct SocketQueryOutput{	RingBufferQueue<JACKIE_INet_Socket*> sockets;};
-		MemPoolAllocRingBufferQueueCtorDtor <RingBufferQueue<JackieINetSocket*>,
-			8, 4, 8> socketQueryOutput;
+		MemoryPool <RingBufferQueue<JackieINetSocket*>, 8, 4> socketQueryOutput;
 
 
 #if USE_SINGLE_THREAD == 0
@@ -162,9 +160,9 @@ namespace JACKIE_INET
 		// lockfree queue
 
 		/// shared between recv and send thread to store allocated JISRecvParams PTR
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> allocRecvParamQ;
+		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* allocRecvParamQ;
 		/// shared by recv and send thread to store JISRecvParams PTR that is being dellacated
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> deAllocRecvParamQ;
+		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* deAllocRecvParamQ;
 
 		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
 		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
@@ -179,9 +177,9 @@ namespace JACKIE_INET
 #else
 
 		/// shared between recv and send thread
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> allocRecvParamQ;
+		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* allocRecvParamQ;
 		/// shared by recv and send thread to  store JISRecvParams PTR that is being dellacated
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE> deAllocRecvParamQ;
+		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* deAllocRecvParamQ;
 
 		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
 		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
@@ -240,9 +238,10 @@ namespace JACKIE_INET
 		/// are called only  by recv thread. the recvStruct will be obtained from 
 		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
 		/// It is Caller's responsibility to make sure s != 0
-		virtual void ReclaimOneJISRecvParams(JISRecvParams *s) override;
-		void ReclaimAllJISRecvParams();
-		virtual JISRecvParams * AllocJISRecvParams() override;
+		virtual void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) override;
+		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
+		virtual JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex) 
+			override;
 
 
 		/// Generate and store a unique GUID
@@ -255,13 +254,13 @@ namespace JACKIE_INET
 
 		void ClearBufferedCommands(void);
 		void ClearSocketQueryOutputs(void);
-		void ClearBufferedRecvParams(void);
+		void ClearAllRecvParamsQs(UInt32 index);
 
 
 		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
 		/// for the furture use of recv thread by popout
 		Packet* AllocPacket(unsigned int dataSize);
-		Packet* AllocPacket(unsigned dataSize, unsigned  char *data);
+		Packet* AllocPacket(unsigned dataSize,  char *data);
 		/// send thread will take charge of dealloc packet in multi-threads env
 		void ReclaimAllPackets(void);
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
@@ -279,9 +278,8 @@ namespace JACKIE_INET
 		void ExecuteComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
 
 
-
 		bool RunNetworkUpdateCycleOnce(void);
-		void RunRecvCycleOnce(void);
+		void RunRecvCycleOnce(UInt32 in = 0);
 		Packet* RunGetPacketCycleOnce(void);
 
 
@@ -294,7 +292,7 @@ namespace JACKIE_INET
 		/// that calls the Start() func plays recv thread
 		/// author mengdi[Jackie]
 		///========================================
-		int CreateRecvPollingThread(int threadPriority);
+		int CreateRecvPollingThread(int threadPriority, UInt32 index);
 		int CreateNetworkUpdateThread(int threadPriority);
 		///========================================
 		/// function  StopRecvPollingThread 

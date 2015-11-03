@@ -38,14 +38,13 @@ class JACKIE_EXPORT JackieSimpleMutex
 	// Unlocks the mutex.
 	void Unlock(void);
 
-	private:
-	void Init(void);
-
 #ifdef _WIN32
 	CRITICAL_SECTION criticalSection;
 	/// Docs say this is faster than a mutex for single process access
 #else
-	pthread_mutex_t hMutex;
+	pthread_mutex_t m_mutex ;
+	pthread_t m_threadID;
+	unsigned int m_count;
 #endif
 
 	// Not threadsafe

@@ -45,7 +45,7 @@ class JackieSimpleMutex
 	CRITICAL_SECTION criticalSection;
 	/// Docs say this is faster than a mutex for single process access
 #else
-	pthread_mutex_t hMutex;
+	pthread_mutex_t m_mutex ;
 #endif
 
 	// Not threadsafe

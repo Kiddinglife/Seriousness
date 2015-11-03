@@ -191,7 +191,7 @@ static void test_NetTime_h_All_funcs()
 	printf_s("JackieGettimeofday(%s)\n", buffer);
 
 	printf_s("GetTime(%i)\n", GetTime());
-	JACKIE_Sleep(1000);
+	JackieSleep(1000);
 	printf_s("GetTime(%i)\n", GetTime());
 }
 
@@ -213,8 +213,8 @@ static void test_GetMyIP_Wins_Linux_funcs()
 class myhandler : public JISEventHandler
 {
 	public:
-	virtual  void ReclaimOneJISRecvParams(JISRecvParams *s) { }
-	virtual JISRecvParams *AllocJISRecvParams() { static JISRecvParams recv; return &recv; }
+	virtual  void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) { }
+	virtual JISRecvParams *AllocJISRecvParams(UInt32 index) { static JISRecvParams recv; return &recv; }
 };
 static void test_JISBerkley_All_funcs()
 {
@@ -297,7 +297,7 @@ static void test_JISBerkley_All_funcs()
 		sendParams.receiverINetAddress = bsock->GetBoundAddress();
 		do { ret = bsock->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
-		JISRecvParams* recvParams = handler.AllocJISRecvParams();
+		JISRecvParams* recvParams = handler.AllocJISRecvParams(0);
 		recvParams->socket = bsock;
 		ret = bsock->RecvFrom(recvParams);
 		if( ret >= 0 ) printf_s("recv(%s)\n", recvParams->data);
@@ -331,7 +331,29 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/RingBufferQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
-#include "JackieNet/MemPoolAllocRingBufferQueue.h"
+
+JACKIE_THREAD_DECLARATION(lockfreeproducer)
+{
+	TIMED_FUNC();
+	for( int i = 0; i < 10; i++ )
+	{
+		( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->PushTail(i);
+	}
+	return 0;
+}
+
+JACKIE_THREAD_DECLARATION(lockfreeconsumer)
+{
+
+	for( int i = 0; i < ( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->Size()
+		; i++ )
+	{
+		int t;
+		( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->PopHead(t);
+	}
+	return 0;
+}
+
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
@@ -351,23 +373,6 @@ static void test_Queue_funcs()
 		for( unsigned int i = 0; i < lockfree.Size(); i++ )
 		{
 			printf_s("%d, ", lockfree[i]);
-		}
-	}
-
-	DataStructures::MemPoolAllocRingBufferQueue<int, 100001, 4, 100001> queue;
-	int i = 0;
-	queue.PushTail(&i);
-	TIMED_BLOCK(MemPoolAllocQueueTimer, "MemPoolAllocQueueTimer")
-	{
-		int i = 0;
-		for( ; i < 100000; i++ )
-		{
-			queue.PushTail(&i);
-		}
-		for( ; i < 100000; i++ )
-		{
-			int* t;
-			queue.PopHead(t);
 		}
 	}
 
@@ -395,7 +400,7 @@ static void test_ServerApplication_funcs()
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::BindSocket socketDescriptor;
-	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; //USE_BLOBKING_SOCKET
 	socketDescriptor.port = 0;
 	socketDescriptor.socketFamily = AF_INET;
 
@@ -410,28 +415,32 @@ static void test_ServerApplication_funcs()
 	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
 	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
-	Packet* packet;
+	Packet* packet = 0;
+	//// Loop for input
+	//while( 1 )
+	//{
 
-	// Loop for input
-	while( 1 )
+	Command* c = app->AllocCommand();
+	c->command = Command::BCS_SEND;
+	app->ExecuteComand(c);
+
+	// This sleep keeps RakNet responsive
+	for( packet = app->GetPacketOnce(); packet != 0;
+		app->ReclaimOnePacket(packet), packet = 0 )
 	{
-		TIMED_SCOPE(GetPacketOnce, "GetPacketOnce");
-		// This sleep keeps RakNet responsive
-		for( packet = app->GetPacketOnce(); packet != 0;
-			app->ReclaimOnePacket(packet), packet = 0 )
-		{
-			Command* c = app->AllocCommand();
-			c->command = Command::BCS_SEND;
-			app->ExecuteComand(c);
-		}
-		/// another way to use
-		//packet = app->GetPacketOnce();
-		//Command* c = app->AllocCommand();
-		//c->command = Command::BCS_SEND;
-		//app->ExecuteComand(c);
-		//if(packet != 0) app->ReclaimOnePacket(packet);
-		Sleep(3000);
+		/// user logics goes here
 	}
+
+	/// another way to use
+	//packet = app->GetPacketOnce();
+	//Command* c = app->AllocCommand();
+	//c->command = Command::BCS_SEND;
+	//app->ExecuteComand(c);
+	//if(packet != 0) app->ReclaimOnePacket(packet);
+
+	//JackieSleep(1500);
+	//break;
+	//}
 
 	Sleep(1001);
 	app->StopRecvPollingThread();
@@ -458,7 +467,7 @@ static void test_JackieStream__funcs()
 	s3.PrintHex();
 
 	printf_s("\n");
-	char str[] = "Jackie";
+	char str[ ] = "Jackie";
 	JackieStream s4(str, sizeof(str), false);
 	s4.WritePosBits(54);
 	s4.PrintBit();
@@ -530,11 +539,11 @@ enum
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
-
-static int testcase = JackieStream_H;
+static int testcase = ServerApplication_H;
 static int testfunc = AllFuncs;
+
+//static int testcase = JackieStream_H;
+//static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
@@ -557,7 +566,7 @@ int main(int argc, char** argv)
 	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
 	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] AtLine[%line]\n%msg\n");
 	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n");
-	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread]\n%msg\n");
+	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread][line %line]\n%msg\n");
 
 
 	/// reconfigureLogger will create new logger if ir does not exists

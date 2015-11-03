@@ -55,8 +55,8 @@ namespace JACKIE_INET
 bool result = false;\
 do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !result )
 
-#define CLIENT_QUEUE_PTR_SIZE 250*8
-#define SERVER_QUEUE_PTR_SIZE 2500*8
+#define CLIENT_QUEUE_PTR_SIZE 25
+#define SERVER_QUEUE_PTR_SIZE 2500
 
 #define USE_NON_BLOBKING_SOCKET true
 #define USE_BLOBKING_SOCKET false
@@ -106,7 +106,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		SOCKET_FAILED_TO_BIND,
 		SOCKET_FAILED_TEST_SEND_RECV,
 		PORT_CANNOT_BE_ZERO,
-		FAILED_TO_CREATE_SEND_THREAD,
+		FAILED_TO_CREATE_NETWORK_UPDATE_THREAD,
 		FAILED_TO_CREATE_RECV_THREAD,
 		COULD_NOT_GENERATE_GUID,
 		STARTUP_OTHER_FAILURE
@@ -758,7 +758,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned int bitSize;
 
 		/// The data from the sender
-		unsigned char *data;
+		char *data;
 
 		/// @internal
 		/// Indicates whether to delete the data, or to simply delete the packet.

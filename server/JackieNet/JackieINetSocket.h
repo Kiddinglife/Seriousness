@@ -71,8 +71,8 @@ namespace JACKIE_INET
 	{
 		public:
 		virtual ~JISEventHandler() { }
-		virtual void ReclaimOneJISRecvParams(JISRecvParams *s) = 0;
-		virtual JISRecvParams *AllocJISRecvParams() = 0;
+		virtual void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) = 0;
+		virtual JISRecvParams *AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex ) = 0;
 	};
 
 	class JACKIE_EXPORT JISAllocator

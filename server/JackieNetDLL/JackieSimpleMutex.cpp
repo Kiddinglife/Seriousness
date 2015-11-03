@@ -12,7 +12,7 @@ JackieSimpleMutex::~JackieSimpleMutex()
 #ifdef _WIN32
 	DeleteCriticalSection(&criticalSection);
 #else
-	pthread_mutex_destroy(&hMutex);
+	pthread_mutex_destroy(&m_mutex );
 #endif
 }
 
@@ -27,7 +27,7 @@ void JackieSimpleMutex::Lock(void)
 #ifdef _WIN32
 	EnterCriticalSection(&criticalSection);
 #else
-	int error = pthread_mutex_lock(&hMutex);
+	int error = pthread_mutex_lock(&m_mutex );
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif
@@ -38,7 +38,7 @@ void JackieSimpleMutex::Unlock(void)
 #ifdef _WIN32
 	LeaveCriticalSection(&criticalSection);
 #else
-	int error = pthread_mutex_unlock(&hMutex);
+	int error = pthread_mutex_unlock(&m_mutex );
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif
@@ -51,7 +51,7 @@ void JackieSimpleMutex::Init(void)
 #elif defined(_WIN32)
 	InitializeCriticalSection(&criticalSection);
 #else
-	int error = pthread_mutex_init(&hMutex, 0);
+	int error = pthread_mutex_init(&m_mutex , 0);
 	(void) error;
 	JACKIE_ASSERT(error == 0);
 #endif

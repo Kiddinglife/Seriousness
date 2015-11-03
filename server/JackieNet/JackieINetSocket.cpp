@@ -158,7 +158,7 @@ namespace JACKIE_INET
 		while( bindResult == JISBindResult_FAILED_BIND_SOCKET )
 		{
 			// Sometimes windows will fail if the socket is recreated too quickly
-			JACKIE_Sleep(100);
+			JackieSleep(100);
 			bindResult = BindShared(bindParameters, file, line);
 		}
 		return bindResult;
@@ -180,7 +180,7 @@ namespace JACKIE_INET
 		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0, boundAddress, 0 };
 
 		JISSendResult sr = Send(&sendParams, TRACE_FILE_AND_LINE_);
-		JACKIE_Sleep(10); // make sure data has been delivered into us
+		JackieSleep(10); // make sure data has been delivered into us
 		JISRecvParams recvParams;
 		recvParams.socket = this;
 		JISRecvResult rr = RecvFrom(&recvParams);

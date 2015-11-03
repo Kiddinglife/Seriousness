@@ -59,7 +59,7 @@ JACKIE_EXPORT inline  extern void  DomainNameToIP(const char *domainName, char i
 
 
 /////////////////////////////////////// JACKIE_Sleep /////////////////////////////////////////
-JACKIE_EXPORT extern void  JACKIE_Sleep(unsigned int ms);
+JACKIE_EXPORT extern void  JackieSleep(unsigned int ms);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline JACKIE_EXPORT extern UInt64 JackieAlignBinary(UInt64 ptr, unsigned char alignment)
