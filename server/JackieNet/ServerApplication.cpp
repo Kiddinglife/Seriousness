@@ -334,7 +334,7 @@ namespace JACKIE_INET
 		isNetworkUpdateThreadActive = false;
 		if( endThreads )
 		{
-			ClearBufferedCommands();
+			ClearAllCommandQs();
 			ClearSocketQueryOutputs();
 			for( unsigned int Index = 0; Index < JISList.Size(); Index++ )
 				ClearAllRecvParamsQs(index);
@@ -408,12 +408,13 @@ namespace JACKIE_INET
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index)
 	{
-		//JINFO << "Reclaim One JISRecvParams";
+		JINFO << "Network Thread Reclaims One JISRecvParams";
 		CHECK_EQ(deAllocRecvParamQ[index].PushTail(s), true);
 	}
-	inline void ServerApplication::ReclaimAllJISRecvParams(UInt32 Index)
+	void ServerApplication::ReclaimAllJISRecvParams(UInt32 Index)
 	{
-		//JINFO << "Reclaim All JISRecvParams";
+		JINFO << "Recv thread " << Index << " Reclaim All JISRecvParams";
+
 		JISRecvParams* recvParams = 0;
 		for( unsigned int index = 0; index < deAllocRecvParamQ[Index].Size(); index++ )
 		{
@@ -423,7 +424,7 @@ namespace JACKIE_INET
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams(UInt32 Index)
 	{
-		//JINFO << "AllocJISRecvParams";
+		JINFO << "Recv Thread" << Index << " Alloc An JISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool[Index].Allocate(); } while( ptr == 0 );
 		return ptr;
@@ -447,18 +448,16 @@ namespace JACKIE_INET
 		deAllocRecvParamQ[index].Clear();
 		JISRecvParamsPool[index].Clear();
 	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneCommand(Command* s)
 	{
-		//JINFO << "Reclaim One Command";
+		JINFO << "Network Thread Reclaims One Command";
 		CHECK_EQ(deAllocCommandQ.PushTail(s), true);
 	}
 	void ServerApplication::ReclaimAllCommands()
 	{
-		//JINFO << "Reclaim All Commands";
+		JINFO << "User Thread Reclaims All Commands";
 
 		Command* bufferedCommand = 0;
 		for( unsigned int index = 0; index < deAllocCommandQ.Size(); index++ )
@@ -472,12 +471,12 @@ namespace JACKIE_INET
 	}
 	Command* ServerApplication::AllocCommand()
 	{
-		JINFO << "AllocBufferedCommand";
+		JINFO << "User Thread Alloc An Command";
 		Command* ptr = 0;
 		do { ptr = commandPool.Allocate(); } while( ptr == 0 );
 		return ptr;
 	}
-	void ServerApplication::ClearBufferedCommands(void)
+	void ServerApplication::ClearAllCommandQs(void)
 	{
 		Command *bcs = 0;
 
@@ -500,10 +499,8 @@ namespace JACKIE_INET
 		allocCommandQ.Clear();
 		commandPool.Clear();
 	}
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	/////////////////////////////// Clear and Allocate ////////////////////////////////////////////////
 	void ServerApplication::InitIPAddress(void)
 	{
 		assert(IPAddress[0] == JACKIE_INET_Address_Null);
@@ -531,6 +528,7 @@ namespace JACKIE_INET
 			++startingIdx;
 		}
 	}
+
 	void ServerApplication::DeallocJISList(void)
 	{
 		for( unsigned int index = 0; index < JISList.Size(); index++ )
@@ -543,13 +541,11 @@ namespace JACKIE_INET
 	{
 		socketQueryOutput.Clear();
 	}
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	//////////////////////////////////////// AllocPacket ///////////////////////////////////////////////
 	Packet* ServerApplication::AllocPacket(unsigned int dataSize)
 	{
-		//JINFO << "Alloc Packet";
+		JINFO << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -565,7 +561,7 @@ namespace JACKIE_INET
 	}
 	Packet* ServerApplication::AllocPacket(unsigned dataSize, char *data)
 	{
-		//JINFO << "Alloc Packet";
+		JINFO << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -581,7 +577,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ReclaimAllPackets()
 	{
-		//JINFO << "Reclaim All Packets";
+		JINFO << "Network Thread Reclaims All Packets";
 
 		Packet* packet;
 		for( unsigned int index = 0; index < deAllocPacketQ.Size(); index++ )
@@ -598,15 +594,13 @@ namespace JACKIE_INET
 			}
 		}
 	}
-	void ServerApplication::ReclaimOnePacket(Packet *packet)
+	inline void ServerApplication::ReclaimOnePacket(Packet *packet)
 	{
-		//JINFO << "Reclaim One Packet";
+		JINFO << "User Thread Reclaims One Packet";
 		CHECK_EQ(deAllocPacketQ.PushTail(packet), true);
 	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	///////////////////////////////////////// thread ///////////////////////////////////////////////////
 	int ServerApplication::CreateRecvPollingThread(int threadPriority, UInt32 index)
 	{
 		char* arg = (char*) jackieMalloc_Ex(sizeof(ServerApplication*) + sizeof(index), TRACE_FILE_AND_LINE_);
@@ -651,12 +645,12 @@ namespace JACKIE_INET
 		endThreads = true;
 		isNetworkUpdateThreadActive = false;
 	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	void ServerApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 	{
+		JINFO << "Process One RecvParam";
+
 #if LIBCAT_SECURITY==1
 #ifdef CAT_AUDIT
 		printf("AUDIT: RECV ");
@@ -699,11 +693,12 @@ namespace JACKIE_INET
 
 		return false;
 	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	void ServerApplication::ProcessConnectionRequestCancelQ(void)
 	{
+		JINFO << "Network Thread Process ConnectionRequest Cancel Q";
+
 		JACKIE_INET_Address connReqCancelAddr;
 		ConnectionRequest* connReq = 0;
 		for( unsigned int index = 0; index < connReqCancelQ.Size(); index++ )
@@ -730,13 +725,14 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
+		JINFO << "Network Thread Process Alloc CommandQ";
+
 		Command* bufferedCommand = 0;
 		RemoteEndPoint* remoteEndPoint = 0;
 
 		/// process command queue
 		for( unsigned int index = 0; index < allocCommandQ.Size(); index++ )
 		{
-			JINFO << "ProcessAllocCommandQ in loop";
 
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
 			CHECK_EQ(allocCommandQ.PopHead(bufferedCommand), true);
@@ -795,6 +791,8 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ProcessAllocJISRecvParamsQ(void)
 	{
+		JINFO << "Network Thread Process Alloc JISRecvParamsQ";
+
 		JISRecvParams* recvParams = 0;
 		for( unsigned int outter = 0; outter < JISList.Size(); outter++ )
 		{
@@ -811,6 +809,7 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
+		JINFO << "Network Thread Process Connection Request Q";
 		if( !connReqQ.IsEmpty() )
 		{
 			Time timeMS;
@@ -1102,6 +1101,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
+		JINFO << "User Thread Packet Go Through PluginCBs";
 		unsigned int i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
@@ -1204,6 +1204,9 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::PacketGoThroughPlugins(Packet*& incomePacket)
 	{
+
+		JINFO << "User Thread Packet Go Through Plugin";
+
 		unsigned int i;
 		PluginActionType pluginResult;
 
@@ -1241,6 +1244,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::UpdatePlugins(void)
 	{
+		JINFO << "User Thread Update Plugins";
 		unsigned int i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
@@ -1264,11 +1268,12 @@ namespace JACKIE_INET
 	}
 	Packet* ServerApplication::RunGetPacketCycleOnce(void)
 	{
-		Packet *incomePacket = 0;
+		ReclaimAllCommands();
 
 		/// UPDATE all plugins
 		UpdatePlugins();
 
+		Packet *incomePacket = 0;
 		/// Pop out one Packet from queue
 		if( allocPacketQ.Size() > 0 )
 		{
@@ -1347,7 +1352,6 @@ namespace JACKIE_INET
 		JISRecvParams* recvParams = 0;
 
 		ReclaimAllJISRecvParams(index);
-		ReclaimAllCommands();
 
 		//do { recvParams = JISRecvParamsPool[index].Allocate(); } while( recvParams == 0 );
 		recvParams = AllocJISRecvParams(index);
@@ -1444,4 +1448,4 @@ namespace JACKIE_INET
 		return g;
 	}
 
-}
+	}

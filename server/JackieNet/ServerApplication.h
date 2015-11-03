@@ -252,7 +252,7 @@ namespace JACKIE_INET
 		unsigned int GetSystemIndexFromGuid(const JACKIE_INet_GUID& input) const;
 
 
-		void ClearBufferedCommands(void);
+		void ClearAllCommandQs(void);
 		void ClearSocketQueryOutputs(void);
 		void ClearAllRecvParamsQs(UInt32 index);
 
