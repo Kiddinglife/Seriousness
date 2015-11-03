@@ -37,7 +37,7 @@ namespace JACKIE_INET
 	/// \author mengdi
 	/// \date Oct 2015
 	//////////////////////////////////////////////////////////////////////////
-	class JACKIE_EXPORT IServerApplication : public JISEventHandler
+	class JACKIE_EXPORT IServerApplication  //: public JISEventHandler
 	{
 		public:
 		/// GetInstance() and DestroyInstance(instance*)
@@ -94,9 +94,12 @@ namespace JACKIE_INET
 		virtual StartupResult Start(unsigned int maxConnections,
 			BindSocket *bindSockets,
 			unsigned int socketDescriptorCount,
-			Int32 threadPriority = -99999) = 0;
+			Int32 threadPriority = -99999)
+		{
+			return ALREADY_STARTED;
+		}
 
-		virtual const JACKIE_INet_GUID& GetMyGUID(void) const = 0;
+		virtual const JACKIE_INet_GUID& GetMyGUID(void) const { return JACKIE_INet_GUID_Null; };
 	};
 
 

@@ -199,8 +199,8 @@ namespace JACKIE_INET
 		JackieSimpleMutex connReqQMutex;
 
 		/// only user thread pushtail into the queue, other threads only read it so no need lock
-		RingBufferQueue<JackieINetSocket*, 8 > JISList;
-
+	    RingBufferQueue<JackieINetSocket*, 8 > bindedSockets;
+		//JackieINetSocket*  bindedSockets[8];
 		// Threadsafe, and not thread safe
 		LockFreeQueue<IPlugin*, 16> pluginListTS;
 		RingBufferQueue<IPlugin*, 16> pluginListNTS;
@@ -212,7 +212,7 @@ namespace JACKIE_INET
 		virtual ~ServerApplication();
 
 		void InitIPAddress(void);
-		void DeallocJISList(void);
+		void DeallocBindedSockets(void);
 		void ResetSendReceipt(void);
 		Packet* GetPacketOnce(void);
 
@@ -238,10 +238,9 @@ namespace JACKIE_INET
 		/// are called only  by recv thread. the recvStruct will be obtained from 
 		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
 		/// It is Caller's responsibility to make sure s != 0
-		virtual void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) override;
+		void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index);
 		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
-		virtual JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex) 
-			override;
+		JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
 
 
 		/// Generate and store a unique GUID
@@ -260,7 +259,7 @@ namespace JACKIE_INET
 		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
 		/// for the furture use of recv thread by popout
 		Packet* AllocPacket(unsigned int dataSize);
-		Packet* AllocPacket(unsigned dataSize,  char *data);
+		Packet* AllocPacket(unsigned dataSize, char *data);
 		/// send thread will take charge of dealloc packet in multi-threads env
 		void ReclaimAllPackets(void);
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env

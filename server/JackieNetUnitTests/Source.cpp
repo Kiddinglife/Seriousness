@@ -209,12 +209,12 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	}
 }
 
-
-class myhandler : public JISEventHandler
+#include "JackieNet/IServerApplication.h"
+class myhandler : public IServerApplication
 {
 	public:
-	virtual  void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) { }
-	virtual JISRecvParams *AllocJISRecvParams(UInt32 index) { static JISRecvParams recv; return &recv; }
+	void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) { }
+	JISRecvParams *AllocJISRecvParams(UInt32 index) { static JISRecvParams recv; return &recv; }
 };
 static void test_JISBerkley_All_funcs()
 {
@@ -412,8 +412,8 @@ static void test_ServerApplication_funcs()
 	JISSendParams sendParams;
 	sendParams.data = data;
 	sendParams.length = strlen(data) + 1;
-	sendParams.receiverINetAddress = app->JISList[0]->GetBoundAddress();
-	do { ret = ( ( JACKIE_INET::JISBerkley* )app->JISList[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+	sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
+	do { ret = ( ( JACKIE_INET::JISBerkley* )app->bindedSockets[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
 
 	Packet* packet = 0;
 	//// Loop for input
@@ -429,6 +429,9 @@ static void test_ServerApplication_funcs()
 		app->ReclaimOnePacket(packet), packet = 0 )
 	{
 		/// user logics goes here
+		//Command* c = app->AllocCommand();
+		//c->command = Command::BCS_SEND;
+		//app->ExecuteComand(c);
 	}
 
 	/// another way to use
@@ -436,7 +439,7 @@ static void test_ServerApplication_funcs()
 	//Command* c = app->AllocCommand();
 	//c->command = Command::BCS_SEND;
 	//app->ExecuteComand(c);
-	//if(packet != 0) app->ReclaimOnePacket(packet);
+	//if( packet != 0 ) app->ReclaimOnePacket(packet);
 
 	//JackieSleep(1500);
 	//break;

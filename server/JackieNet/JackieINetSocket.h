@@ -17,10 +17,12 @@ typedef int PP_Resource;
 
 namespace JACKIE_INET
 {
+
 	/// JIS is short name for JACKIE_INet_Socket 
 	class  JackieINetSocket;
 	struct JIS_BerkleyBindParams;
 	struct JIS_SendParams;
+	class IServerApplication;
 
 	typedef int JISSocket;
 	typedef int JISSendResult;
@@ -72,7 +74,7 @@ namespace JACKIE_INET
 		public:
 		virtual ~JISEventHandler() { }
 		virtual void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) = 0;
-		virtual JISRecvParams *AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex ) = 0;
+		virtual JISRecvParams *AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex) = 0;
 	};
 
 	class JACKIE_EXPORT JISAllocator
@@ -85,7 +87,7 @@ namespace JACKIE_INET
 	class JACKIE_EXPORT JackieINetSocket
 	{
 		protected:
-		JISEventHandler *eventHandler;
+		IServerApplication *eventHandler;
 		JACKIE_INET_Address boundAddress;
 		unsigned int userConnectionSocketIndex;
 		JISType socketType;
@@ -97,8 +99,8 @@ namespace JACKIE_INET
 
 		// In order for the handler to trigger, some platforms must call PollRecvFrom, 
 		// some platforms this create an internal thread.
-		inline void SetRecvEventHandler(JISEventHandler *_eventHandler) { eventHandler = _eventHandler; }
-		inline JISEventHandler * GetEventHandler(void) const { return eventHandler; }
+		inline void SetRecvEventHandler(IServerApplication *_eventHandler) { eventHandler = _eventHandler; }
+		inline IServerApplication * GetEventHandler(void) const { return eventHandler; }
 
 		inline JISType GetSocketType(void) const { return socketType; }
 		inline void SetSocketType(JISType t) { socketType = t; }
@@ -141,7 +143,7 @@ namespace JACKIE_INET
 		int setIPHdrIncl;
 		int doNotFragment;
 		int pollingThreadPriority;
-		JISEventHandler *eventHandler;
+		IServerApplication *eventHandler;
 		unsigned short remotePortJackieNetWasStartedOn_PS3_PS4_PSP2;
 	};
 

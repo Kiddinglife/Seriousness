@@ -158,12 +158,11 @@ namespace JACKIE_INET
 		JackieINetSocket* sock;
 		JISBerkleyBindParams berkleyBindParams;
 		JISBindResult bindResult;
-		DeallocJISList(); /// Deref All Sockets
+		DeallocBindedSockets();
 		for( index = 0; index < bindLocalSocketsCount; index++ )
 		{
 			do { sock = JISAllocator::AllocJIS(); } while( sock == 0 );
-			sock->SetUserConnectionSocketIndex(index);
-			JISList.PushTail(sock);
+			CHECK_EQ(bindedSockets.PushTail(sock), true);
 
 #if defined(__native_client__)
 			NativeClientBindParameters ncbp;
@@ -219,7 +218,7 @@ namespace JACKIE_INET
 					bindResult == JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED )
 				{
 					JISAllocator::DeallocJIS(sock);
-					DeallocJISList();
+					DeallocBindedSockets();
 					JERROR << "Bind Failed (REQUIRES_NET_SUPPORT_IPV6_DEFINED) ! ";
 					return SOCKET_FAMILY_NOT_SUPPORTED;
 				}
@@ -227,24 +226,21 @@ namespace JACKIE_INET
 				switch( bindResult )
 				{
 					case JISBindResult_FAILED_BIND_SOCKET:
-						JISAllocator::DeallocJIS(sock);
-						DeallocJISList();
+						DeallocBindedSockets();
 						JERROR << "Bind Failed (FAILED_BIND_SOCKET) ! ";
 						return SOCKET_PORT_ALREADY_IN_USE;
 						break;
 
 					case JISBindResult_FAILED_SEND_RECV_TEST:
-						JISAllocator::DeallocJIS(sock);
-						DeallocJISList();
+						DeallocBindedSockets();
 						JERROR << "Bind Failed (FAILED_SEND_RECV_TEST) ! ";
 						return SOCKET_FAILED_TEST_SEND_RECV;
 						break;
 
 					default:
 						assert(bindResult == JISBindResult_SUCCESS);
-						char str[256];
-						sock->GetBoundAddress().ToString(true, str);
-						JINFO << "Bind [" << str << "] Successfully";
+						JINFO << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
+						sock->SetUserConnectionSocketIndex(index);
 						break;
 				}
 			} else
@@ -255,32 +251,32 @@ namespace JACKIE_INET
 #endif
 		}
 
-		assert(JISList.Size() == bindLocalSocketsCount);
+		assert(bindedSockets.Size() == bindLocalSocketsCount);
 
 		/// after binding, assign IPAddress port number
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-		if( JISList[0]->IsBerkleySocket() )
+		if( bindedSockets[0]->IsBerkleySocket() )
 		{
 			for( index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
 			{
 				if( IPAddress[index] == JACKIE_INET_Address_Null ) break;
-				IPAddress[index].SetPortHostOrder(( (JISBerkley*) JISList[0] )->GetBoundAddress().GetPortHostOrder());
+				IPAddress[index].SetPortHostOrder(( (JISBerkley*) bindedSockets[0] )->GetBoundAddress().GetPortHostOrder());
 			}
 		}
 #endif
 
 		JISRecvParamsPool = JACKIE_INET::OP_NEW_ARRAY < MemoryPool < JISRecvParams,
-			512, 8 >> ( JISList.Size(), TRACE_FILE_AND_LINE_ );
+			512, 8 >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
 #if USE_SINGLE_THREAD == 0
 		deAllocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < LockFreeQueue <
-			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( JISList.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
 		allocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < LockFreeQueue <
-			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( JISList.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
 #else
 		deAllocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < RingBufferQueue
-			< JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( JISList.Size(), TRACE_FILE_AND_LINE_ );
+			< JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
 		allocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < RingBufferQueue <
-			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( JISList.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams*, SERVER_QUEUE_PTR_SIZE >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
 #endif
 
 		/// setup connections list
@@ -336,7 +332,7 @@ namespace JACKIE_INET
 		{
 			ClearAllCommandQs();
 			ClearSocketQueryOutputs();
-			for( unsigned int Index = 0; Index < JISList.Size(); Index++ )
+			for( unsigned int Index = 0; Index < bindedSockets.Size(); Index++ )
 				ClearAllRecvParamsQs(index);
 
 			firstExternalID = JACKIE_INET_Address_Null;
@@ -351,7 +347,7 @@ namespace JACKIE_INET
 			/// each of socket
 			for( index = 0; index < bindLocalSocketsCount; index++ )
 			{
-				if( JISList[index]->IsBerkleySocket() )
+				if( bindedSockets[index]->IsBerkleySocket() )
 				{
 					if( CreateRecvPollingThread(threadPriority, index) != 0 )
 					{
@@ -529,13 +525,12 @@ namespace JACKIE_INET
 		}
 	}
 
-	void ServerApplication::DeallocJISList(void)
+	void ServerApplication::DeallocBindedSockets(void)
 	{
-		for( unsigned int index = 0; index < JISList.Size(); index++ )
+		for( unsigned int index = 0; index < bindedSockets.Size(); index++ )
 		{
-			if( JISList[index] != 0 ) JISAllocator::DeallocJIS(JISList[index]);
+			if( bindedSockets[index] != 0 ) JISAllocator::DeallocJIS(bindedSockets[index]);
 		}
-		JISList.Clear();
 	}
 	void ServerApplication::ClearSocketQueryOutputs(void)
 	{
@@ -617,11 +612,11 @@ namespace JACKIE_INET
 	{
 		endThreads = true;
 #if USE_SINGLE_THREAD == 0
-		for( UInt32 i = 0; i < JISList.Size(); i++ )
+		for( UInt32 i = 0; i < bindedSockets.Size(); i++ )
 		{
-			if( JISList[i]->IsBerkleySocket() )
+			if( bindedSockets[i]->IsBerkleySocket() )
 			{
-				JISBerkley* sock = (JISBerkley*) JISList[i];
+				JISBerkley* sock = (JISBerkley*) bindedSockets[i];
 				if( sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET )
 				{
 					/// try to send 0 data to let recv thread keep running
@@ -718,11 +713,11 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
 					connReqQ.RemoveAtIndex(i);
 					break;
-				}
 			}
-			connReqQMutex.Unlock();
 		}
+			connReqQMutex.Unlock();
 	}
+}
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		JINFO << "Network Thread Process Alloc CommandQ";
@@ -794,7 +789,7 @@ namespace JACKIE_INET
 		JINFO << "Network Thread Process Alloc JISRecvParamsQ";
 
 		JISRecvParams* recvParams = 0;
-		for( unsigned int outter = 0; outter < JISList.Size(); outter++ )
+		for( unsigned int outter = 0; outter < bindedSockets.Size(); outter++ )
 		{
 			for( unsigned int inner = 0; inner < allocRecvParamQ[outter].Size(); inner++ )
 			{
@@ -1355,9 +1350,9 @@ namespace JACKIE_INET
 
 		//do { recvParams = JISRecvParamsPool[index].Allocate(); } while( recvParams == 0 );
 		recvParams = AllocJISRecvParams(index);
-		recvParams->socket = JISList[index];
+		recvParams->socket = bindedSockets[index];
 
-		if( ( (JISBerkley*) JISList[index] )->RecvFrom(recvParams) > 0 )
+		if( ( (JISBerkley*) bindedSockets[index] )->RecvFrom(recvParams) > 0 )
 		{
 			CHECK_EQ(allocRecvParamQ[index].PushTail(recvParams), true);
 
@@ -1448,4 +1443,4 @@ namespace JACKIE_INET
 		return g;
 	}
 
-	}
+		}
