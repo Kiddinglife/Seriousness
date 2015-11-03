@@ -319,6 +319,7 @@ namespace JACKIE_INET
 		{
 			pluginListTS[index]->OnRakPeerStartup();
 		}
+
 		for( index = 0; index < pluginListNTS.Size(); index++ )
 		{
 			pluginListNTS[index]->OnRakPeerStartup();
@@ -332,8 +333,7 @@ namespace JACKIE_INET
 		{
 			ClearAllCommandQs();
 			ClearSocketQueryOutputs();
-			for( unsigned int Index = 0; Index < bindedSockets.Size(); Index++ )
-				ClearAllRecvParamsQs(index);
+			ClearAllRecvParamsQs();
 
 			firstExternalID = JACKIE_INET_Address_Null;
 			updateCycleIsRunning = false;
@@ -425,24 +425,27 @@ namespace JACKIE_INET
 		do { ptr = JISRecvParamsPool[Index].Allocate(); } while( ptr == 0 );
 		return ptr;
 	}
-	void ServerApplication::ClearAllRecvParamsQs(UInt32 index)
+	void ServerApplication::ClearAllRecvParamsQs()
 	{
-		JISRecvParams *recvParams = 0;
-		for( unsigned int i = 0; i < allocRecvParamQ[index].Size(); i++ )
+		for( unsigned int index = 0; index < bindedSockets.Size(); index++ )
 		{
-			CHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
-			if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
-			JISRecvParamsPool[index].Reclaim(recvParams);
+			JISRecvParams *recvParams = 0;
+			for( unsigned int i = 0; i < allocRecvParamQ[index].Size(); i++ )
+			{
+				CHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
+				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
+				JISRecvParamsPool[index].Reclaim(recvParams);
+			}
+			for( unsigned int i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
+			{
+				CHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
+				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
+				JISRecvParamsPool[index].Reclaim(recvParams);
+			}
+			allocRecvParamQ[index].Clear();
+			deAllocRecvParamQ[index].Clear();
+			JISRecvParamsPool[index].Clear();
 		}
-		for( unsigned int i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
-		{
-			CHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
-			if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
-			JISRecvParamsPool[index].Reclaim(recvParams);
-		}
-		allocRecvParamQ[index].Clear();
-		deAllocRecvParamQ[index].Clear();
-		JISRecvParamsPool[index].Clear();
 	}
 
 
@@ -608,7 +611,7 @@ namespace JACKIE_INET
 	{
 		return JACKIE_Thread::Create(JACKIE_INET::RunNetworkUpdateCycleLoop, this, threadPriority);
 	}
-	void ServerApplication::StopRecvPollingThread()
+	void ServerApplication::StopRecvThread()
 	{
 		endThreads = true;
 #if USE_SINGLE_THREAD == 0
@@ -713,11 +716,11 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
 					connReqQ.RemoveAtIndex(i);
 					break;
+				}
 			}
-		}
 			connReqQMutex.Unlock();
+		}
 	}
-}
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		JINFO << "Network Thread Process Alloc CommandQ";
@@ -1255,6 +1258,11 @@ namespace JACKIE_INET
 	Packet* ServerApplication::GetPacketOnce(void)
 	{
 		TIMED_FUNC();
+
+#if USE_SINGLE_THREAD == 0
+		if( !( IsActive() ) ) return 0;
+#endif
+
 #if USE_SINGLE_THREAD != 0
 		RunRecvCycleOnce(0);
 		RunNetworkUpdateCycleOnce();
@@ -1443,4 +1451,4 @@ namespace JACKIE_INET
 		return g;
 	}
 
-		}
+}

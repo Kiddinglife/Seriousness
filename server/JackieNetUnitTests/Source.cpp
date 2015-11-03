@@ -446,7 +446,7 @@ static void test_ServerApplication_funcs()
 	//}
 
 	Sleep(1001);
-	app->StopRecvPollingThread();
+	app->StopRecvThread();
 	Sleep(1001);
 	app->StopNetworkUpdateThread();
 	Sleep(1001);
@@ -456,24 +456,20 @@ static void test_ServerApplication_funcs()
 #include "JackieNet/JackieStream.h"
 static void test_JackieStream__funcs()
 {
-	int a = 12;
-	JackieStream s0((char*) &a, sizeof(a), true);
-	s0.PrintHex();
-
-	printf_s("\n");
-	JackieStream s1;
-	s1.PrintHex();
-
-	printf_s("\n");
-	char buf[1024] = { 0 };
-	JackieStream s3(buf, 24, false);
-	s3.PrintHex();
-
-	printf_s("\n");
-	char str[ ] = "Jackie";
+	char str[] = "Hel";
 	JackieStream s4(str, sizeof(str), false);
-	s4.WritePosBits(54);
+
 	s4.PrintBit();
+
+	s4.mReadPosBits = 19;
+
+	char src[4] = { 0};
+	char stri[1024];
+	JackieStream::PrintBit(stri, 32, src);
+	printf_s("%s", stri);
+	s4.ReadBits(src, 5);
+	JackieStream::PrintBit(stri, 32, src);
+	printf_s("%s", stri);
 }
 enum
 {
@@ -542,11 +538,11 @@ enum
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
-
-//static int testcase = JackieStream_H;
+//static int testcase = ServerApplication_H;
 //static int testfunc = AllFuncs;
+
+static int testcase = JackieStream_H;
+static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)

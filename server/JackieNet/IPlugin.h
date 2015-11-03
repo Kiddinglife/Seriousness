@@ -1,9 +1,11 @@
 #ifndef PluginReceiveResult_H_
 #define PluginReceiveResult_H_
+
 #include "DLLExport.h"
 #include "NetTypes.h"
 #include "CompileFeatures.h"
 #include "IServerApplication.h"
+#include "EasyLog.h"
 
 namespace JACKIE_INET
 {
@@ -79,25 +81,32 @@ namespace JACKIE_INET
 		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
 		JACKIE_INet_GUID GetMyGUIDUnified(void) const
 		{
-			if( serverApplication != 0 )
-				return serverApplication->GetMyGUID();
+			if( serverApplication != 0 ) return serverApplication->GetMyGUID();
 			return JACKIE_INet_GUID_Null;
 		}
 
-		//////////////////////////////////////////////////////////////////////////
 		/// Called when the interface is attached
-		virtual void OnAttach(void) { }
+		virtual void OnAttach(void)
+		{
+			JINFO << "USER THREAD OnAttach()";
+		}
 		/// Called when the interface is detached
-		virtual void OnDetach(void) { }
-		//////////////////////////////////////////////////////////////////////////
+		virtual void OnDetach(void)
+		{
+			JINFO << "USER THREAD OnDetach()";
+		}
 
 
-		//////////////////////////////////////////////////////////////////////////
 		/// Called when serverApplication is initialized
-		virtual void OnRakPeerStartup() { }
+		virtual void OnRakPeerStartup()
+		{
+			JINFO << "USER THREAD OnRakPeerStartup()";
+		}
 		/// Called when serverApplication is shutdown
-		virtual void OnRakPeerShutdown(void) { }
-		//////////////////////////////////////////////////////////////////////////
+		virtual void OnRakPeerShutdown(void)
+		{
+			JINFO << "USER THREAD OnRakPeerShutdown()";
+		}
 
 
 		/// Update is called every time a packet is checked for 

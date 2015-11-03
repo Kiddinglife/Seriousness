@@ -76,7 +76,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	typedef unsigned char   RPCIndex;
 	typedef UInt16 SystemIndex;
 	typedef UInt64 NetworkID;
-
+	typedef UInt32 BitSize;
 	/// First byte of a network message
 	typedef unsigned char MessageID;
 

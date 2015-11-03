@@ -35,10 +35,7 @@ namespace JACKIE_INET
 {
 	class JACKIE_EXPORT ServerApplication : public IServerApplication
 	{
-		//private:
-		public:
-		STATIC_FACTORY_DECLARATIONS(ServerApplication);
-
+		private:
 #if LIBCAT_SECURITY == 1
 		// Encryption and security
 		bool _using_security, _require_client_public_key;
@@ -74,6 +71,7 @@ namespace JACKIE_INET
 		/// and moving elements in the list by copying pointers variables
 		/// without affecting running threads, even if they are in the reliability layer
 		RemoteEndPoint* remoteSystemList;
+
 		/// activeSystemList holds a list of pointers and is preallocated to be the same size as 
 		/// remoteSystemList. It is updated only by the network thread, but read by both threads
 		/// When the isActive member of RemoteEndPoint is set to true or false, that system is 
@@ -81,6 +79,7 @@ namespace JACKIE_INET
 		/// and the list is only added to, not removed from
 		RemoteEndPoint** activeSystemList;
 		unsigned int activeSystemListSize;
+
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
 
@@ -115,6 +114,7 @@ namespace JACKIE_INET
 		TimeMS defaultTimeoutTime;
 		unsigned int maxOutgoingBPS;
 		bool limitConnectionFrequencyFromTheSameIP;
+
 		// Nobody would use the internet simulator in a final build.
 #ifdef _DEBUG
 		double _packetloss;
@@ -198,16 +198,16 @@ namespace JACKIE_INET
 		RingBufferQueue<ConnectionRequest*, SERVER_QUEUE_PTR_SIZE> connReqQ;
 		JackieSimpleMutex connReqQMutex;
 
-		/// only user thread pushtail into the queue, other threads only read it so no need lock
-	    RingBufferQueue<JackieINetSocket*, 8 > bindedSockets;
-		//JackieINetSocket*  bindedSockets[8];
 		// Threadsafe, and not thread safe
 		LockFreeQueue<IPlugin*, 16> pluginListTS;
 		RingBufferQueue<IPlugin*, 16> pluginListNTS;
 
-
+		public:
+		/// only user thread pushtail into the queue, other threads only read it so no need lock
+		RingBufferQueue<JackieINetSocket*, 8 > bindedSockets;
 
 		public:
+		STATIC_FACTORY_DECLARATIONS(ServerApplication);
 		ServerApplication();
 		virtual ~ServerApplication();
 
@@ -216,6 +216,7 @@ namespace JACKIE_INET
 		void ResetSendReceipt(void);
 		Packet* GetPacketOnce(void);
 
+		private:
 		void ProcessOneRecvParam(JISRecvParams* recvParams);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
@@ -226,21 +227,12 @@ namespace JACKIE_INET
 		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);
 		void AdjustTimestamp(Packet*& incomePacket) const;
 
-
+		public:
 		virtual StartupResult Start(unsigned int maxConnections,
 			BindSocket *socketDescriptors,
 			unsigned int socketDescriptorCount, Int32 threadPriority = -99999) override;
 		void End(unsigned int blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
-
-
-		/// In multi-threads app and single- thread app,these 3 functions
-		/// are called only  by recv thread. the recvStruct will be obtained from 
-		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
-		/// It is Caller's responsibility to make sure s != 0
-		void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index);
-		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
-		JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
 
 
 		/// Generate and store a unique GUID
@@ -251,10 +243,20 @@ namespace JACKIE_INET
 		unsigned int GetSystemIndexFromGuid(const JACKIE_INet_GUID& input) const;
 
 
+		unsigned int MaxConnections() const { return maxConnections; }
+
+		private:
 		void ClearAllCommandQs(void);
 		void ClearSocketQueryOutputs(void);
-		void ClearAllRecvParamsQs(UInt32 index);
+		void ClearAllRecvParamsQs(void);
 
+		/// In multi-threads app and single- thread app,these 3 functions
+		/// are called only  by recv thread. the recvStruct will be obtained from 
+		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
+		/// It is Caller's responsibility to make sure s != 0
+		void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index);
+		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
+		JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
 
 		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
 		/// for the furture use of recv thread by popout
@@ -262,25 +264,16 @@ namespace JACKIE_INET
 		Packet* AllocPacket(unsigned dataSize, char *data);
 		/// send thread will take charge of dealloc packet in multi-threads env
 		void ReclaimAllPackets(void);
-		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
-		void ReclaimOnePacket(Packet *packet);
-
-
 
 		/// send thread will push trail this command PTR  to buffered command
 		/// dealloc queue in multi-threads env
 		void ReclaimOneCommand(Command* bufferedCommand);
 		/// recv thread will reclaim all commands  into command pool in multi-threads env
 		void ReclaimAllCommands();
-		/// only recv thread will take charge of alloc packet in multi-threads env
-		Command* AllocCommand();
-		void ExecuteComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
-
 
 		bool RunNetworkUpdateCycleOnce(void);
 		void RunRecvCycleOnce(UInt32 in = 0);
 		Packet* RunGetPacketCycleOnce(void);
-
 
 		///========================================
 		/// function  CreateRecvPollingThread 
@@ -293,6 +286,18 @@ namespace JACKIE_INET
 		///========================================
 		int CreateRecvPollingThread(int threadPriority, UInt32 index);
 		int CreateNetworkUpdateThread(int threadPriority);
+
+		void PacketGoThroughPluginCBs(Packet*& incomePacket);
+		void PacketGoThroughPlugins(Packet*& incomePacket);
+		void UpdatePlugins(void);
+
+		public:
+		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
+		void ReclaimOnePacket(Packet *packet);
+		/// only recv thread will take charge of alloc packet in multi-threads env
+		Command* AllocCommand();
+		void ExecuteComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
+
 		///========================================
 		/// function  StopRecvPollingThread 
 		/// Access  public  
@@ -302,14 +307,9 @@ namespace JACKIE_INET
 		/// will never block so no need to use this
 		/// author mengdi[Jackie]
 		///========================================
-		void StopRecvPollingThread(void);
+		void StopRecvThread(void);
 		void StopNetworkUpdateThread(void);
 		bool IsActive(void) const { return endThreads == false; }
-
-
-		void PacketGoThroughPluginCBs(Packet*& incomePacket);
-		void PacketGoThroughPlugins(Packet*& incomePacket);
-		void UpdatePlugins(void);
 
 
 		const JACKIE_INet_GUID& GetMyGUID(void) const { return myGuid; }
@@ -331,7 +331,6 @@ namespace JACKIE_INET
 			Command* bufferedCommand);
 		void CloseConnectionInternally(bool sendDisconnectionNotification,
 			bool performImmediate, Command* bufferedCommand);
-
 
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
