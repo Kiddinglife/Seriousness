@@ -382,7 +382,7 @@ namespace JACKIE_INET
 		}
 
 		/// fill out the remote endpoint address
-		recvFromStruct->timeRead = GetTimeUS();
+		recvFromStruct->timeRead = Get64BitsTimeUS();
 		recvFromStruct->senderINetAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 
@@ -432,7 +432,7 @@ namespace JACKIE_INET
 #endif
 		}
 
-		recvFromStruct->timeRead = GetTimeUS();
+		recvFromStruct->timeRead = Get64BitsTimeUS();
 
 		if( sa.ss_family == AF_INET )
 		{
@@ -466,8 +466,8 @@ namespace JACKIE_INET
 		JISSendParams sendParams = { (char*) &zero, sizeof(zero), 0, this->boundAddress, 0 };
 		this->Send(&sendParams, TRACE_FILE_AND_LINE_);
 
-		TimeMS timeout = ::GetTimeMS() + 1000;
-		while( isRecvFromLoopThreadActive.GetValue() > 0 && GetTimeMS() < timeout )
+		TimeMS timeout = ::Get32BitsTimeMS() + 1000;
+		while( isRecvFromLoopThreadActive.GetValue() > 0 && Get32BitsTimeMS() < timeout )
 		{
 			// Get recvfrom to unblock
 			this->Send(&sendParams, TRACE_FILE_AND_LINE_);

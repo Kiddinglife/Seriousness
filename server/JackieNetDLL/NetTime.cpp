@@ -57,14 +57,14 @@ TimeUS NormalizeTime(TimeUS timeIn)
 }
 #endif // #if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
 
-Time GetTime(void)
+Time GetTimeMS(void)
 {
-	return (Time) ( GetTimeUS() / 1000 );
+	return (Time) ( Get64BitsTimeUS() / 1000 );
 }
 
-TimeMS GetTimeMS(void)
+TimeMS Get32BitsTimeMS(void)
 {
-	return (TimeMS) ( GetTimeUS() / 1000 );
+	return (TimeMS) ( Get64BitsTimeUS() / 1000 );
 }
 
 #if defined(_WIN32)
@@ -135,7 +135,7 @@ TimeUS GetTimeUS_Linux(void)
 }
 #endif
 
-TimeUS GetTimeUS(void)
+TimeUS Get64BitsTimeUS(void)
 {
 #if   defined(_WIN32)
 	return GetTimeUS_Windows();

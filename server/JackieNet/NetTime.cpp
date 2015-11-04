@@ -1,30 +1,4 @@
-#if defined(_WIN32)
-#include "WindowsIncludes.h"
-#if !defined(WINDOWS_PHONE_8)
-// To call timeGetTime, on Code::Blocks, this needs to be libwinmm.a instead
-#pragma comment(lib, "Winmm.lib")
-#endif
-#endif
-
-#if defined(_WIN32)
-//DWORD mProcMask;
-//DWORD mSysMask;
-//HANDLE mThread;
-#else
-#include <sys/time.h>
-#include <unistd.h>
-TimeUS initialTime;
-#endif
-
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
-#else
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-#endif
-
 #include "NetTime.h"
-
-static bool initialized = false;
 
 #if defined(GET_TIME_SPIKE_LIMIT)&&GET_TIME_SPIKE_LIMIT > 0
 #include "JACKIE_Simple_Mutex.h"
@@ -57,110 +31,9 @@ TimeUS NormalizeTime(TimeUS timeIn)
 }
 #endif // #if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
 
-Time GetTime(void)
-{
-	return (Time) ( GetTimeUS() / 1000 );
-}
-
-TimeMS GetTimeMS(void)
-{
-	return (TimeMS) ( GetTimeUS() / 1000 );
-}
-
-#if defined(_WIN32)
-
-TimeUS GetTimeUS_Windows(void)
-{
-	if( initialized == false )
-	{
-		initialized = true;
-
-		// Save the current process
-#if !defined(_WIN32_WCE)
-		//		HANDLE mProc = GetCurrentProcess();
-
-		// Get the current Affinity
-#if _MSC_VER >= 1400 && defined (_M_X64)
-		//		GetProcessAffinityMask(mProc, (PDWORD_PTR)&mProcMask, (PDWORD_PTR)&mSysMask);
-#else
-		//		GetProcessAffinityMask(mProc, &mProcMask, &mSysMask);
-#endif
-		//		mThread = GetCurrentThread();
-
-#endif // _WIN32_WCE
-	}
-
-	// 9/26/2010 In China running LuDaShi, QueryPerformanceFrequency has to be called every time because CPU clock speeds can be different
-	TimeUS curTime;
-	LARGE_INTEGER PerfVal;
-	LARGE_INTEGER yo1;
-
-	QueryPerformanceFrequency(&yo1);
-	QueryPerformanceCounter(&PerfVal);
-
-	__int64 quotient, remainder;
-	quotient = ( ( PerfVal.QuadPart ) / yo1.QuadPart );
-	remainder = ( ( PerfVal.QuadPart ) % yo1.QuadPart );
-	curTime = (TimeUS) quotient*(TimeUS) 1000000 + ( remainder*(TimeUS) 1000000 / yo1.QuadPart );
-
-#if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
-	return NormalizeTime(curTime);
-#else
-	return curTime;
-#endif // #if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
-}
-#elif defined(__GNUC__)  || defined(__GCCXML__) || defined(__S3E__)
-TimeUS GetTimeUS_Linux(void)
-{
-	timeval tp;
-	if( initialized == false )
-	{
-		gettimeofday(&tp, 0);
-		initialized = true;
-		// I do this because otherwise Time in milliseconds won't work as it will underflow when dividing by 1000 to do the conversion
-		initialTime = ( tp.tv_sec ) * ( TimeUS ) 1000000 + ( tp.tv_usec );
-	}
-
-	// GCC
-	TimeUS curTime;
-	gettimeofday(&tp, 0);
-
-	curTime = ( tp.tv_sec ) * ( TimeUS ) 1000000 + ( tp.tv_usec );
-
-#if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
-	return NormalizeTime(curTime - initialTime);
-#else
-	return curTime - initialTime;
-#endif // #if defined(GET_TIME_SPIKE_LIMIT) && GET_TIME_SPIKE_LIMIT>0
-}
-#endif
-
-TimeUS GetTimeUS(void)
-{
-#if   defined(_WIN32)
-	return GetTimeUS_Windows();
-#else
-	return GetTimeUS_Linux();
-#endif
-}
-
-bool GreaterThan(Time a, Time b)
-{
-	// a > b?
-	const Time halfSpan = (Time) ( ( (Time) (const Time) -1 ) / (Time) 2 );
-	return b != a && b - a > halfSpan;
-}
-
-bool LessThan(Time a, Time b)
-{
-	// a < b?
-	const Time halfSpan = ( (Time) (const Time) -1 ) / (Time) 2;
-	return b != a && b - a < halfSpan;
-}
-
+/// Add gettimeofday() to win32 plateform
 #if defined(_WIN32) && !defined(__GNUC__)  &&!defined(__GCCXML__)
-
-int JackieGettimeofday(JackieTimeVal *tv, JackieTimeZone *tz)
+int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
 #if defined(WINDOWS_PHONE_8) || defined(WINDOWS_STORE_RT)
 	// _tzset not supported
@@ -203,3 +76,49 @@ int JackieGettimeofday(JackieTimeVal *tv, JackieTimeZone *tz)
 	return 0;
 }
 #endif
+
+
+#if defined(_WIN32)
+#include "WindowsIncludes.h" // Sleep
+#else
+#include <pthread.h>
+#include <time.h>
+#include <sys/time.h>
+static pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
+#endif
+
+#if defined(WINDOWS_PHONE_8) || defined(WINDOWS_STORE_RT)
+#include "../DependentExtensions/WinPhone8/ThreadEmulation.h"
+using namespace ThreadEmulation;
+#endif
+void JackieSleep(unsigned int ms)
+{
+#if defined(_WIN32)
+	Sleep(ms);
+#else
+	/// Single thread sleep code thanks to Furquan Shaikh, 
+	/// http://somethingswhichidintknow.blogspot.com/2009/09/sleep-in-pthread.html
+	///  Modified slightly from the original
+	struct timespec timeToWait;
+	struct timeval now;
+	int rt;
+
+	gettimeofday(&now, NULL);
+
+	long seconds = ms / 1000;
+	long nanoseconds = ( ms - seconds * 1000 ) * 1000000;
+	timeToWait.tv_sec = now.tv_sec + seconds;
+	timeToWait.tv_nsec = now.tv_usec * 1000 + nanoseconds;
+
+	if( timeToWait.tv_nsec >= 1000000000 )
+	{
+		timeToWait.tv_nsec -= 1000000000;
+		timeToWait.tv_sec++;
+	}
+
+	pthread_mutex_lock(&fakeMutex);
+	rt = pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
+	pthread_mutex_unlock(&fakeMutex);
+#endif
+}

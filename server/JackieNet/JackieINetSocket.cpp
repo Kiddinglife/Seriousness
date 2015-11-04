@@ -392,7 +392,7 @@ namespace JACKIE_INET
 		}
 
 		/// fill out the remote endpoint address
-		recvFromStruct->timeRead = GetTimeUS();
+		recvFromStruct->timeRead = Get64BitsTimeUS();
 		recvFromStruct->senderINetAddress.SetPortNetworkOrder(sa.sin_port);
 		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
 		return recvFromStruct->bytesRead;
@@ -440,7 +440,7 @@ namespace JACKIE_INET
 #endif
 		}
 
-		recvFromStruct->timeRead = GetTimeUS();
+		recvFromStruct->timeRead = Get64BitsTimeUS();
 
 		if( sa.ss_family == AF_INET )
 		{
@@ -709,6 +709,5 @@ namespace JACKIE_INET
 	////////////////////////////// JISBerkley implementations ////////////////////////////
 
 #endif
-
 
 }

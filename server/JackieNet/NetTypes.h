@@ -77,6 +77,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	typedef UInt16 SystemIndex;
 	typedef UInt64 NetworkID;
 	typedef UInt32 BitSize;
+	typedef UInt32 ByteSize;
 	/// First byte of a network message
 	typedef unsigned char MessageID;
 
@@ -216,7 +217,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Required for Google chrome
 		_PP_Instance_ chromeInstance;
 
-		/// Set to true to use a blocking socket (default, do not change unless you have a reason to)
+		/// USE_BLOBKING_SOCKET or USE_NON_BLOBKING_SOCKET
 		bool blockingSocket;
 
 		/// XBOX only: set IPPROTO_VDP if you want to use VDP.
@@ -898,5 +899,28 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		char remote_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 #endif
 	};
+
+	/// Every platform except windows store 8 and native client supports Berkley sockets
+#if !defined(WINDOWS_STORE_RT)
+	JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4And6(const char *domainName, char ip[65]);
+	JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4(const char *domainName, char ip[65]);
+#else
+	JACKIE_EXPORT extern void DomainNameToIP_Non_Berkley(const char *domainName, char ip[65]);
+#endif ///  !defined(WINDOWS_STORE_RT)
+	inline JACKIE_EXPORT extern void  DomainNameToIP(const char *domainName, char ip[65])
+	{
+#if defined(WINDOWS_STORE_RT)
+		return DomainNameToIP_Non_Berkley(domainName, ip);
+#elif defined(__native_client__)
+		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
+#elif defined(_WIN32)
+		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
+#else
+		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
+#endif
+	}
+
+	/// Return false if Numeric IP address. Return true if domain NonNumericHostString
+	JACKIE_EXPORT extern bool  isDomainIPAddr(const char *host);
 }
 #endif

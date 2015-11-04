@@ -23,11 +23,6 @@ JACKIE_EXPORT extern  unsigned long  SuperFastHashFilePtr(FILE *fp);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Return false if Numeric IP address. Return true if domain NonNumericHostString
-JACKIE_EXPORT extern  bool  isDomainIPAddr(const char *host);
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Fast itoa from http://www.jb.man.ac.uk/~slowe/cpp/itoa.html for Linux since it seems like
@@ -35,32 +30,7 @@ JACKIE_EXPORT extern  bool  isDomainIPAddr(const char *host);
 JACKIE_EXPORT extern char*  Itoa(int value, char* result, int base);
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////// DomainNameToIP /////////////////////////////////////////
-/// Every platform except windows store 8 and native client supports Berkley sockets
-#if !defined(WINDOWS_STORE_RT)
-JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4And6(const char *domainName, char ip[65]);
-JACKIE_EXPORT extern void DomainNameToIP_Berkley_IPV4(const char *domainName, char ip[65]);
-#else
-JACKIE_EXPORT extern void DomainNameToIP_Non_Berkley(const char *domainName, char ip[65]);
-#endif ///  !defined(WINDOWS_STORE_RT)
-JACKIE_EXPORT inline  extern void  DomainNameToIP(const char *domainName, char ip[65])
-{
-#if defined(WINDOWS_STORE_RT)
-	return DomainNameToIP_Non_Berkley(domainName, ip);
-#elif defined(__native_client__)
-	return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
-#elif defined(_WIN32)
-	return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
-#else
-	return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
-#endif
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-/////////////////////////////////////// JACKIE_Sleep /////////////////////////////////////////
-JACKIE_EXPORT extern void  JackieSleep(unsigned int ms);
-//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 inline JACKIE_EXPORT extern UInt64 JackieAlignBinary(UInt64 ptr, unsigned char alignment)
 {

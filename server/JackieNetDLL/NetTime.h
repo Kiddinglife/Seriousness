@@ -49,15 +49,15 @@ typedef UInt64 TimeUS;
 
 /// Same as GetTimeMS 
 /// Holds the time in either a 32 or 64 bit variable, depending on __GET_TIME_64BIT
-Time JACKIE_EXPORT GetTime(void);
+Time JACKIE_EXPORT GetTimeMS(void);
 
 /// Return the time as 32 bit
 /// \note The maximum delta between returned calls is 1 second - however, RakNet calls this constantly anyway. See NormalizeTime() in the cpp.
-TimeMS JACKIE_EXPORT GetTimeMS(void);
+TimeMS JACKIE_EXPORT Get32BitsTimeMS(void);
 
 /// Return the time as 64 bit
 /// \note The maximum delta between returned calls is 1 second - however, RakNet calls this constantly anyway. See NormalizeTime() in the cpp.
-TimeUS JACKIE_EXPORT GetTimeUS(void);
+TimeUS JACKIE_EXPORT Get64BitsTimeUS(void);
 
 /// a > b?
 extern  bool JACKIE_EXPORT GreaterThan(Time a, Time b);

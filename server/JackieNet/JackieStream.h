@@ -32,11 +32,10 @@ namespace JACKIE_INET
 	{
 		/*private:*/
 		public:
-		typedef BitSize BitSize;
 		BitSize bitsAllocCount;
 		BitSize mWritePosBits;
 		BitSize mReadPosBits;
-		char *mBuffer;
+		char *base;
 		/// true if the internal buffer is copy of the data passed to the constructor
 		bool mUseHeapBuf;
 		char mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
@@ -50,8 +49,8 @@ namespace JACKIE_INET
 		void WritePosBits(BitSize val) { mWritePosBits = val; }
 		BitSize ReadPosBits() const { return mReadPosBits; }
 		void ReadPosBits(BitSize val) { mReadPosBits = val; }
-		char * Buffer() const { return mBuffer; }
-		void Buffer(char * val) { mBuffer = val; }
+		char * Buffer() const { return base; }
+		void Buffer(char * val) { base = val; }
 
 		///========================================
 		/// @Param [in] [ BitSize initialBytesToAllocate]:

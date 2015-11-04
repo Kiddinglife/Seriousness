@@ -121,7 +121,6 @@ namespace JACKIE_INET
 		unsigned int bindLocalSocketsCount,
 		Int32 threadPriority /*= -99999*/)
 	{
-
 		if( IsActive() ) return StartupResult::ALREADY_STARTED;
 
 		// If getting the guid failed in the constructor, try again
@@ -627,8 +626,8 @@ namespace JACKIE_INET
 					char zero[ ] = "This is used to Stop Recv Thread";
 					JISSendParams sendParams = { zero, sizeof(zero), 0, sock->GetBoundAddress(), 0 };
 					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
-					TimeMS timeout = GetTimeMS() + 1000;
-					while( isRecvPollingThreadActive.GetValue() > 0 && GetTimeMS() < timeout )
+					TimeMS timeout = Get32BitsTimeMS() + 1000;
+					while( isRecvPollingThreadActive.GetValue() > 0 && Get32BitsTimeMS() < timeout )
 					{
 						sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
 						JackieSleep(100);
@@ -744,7 +743,7 @@ namespace JACKIE_INET
 					/// GetTime is a very slow call so do it once and as late as possible
 					if( timeUS == 0 )
 					{
-						timeUS = GetTimeUS();
+						timeUS = Get64BitsTimeUS();
 						timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
 					}
 					/// send data stored in this bc right now
@@ -813,7 +812,7 @@ namespace JACKIE_INET
 			Time timeMS;
 			if( timeUS == 0 )
 			{
-				timeUS = GetTimeUS();
+				timeUS = Get64BitsTimeUS();
 				timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
 			}
 
@@ -1430,7 +1429,7 @@ namespace JACKIE_INET
 	}
 	UInt64 ServerApplication::Get64BitUniqueRandomNumber(void)
 	{
-		UInt64 g = GetTimeUS();
+		UInt64 g = Get64BitsTimeUS();
 		TimeUS lastTime, thisTime, diff;
 		unsigned char diffByte = 0;
 		// Sleep a small random time, then use the last 4 bits as a source of randomness
@@ -1439,9 +1438,9 @@ namespace JACKIE_INET
 			diffByte = 0;
 			for( int index = 0; index < 4; index++ )
 			{
-				lastTime = GetTimeUS();
+				lastTime = Get64BitsTimeUS();
 				JackieSleep(1);
-				thisTime = GetTimeUS();
+				thisTime = Get64BitsTimeUS();
 				diff = thisTime - lastTime;
 				diffByte ^= (unsigned char) ( ( diff & 15 ) << ( index * 2 ) ); ///0xF = 1111 = 15
 				if( index == 3 ) diffByte ^= (unsigned char) ( ( diff & 15 ) >> 2 );

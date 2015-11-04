@@ -1,5 +1,4 @@
 #include <iostream>
-
 //#define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
@@ -8,8 +7,12 @@
 INITIALIZE_EASYLOGGINGPP
 
 #include "JackieNet\WSAStartupSingleton.h"
-//////////////////////////// GlobalFunctions_h starts ////////////////////////////////////////////
+#include "JackieNet\NetTypes.h"
 #include "JackieNet\GlobalFunctions.h"
+
+using namespace JACKIE_INET;
+
+//////////////////////////// GlobalFunctions_h starts ////////////////////////////////////////////
 static void test_superfastfunction_func()
 {
 	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
@@ -30,6 +33,7 @@ static void test_itoa_func()
 	char result[3];
 	std::cout << "\nvalue(int 12)= " << Itoa(12, result, 10) << "\n";
 }
+
 static void test_DomainNameToIP_func()
 {
 	// needed for getaddrinfo
@@ -174,10 +178,10 @@ static void test_NetTime_h_All_funcs()
 
 	char buffer[128];
 	time_t rawtime;
-	JackieTimeVal tv;
+	struct timeval tv;
 	// If you get an arror about an incomplete type, just delete this file
-	JackieTimeZone tz;
-	JackieGettimeofday(&tv, &tz);
+	struct timezone tz;
+	gettimeofday(&tv, &tz);
 	// time ( &rawtime );
 	rawtime = tv.tv_sec;
 
@@ -190,9 +194,9 @@ static void test_NetTime_h_All_funcs()
 
 	printf_s("JackieGettimeofday(%s)\n", buffer);
 
-	printf_s("GetTime(%i)\n", GetTime());
+	printf_s("GetTime(%i)\n", GetTimeMS());
 	JackieSleep(1000);
-	printf_s("GetTime(%i)\n", GetTime());
+	printf_s("GetTime(%i)\n", GetTimeMS());
 }
 
 ///////////////////////////// JACKIE_INet_Socket_h /////////////////////////////
@@ -456,18 +460,18 @@ static void test_ServerApplication_funcs()
 #include "JackieNet/JackieStream.h"
 static void test_JackieStream__funcs()
 {
-	char str[] = "Hel";
+	char str[ ] = "Hel";
 	JackieStream s4(str, sizeof(str), false);
-
 	s4.PrintBit();
 
-	s4.mReadPosBits = 19;
-
-	char src[4] = { 0};
+	char src[4] = { 0 };
 	char stri[1024];
+
 	JackieStream::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
-	s4.ReadBits(src, 5);
+
+	s4.ReadBits(src, 15, false);
+
 	JackieStream::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
 }
