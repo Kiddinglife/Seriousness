@@ -104,10 +104,11 @@ namespace JACKIE_INET
 		/// @Param [in] [const bool alignRight]  If true bits will be right aligned
 		/// @Returns bool True if [bitsRead] number of bits are read
 		/// @Remarks
+		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
+		/// 2.user data are aligned to the right side of byte boundary.
 		/// @Notice
-		/// [alignBitsToRight] should be set to True to convert internal
-		/// bitstream data to user data or False if you used [WriteBits()] with 
-		/// [rightAlignedBits] false
+		/// 1.Use True to read to user data 
+		/// 2.Use False to read this stream to another stream 
 		/// @Author mengdi[Jackie]
 		///========================================
 		bool ReadBits(char *dest, BitSize bitsRead, bool alignRight = true);
@@ -121,12 +122,11 @@ namespace JACKIE_INET
 		/// @Param [in] [bool rightAligned] if true particial bits will be right aligned
 		/// @Returns void
 		/// @Remarks
+		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
+		/// 2.user data are aligned to the right side of byte boundary.
 		/// @Notice
-		/// in the case of a partial byte, the bits are aligned
-		/// from the right (bit 0) rather than the left (as in the normal
-		/// internal representation) You would set this to true when
-		/// writing user data, and false when copying bitstream data, such
-		/// as writing one bitstream to another.
+		/// 1.Use true to write user data to jackie stream 
+		/// 2.Use False to write this jackie stream internal data to another stream
 		/// @Author mengdi[Jackie]
 		///========================================
 		void WriteBits(const char* src, BitSize bitsSize, bool rightAligned = true);

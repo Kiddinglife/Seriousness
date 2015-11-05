@@ -379,7 +379,7 @@ static void test_JackieStream__funcs()
 	JackieStream::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
 
-	s4.ReadBits(src, 15, false);
+	s4.ReadBits(src, 15,false);
 
 	JackieStream::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
@@ -451,11 +451,11 @@ enum
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
-
-//static int testcase = JackieStream_H;
+//static int testcase = ServerApplication_H;
 //static int testfunc = AllFuncs;
+
+static int testcase = JackieStream_H;
+static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
