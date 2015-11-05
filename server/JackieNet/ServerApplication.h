@@ -23,17 +23,18 @@
 #include "CompileFeatures.h"
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
-#include "RingBufferQueue.h"
+#include "ArraryQueue.h"
 #include "LockFreeQueue.h"
 #include "MemoryPool.h"
 #include "IPlugin.h"
 #include "RandomSeedCreator.h"
 #include "JackieINetSocket.h"
+
 using namespace DataStructures;
 
 namespace JACKIE_INET
 {
-	class JACKIE_EXPORT ServerApplication : public IServerApplication
+	class JACKIE_EXPORT ServerApplication  //: public IServerApplication
 	{
 		private:
 #if LIBCAT_SECURITY == 1
@@ -48,15 +49,15 @@ namespace JACKIE_INET
 		Ultils::RandomSeedCreator rnr;
 		JackieStream sendBitStream;
 
-		JACKIE_INet_GUID myGuid;
-		JACKIE_INET_Address IPAddress[MAX_COUNT_LOCAL_IP_ADDR];
-		JACKIE_INET_Address firstExternalID;
+		JackieGUID myGuid;
+		JackieAddress IPAddress[MAX_COUNT_LOCAL_IP_ADDR];
+		JackieAddress firstExternalID;
 
 
 		/// Store the maximum number of peers allowed to connect
 		unsigned int maxConnections;
 		///Store the maximum incoming connection allowed 
-		unsigned int maxIncomeConnections;
+		unsigned int maxPassiveConnections;
 
 
 		char incomingPassword[256];
@@ -133,20 +134,20 @@ namespace JACKIE_INET
 
 
 		/// in Multi-threads app, used only by send thread to alloc packet
-		MemoryPool<Packet, 512, 8> packetPool;
+		MemoryPool<Packet> packetPool;
 		/// used only by ? thread to alloc RemoteEndPointIndex
-		MemoryPool<RemoteEndPointIndex, 1024, 8> remoteSystemIndexPool;
+		MemoryPool<RemoteEndPointIndex> remoteSystemIndexPool;
 		/// in single thread app, default JISRecvParams pool is JISRecvParamsPool
 		/// in Multi-threads app, used only by recv thread to alloc and dealloc JISRecvParams
 		/// via anpothe
-		MemoryPool<JISRecvParams, 512, 8>* JISRecvParamsPool;
+		MemoryPool<JISRecvParams>* JISRecvParamsPool;
 		//MemoryPool<JISRecvParams, 512, 8> JISRecvParamsPool;
-		MemoryPool<Command, 512, 8> commandPool;
+		MemoryPool<Command> commandPool;
 
 
 		struct PacketFollowedByData { Packet p; unsigned char data[1]; };
 		//struct SocketQueryOutput{	RingBufferQueue<JACKIE_INet_Socket*> sockets;};
-		MemoryPool <RingBufferQueue<JackieINetSocket*>, 8, 4> socketQueryOutput;
+		MemoryPool <ArraryQueue<JackieINetSocket*>, 8, 4> socketQueryOutput;
 
 
 #if USE_SINGLE_THREAD == 0
@@ -160,51 +161,50 @@ namespace JACKIE_INET
 		// lockfree queue
 
 		/// shared between recv and send thread to store allocated JISRecvParams PTR
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* allocRecvParamQ;
+		LockFreeQueue<JISRecvParams*>* allocRecvParamQ;
 		/// shared by recv and send thread to store JISRecvParams PTR that is being dellacated
-		LockFreeQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* deAllocRecvParamQ;
+		LockFreeQueue<JISRecvParams*>* deAllocRecvParamQ;
 
-		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
-		LockFreeQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
+		LockFreeQueue<Command*> allocCommandQ;
+		LockFreeQueue<Command*> deAllocCommandQ;
 
 		/// shared by recv thread and send thread
-		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE> allocPacketQ;
+		LockFreeQueue<Packet*> allocPacketQ;
 		/// shared by recv thread and send thread
-		LockFreeQueue<Packet*, SERVER_QUEUE_PTR_SIZE> deAllocPacketQ;
+		LockFreeQueue<Packet*> deAllocPacketQ;
 
-		LockFreeQueue<JACKIE_INET_Address> connReqCancelQ;
+		LockFreeQueue<JackieAddress> connReqCancelQ;
 
+		LockFreeQueue<ConnectionRequest*> connReqQ;
+		JackieSimpleMutex connReqQMutex;
 #else
 
 		/// shared between recv and send thread
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* allocRecvParamQ;
+		ArraryQueue<JISRecvParams*>* allocRecvParamQ;
 		/// shared by recv and send thread to  store JISRecvParams PTR that is being dellacated
-		RingBufferQueue<JISRecvParams*, SERVER_QUEUE_PTR_SIZE>* deAllocRecvParamQ;
+		ArraryQueue<JISRecvParams*>* deAllocRecvParamQ;
 
-		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> allocCommandQ;
-		RingBufferQueue<Command*, SERVER_QUEUE_PTR_SIZE> deAllocCommandQ;
+		ArraryQueue<Command*> allocCommandQ;
+		ArraryQueue<Command*> deAllocCommandQ;
 
 		/// shared by recv thread and send thread
-		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE> allocPacketQ;
+		ArraryQueue<Packet*> allocPacketQ;
 		/// shared by recv thread and send thread
-		RingBufferQueue<Packet*, SERVER_QUEUE_PTR_SIZE> deAllocPacketQ;
+		ArraryQueue<Packet*> deAllocPacketQ;
 
-		RingBufferQueue<JACKIE_INET_Address, SERVER_QUEUE_PTR_SIZE> connReqCancelQ;
+		ArraryQueue<JackieAddress> connReqCancelQ;
+
+		ArraryQueue<ConnectionRequest*> connReqQ;
 
 #endif
 
-		/// thread unsafe we cannot use lockfree because we have to 
-		/// do removeAt(index) operation on this queue
-		RingBufferQueue<ConnectionRequest*, SERVER_QUEUE_PTR_SIZE> connReqQ;
-		JackieSimpleMutex connReqQMutex;
-
 		// Threadsafe, and not thread safe
-		LockFreeQueue<IPlugin*, 16> pluginListTS;
-		RingBufferQueue<IPlugin*, 16> pluginListNTS;
+		LockFreeQueue<IPlugin*> pluginListTS;
+		ArraryQueue<IPlugin*> pluginListNTS;
 
 		public:
 		/// only user thread pushtail into the queue, other threads only read it so no need lock
-		RingBufferQueue<JackieINetSocket*, 8 > bindedSockets;
+		ArraryQueue<JackieINetSocket*, 8 > bindedSockets;
 
 		public:
 		STATIC_FACTORY_DECLARATIONS(ServerApplication);
@@ -230,20 +230,32 @@ namespace JACKIE_INET
 		public:
 		virtual StartupResult Start(unsigned int maxConnections,
 			BindSocket *socketDescriptors,
-			unsigned int socketDescriptorCount, Int32 threadPriority = -99999) override;
+			unsigned int socketDescriptorCount, Int32 threadPriority = -99999);
 		void End(unsigned int blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
 
 
 		/// Generate and store a unique GUID
-		void GenerateGUID(void) { myGuid.g = Get64BitUniqueRandomNumber(); }
+		void GenerateGUID(void) { myGuid.g = CreateUniqueRandness(); }
 		/// Mac address is a poor solution because 
 		/// you can't have multiple connections from the same system
-		UInt64 Get64BitUniqueRandomNumber(void);
-		unsigned int GetSystemIndexFromGuid(const JACKIE_INet_GUID& input) const;
+		UInt64 CreateUniqueRandness(void);
+		unsigned int GetSystemIndexFromGuid(const JackieGUID& input) const;
 
 
 		unsigned int MaxConnections() const { return maxConnections; }
+
+		///========================================
+		/// @Function CancelConnectionRequest 
+		/// @Brief  
+		/// Cancel a pending connection attempt
+		//  If we are already connected, the connection stays open
+		/// @Access  public  
+		/// @Param [in] [const JackieAddress & target] 
+		///  Which remote server the connection being cancelled to
+		/// @Author mengdi[Jackie]
+		///========================================
+		void CancelConnectionRequest(const JackieAddress& target);
 
 		private:
 		void ClearAllCommandQs(void);
@@ -265,9 +277,6 @@ namespace JACKIE_INET
 		/// send thread will take charge of dealloc packet in multi-threads env
 		void ReclaimAllPackets(void);
 
-		/// send thread will push trail this command PTR  to buffered command
-		/// dealloc queue in multi-threads env
-		void ReclaimOneCommand(Command* bufferedCommand);
 		/// recv thread will reclaim all commands  into command pool in multi-threads env
 		void ReclaimAllCommands();
 
@@ -293,10 +302,44 @@ namespace JACKIE_INET
 
 		public:
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
-		void ReclaimOnePacket(Packet *packet);
+		void ReclaimPacket(Packet *packet);
 		/// only recv thread will take charge of alloc packet in multi-threads env
 		Command* AllocCommand();
-		void ExecuteComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
+		void PostComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
+
+
+		///========================================
+		/// @Function Connect 
+		/// @Brief Connect to a remote host
+		/// @Access  public  
+		/// @Param [in] [const char * host] Either a dotted IP address or a domain name
+		/// @Param [in] [UInt16 port] Which port to connect to on the remote machine.
+		/// @Param [in] [const char * pwd]  
+		/// 1.Must match the pwd on the server.  
+		/// 2.This can be just a password, or can be a stream of data
+		/// @Param [in] [UInt32 pwdLen]  The length in bytes
+		/// @Param [in] [JACKIE_Public_Key * publicKey]  
+		/// @Param [in] [UInt32 ConnectionSocketIndex]  
+		/// @Param [in] [UInt32 ConnectionAttemptTimes]  
+		/// @Param [in] [UInt32 ConnectionAttemptIntervalMS]  
+		/// @Param [in] [TimeMS timeout]  
+		/// @Returns [JACKIE_INET::ConnectionAttemptResult]
+		/// 1.True on successful initiation. 
+		/// 2.False on incorrect parameters, internal error, or too many existing peers
+		/// @Remarks None
+		/// @Notice
+		/// 1.Calling Connect and not calling @SetMaxPassiveConnections() 
+		/// acts as a dedicated client.  Calling both acts as a hyrid;
+		/// 2.This is a non-blocking connection. So the connection gets successful
+		/// when IsConnected() returns true or getting a packet with the type identifier 
+		/// ID_CONNECTION_REQUEST_ACCEPTED. 
+		/// @Author mengdi[Jackie]
+		///========================================
+		ConnectionAttemptResult Connect(const char* host, UInt16 port,
+			const char *pwd = 0, UInt32 pwdLen = 0, JACKIE_Public_Key *publicKey = 0,
+			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 6,
+			UInt32 ConnectionAttemptIntervalMS = 1000, TimeMS timeout = 0, 
+			UInt32 extraData=0);
 
 		///========================================
 		/// function  StopRecvPollingThread 
@@ -312,23 +355,25 @@ namespace JACKIE_INET
 		bool IsActive(void) const { return endThreads == false; }
 
 
-		const JACKIE_INet_GUID& GetMyGUID(void) const { return myGuid; }
-		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address& sa,
+		const JackieGUID& GetMyGUID(void) const { return myGuid; }
+		RemoteEndPoint* GetRemoteEndPoint(const JackieAddress& sa,
 			bool neededBySendThread, bool onlyWantActiveEndPoint) const;
-		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address& sa)
+		RemoteEndPoint* GetRemoteEndPoint(const JackieAddress& sa)
 			const;
 		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address_GUID_Wrapper&
 			senderWrapper, bool neededBySendThread,
 			bool onlyWantActiveEndPoint) const;
-		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INet_GUID& senderGUID,
+		RemoteEndPoint* GetRemoteEndPoint(const JackieGUID& senderGUID,
 			bool onlyWantActiveEndPoint) const;
-		Int32 GetRemoteEndPointIndex(const JACKIE_INET_Address &sa) const;
-		void RefRemoteEndPoint(const JACKIE_INET_Address &sa, unsigned int index);
-		void DeRefRemoteEndPoint(const JACKIE_INET_Address &sa);
+		Int32 GetRemoteEndPointIndex(const JackieAddress &sa) const;
+		void RefRemoteEndPoint(const JackieAddress &sa, unsigned int index);
+		void DeRefRemoteEndPoint(const JackieAddress &sa);
 
 
 		bool SendRightNow(TimeUS currentTime, bool useCallerAlloc,
 			Command* bufferedCommand);
+
+
 		void CloseConnectionInternally(bool sendDisconnectionNotification,
 			bool performImmediate, Command* bufferedCommand);
 

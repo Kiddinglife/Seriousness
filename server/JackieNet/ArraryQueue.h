@@ -13,7 +13,7 @@ namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
 	template <typename queue_type, unsigned int QUEUE_INIT_SIZE = 32>
-	class JACKIE_EXPORT RingBufferQueue
+	class JACKIE_EXPORT ArraryQueue
 	{
 		private:
 		queue_type* array;
@@ -22,12 +22,12 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 		public:
-		RingBufferQueue()
+		ArraryQueue()
 		{
 			allocation_size = head = tail = 0;
 			array = 0;
 		}
-		~RingBufferQueue()
+		~ArraryQueue()
 		{
 			if( allocation_size > 0 )
 				JACKIE_INET::OP_DELETE_ARRAY(array, TRACE_FILE_AND_LINE_);
@@ -35,7 +35,7 @@ namespace DataStructures
 			array = 0;
 			allocation_size = head = tail = 0;
 		}
-		RingBufferQueue(RingBufferQueue& original_copy)
+		ArraryQueue(ArraryQueue& original_copy)
 		{
 			// Allocate memory for copy
 			if( original_copy.Size() == 0 )
@@ -58,7 +58,7 @@ namespace DataStructures
 			allocation_size = original_copy.Size() + 1;
 		}
 
-		bool operator= ( const RingBufferQueue& original_copy )
+		bool operator= ( const ArraryQueue& original_copy )
 		{
 			if( ( &original_copy ) == this ) return false;
 

@@ -206,7 +206,7 @@
     <ClInclude Include="IPlugin.h" />
     <ClInclude Include="LockFreeQueue.h" />
     <ClInclude Include="RandomSeedCreator.h" />
-    <ClInclude Include="RingBufferQueue.h" />
+    <ClInclude Include="ArraryQueue.h" />
     <ClInclude Include="BasicTypes.h" />
     <ClInclude Include="CompileFeatures.h" />
     <ClInclude Include="CompileFeaturesOverride.h" />

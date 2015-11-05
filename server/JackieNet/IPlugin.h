@@ -79,7 +79,7 @@ namespace JACKIE_INET
 
 
 		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
-		JACKIE_INet_GUID GetMyGUIDUnified(void) const
+		JackieGUID GetMyGUIDUnified(void) const
 		{
 			if( serverApplication != 0 ) return serverApplication->GetMyGUID();
 			return JACKIE_INet_GUID_Null;
@@ -123,8 +123,8 @@ namespace JACKIE_INET
 		/// \param[in] systemAddress The system whose connection was closed
 		/// \param[in] rakNetGuid The guid of the specified system
 		/// \param[in] lostConnectionReason How the connection was closed: manually, connection lost, or notification of disconnection
-		virtual void OnClosedConnection(const JACKIE_INET_Address &systemAddress,
-			JACKIE_INet_GUID& rakNetGUID, LoseConnectionReason lostConnectionReason)
+		virtual void OnClosedConnection(const JackieAddress &systemAddress,
+			JackieGUID& rakNetGUID, LoseConnectionReason lostConnectionReason)
 		{
 		}
 
@@ -132,8 +132,8 @@ namespace JACKIE_INET
 		/// \param[in] systemAddress Address of the new connection
 		/// \param[in] rakNetGuid The guid of the specified system
 		/// \param[in] isIncoming If true, this is ID_NEW_INCOMING_CONNECTION, or the equivalent
-		virtual void OnNewConnection(const JACKIE_INET_Address &systemAddress,
-			JACKIE_INet_GUID& rakNetGUID, bool isIncoming) { }
+		virtual void OnNewConnection(const JackieAddress &systemAddress,
+			JackieGUID& rakNetGUID, bool isIncoming) { }
 
 		/// Called when a connection attempt fails
 		/// \param[in] packet Packet to be returned to the user
@@ -150,21 +150,21 @@ namespace JACKIE_INET
 		/// \param[in] time The current time as returned by RakNet::GetTimeMS()
 		/// \param[in] isSend Is this callback representing a send event or receive event?
 		virtual void OnInternalPacket(InternalPacket *internalPacket, unsigned frameNumber,
-			JACKIE_INET_Address& remoteSystemAddress, TimeMS time, int isSend) { }
+			JackieAddress& remoteSystemAddress, TimeMS time, int isSend) { }
 
 		/// Called when we get an ack for a message we reliably sent
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] messageNumber The numerical identifier for which message this is
 		/// \param[in] remoteSystemAddress The player we sent or got this packet from
 		/// \param[in] time The current time as returned by RakNet::GetTimeMS()
-		virtual void OnAck(unsigned int messageNumber, JACKIE_INET_Address& remoteSystemAddress, TimeMS time) { }
+		virtual void OnAck(unsigned int messageNumber, JackieAddress& remoteSystemAddress, TimeMS time) { }
 
 		/// System called IServerApplication::PushBackPacket()
 		/// \param[in] data The data being sent
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress The player we sent or got this packet from
 		virtual void OnPushBackPacket(const char *data, const unsigned int bitsUsed,
-			JACKIE_INET_Address& remoteSystemAddress) { }
+			JackieAddress& remoteSystemAddress) { }
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Queried when attached to RakPeer
@@ -176,19 +176,19 @@ namespace JACKIE_INET
 		/// \param[in] data The data being sent
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
-		virtual void OnDirectSocketSend(const char *data, const unsigned int bitsUsed, JACKIE_INET_Address& remoteSystemAddress) { }
+		virtual void OnDirectSocketSend(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
 		/// Called on a receive from the socket, per datagram, that does not go through the reliability layer
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] data The data being sent
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
-		virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JACKIE_INET_Address& remoteSystemAddress) { }
+		virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
 		/// Called when the reliability layer rejects a send or receive
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
 		virtual void OnReliabilityLayerNotification(const char *errorMessage, const unsigned int
-			bitsUsed, JACKIE_INET_Address& remoteSystemAddress, bool isError) { }
+			bitsUsed, JackieAddress& remoteSystemAddress, bool isError) { }
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 	};
 }

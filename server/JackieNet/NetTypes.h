@@ -26,8 +26,8 @@ namespace JACKIE_INET
 	class   INetApplication;
 	class   JackieStream;
 	struct  Packet;
-	struct  JACKIE_INET_Address;
-	struct  JACKIE_INet_GUID;
+	struct  JackieAddress;
+	struct  JackieGUID;
 	class JackieINetSocket;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -83,8 +83,8 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
-	JACKIE_EXPORT extern const  JACKIE_INET_Address JACKIE_INET_Address_Null;
-	JACKIE_EXPORT extern const  JACKIE_INet_GUID JACKIE_INet_GUID_Null;
+	JACKIE_EXPORT extern const  JackieAddress JACKIE_INET_Address_Null;
+	JACKIE_EXPORT extern const  JackieGUID JACKIE_INet_GUID_Null;
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player
@@ -116,7 +116,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	enum ConnectionAttemptResult
 	{
 		CONNECTION_ATTEMPT_STARTED,
-		INVALID_PARAMETER,
+		INVALID_PARAM,
 		CANNOT_RESOLVE_DOMAIN_NAME,
 		ALREADY_CONNECTED_TO_ENDPOINT,
 		CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS,
@@ -235,7 +235,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	/// Use JACKIE_INet_GUID for a unique per-instance of ServerApplication to identify 
 	/// systems
 	//////////////////////////////////////////////////////////////////////////
-	struct JACKIE_EXPORT JACKIE_INET_Address /// JACKIE_INET_Address
+	struct JACKIE_EXPORT JackieAddress /// JACKIE_INET_Address
 	{
 		/// In6 Or In4 
 		/// JACKIE_INET_Address, with RAKNET_SUPPORT_IPV6 defined, 
@@ -260,24 +260,24 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 
 		/// Constructors
-		JACKIE_INET_Address();
-		JACKIE_INET_Address(const char *str);
-		JACKIE_INET_Address(const char *str, UInt16 port);
+		JackieAddress();
+		JackieAddress(const char *str);
+		JackieAddress(const char *str, UInt16 port);
 
-		JACKIE_INET_Address& operator = ( const JACKIE_INET_Address& input );
-		bool operator==( const JACKIE_INET_Address& right ) const;
-		bool operator!=( const JACKIE_INET_Address& right ) const;
-		bool operator > ( const JACKIE_INET_Address& right ) const;
-		bool operator < ( const JACKIE_INET_Address& right ) const;
+		JackieAddress& operator = ( const JackieAddress& input );
+		bool operator==( const JackieAddress& right ) const;
+		bool operator!=( const JackieAddress& right ) const;
+		bool operator > ( const JackieAddress& right ) const;
+		bool operator < ( const JackieAddress& right ) const;
 
 		/// @internal Return the size to write to a bitStream
 		static Int32 size(void);
 
 		/// Hash the JACKIE_INET_Address
-		static unsigned int ToHashCode(const JACKIE_INET_Address &sa);
+		static unsigned int ToHashCode(const JackieAddress &sa);
 
 		/// Return the IP version, either IPV4 or IPV6
-		unsigned char JACKIE_INET_Address::GetIPVersion(void) const;
+		unsigned char JackieAddress::GetIPVersion(void) const;
 
 		/// @internal Returns either IPPROTO_IP or IPPROTO_IPV6
 		unsigned char GetIPProtocol(void) const;
@@ -297,7 +297,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		void SetPortNetworkOrder(UInt16 s);
 
 		/// set the port from another JACKIE_INET_Address structure
-		void SetPortNetworkOrder(const JACKIE_INET_Address& right);
+		void SetPortNetworkOrder(const JackieAddress& right);
 
 		/// Call SetToLoopback(), with whatever IP version is currently held. Defaults to IPV4
 		void SetToLoopBack(void);
@@ -358,16 +358,16 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	/// Use ServerApplication::GetGuidFromSystemAddress
 	/// (JACKIE_INET_Address_Null) to get your own GUID
 	//////////////////////////////////////////////////////////////////////////
-	struct JACKIE_EXPORT JACKIE_INet_GUID
+	struct JACKIE_EXPORT JackieGUID
 	{
 		/// Used internally for fast lookup. Optional (use -1 to do regular lookup).
 		/// Don't transmit this.
 		SystemIndex systemIndex;
 		UInt64 g;
 
-		JACKIE_INet_GUID();
-		explicit JACKIE_INet_GUID(UInt64 _g);
-		JACKIE_INet_GUID& operator = ( const JACKIE_INet_GUID& input );
+		JackieGUID();
+		explicit JackieGUID(UInt64 _g);
+		JackieGUID& operator = ( const JackieGUID& input );
 
 
 		/// Return the GUID as a static string. 
@@ -381,19 +381,19 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		bool FromString(const char *source);
 
-		static unsigned long ToUInt32(const JACKIE_INet_GUID &g);
+		static unsigned long ToUInt32(const JackieGUID &g);
 		static int size();
 
-		bool operator==( const JACKIE_INet_GUID& right ) const;
-		bool operator!=( const JACKIE_INet_GUID& right ) const;
-		bool operator > ( const JACKIE_INet_GUID& right ) const;
-		bool operator < ( const JACKIE_INet_GUID& right ) const;
+		bool operator==( const JackieGUID& right ) const;
+		bool operator!=( const JackieGUID& right ) const;
+		bool operator > ( const JackieGUID& right ) const;
+		bool operator < ( const JackieGUID& right ) const;
 	};
 
 	struct JACKIE_EXPORT JACKIE_INET_Address_GUID_Wrapper
 	{
-		JACKIE_INet_GUID guid;
-		JACKIE_INET_Address systemAddress;
+		JackieGUID guid;
+		JackieAddress systemAddress;
 
 		SystemIndex GetSystemIndex(void) const
 		{
@@ -428,13 +428,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			guid = input.guid;
 			systemAddress = input.systemAddress;
 		}
-		JACKIE_INET_Address_GUID_Wrapper(const JACKIE_INET_Address& input)
+		JACKIE_INET_Address_GUID_Wrapper(const JackieAddress& input)
 		{
 			guid = JACKIE_INet_GUID_Null;
 			systemAddress = input;
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const Packet& packet);
-		JACKIE_INET_Address_GUID_Wrapper(const JACKIE_INet_GUID& input)
+		JACKIE_INET_Address_GUID_Wrapper(const JackieGUID& input)
 		{
 			guid = input;
 			systemAddress = JACKIE_INET_Address_Null;
@@ -445,13 +445,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			systemAddress = input.systemAddress;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INET_Address& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieAddress& input )
 		{
 			guid = JACKIE_INet_GUID_Null;
 			systemAddress = input;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INet_GUID& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieGUID& input )
 		{
 			guid = input;
 			systemAddress = JACKIE_INET_Address_Null;
@@ -743,14 +743,14 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	struct JACKIE_EXPORT Packet
 	{
 		/// The system that send this packet.
-		JACKIE_INET_Address systemAddress;
+		JackieAddress systemAddress;
 
 		/// A unique identifier for the system that sent this packet, 
 		/// regardless of IP address (internal / external / remote system)
 		/// Only valid once a connection has been established 
 		/// (ID_CONNECTION_REQUEST_ACCEPTED, or ID_NEW_INCOMING_CONNECTION)
 		/// Until that time, will be JACKIE_INet_GUID_Null
-		JACKIE_INet_GUID guid;
+		JackieGUID guid;
 
 		/// The length of the data in bytes
 		unsigned int length;
@@ -781,11 +781,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		// Is this structure in use?
 		bool isActive;
 		/// Their external IP on the internet
-		JACKIE_INET_Address systemAddress;
+		JackieAddress systemAddress;
 		/// Your external IP on the internet, from their perspective
-		JACKIE_INET_Address myExternalSystemAddress;
+		JackieAddress myExternalSystemAddress;
 		/// Their internal IP, behind the LAN
-		JACKIE_INET_Address theirInternalSystemAddress[MAX_COUNT_LOCAL_IP_ADDR];
+		JackieAddress theirInternalSystemAddress[MAX_COUNT_LOCAL_IP_ADDR];
 		/// The reliability layer associated with this player
 		ReliabilityLayer reliabilityLayer;
 		/// True if we started this connection via Connect.  
@@ -807,7 +807,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		Time lastReliableSend;
 		/// connection time, if active.
 		Time connectionTime;
-		JACKIE_INet_GUID guid;
+		JackieGUID guid;
 		int MTUSize;
 		// Reference counted socket to send back on
 		JackieINetSocket* rakNetSocket;
@@ -872,18 +872,18 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	struct JACKIE_EXPORT ConnectionRequest
 	{
-		JACKIE_INET_Address receiverAddr;
+		JackieAddress receiverAddr;
 		Time nextRequestTime;
 		unsigned char requestsMade;
 		char *data;
 		unsigned short dataLength;
-		char outgoingPassword[256];
-		unsigned char outgoingPasswordLength;
+		char pwd[256];
+		unsigned char pwdLen;
 		unsigned socketIndex;
 		unsigned int extraData;
-		unsigned sendConnectionAttemptCount;
-		unsigned timeoutReqConn;
-		TimeMS timeoutTime;
+		unsigned connAttemptTimes;
+		unsigned connAttemptIntervalMS;
+		TimeMS timeout;
 		PublicKeyMode publicKeyMode;
 		JackieINetSocket* socket;
 		enum

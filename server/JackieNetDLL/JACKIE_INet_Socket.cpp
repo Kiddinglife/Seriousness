@@ -76,7 +76,7 @@ namespace JACKIE_INET
 	//////////////////////////////// JISAllocator ends  ///////////////////////
 
 	/////////////////////////////// JACKIE_INet_Socket Implementations /////////////////////////////////
-	void JackieINetSocket::GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JackieINetSocket::GetMyIP(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 #if defined(WINDOWS_STORE_RT)
 		JISWINSTROE8::GetMyIP(addresses);
@@ -145,7 +145,7 @@ namespace JACKIE_INET
 			0 //unsigned short remotePortJackieNetWasStartedOn_PS3_PS4_PSP2;
 		};
 
-		JACKIE_INET_Address boundAddress;
+		JackieAddress boundAddress;
 		JISBerkley *rns2 = (JISBerkley*) JISAllocator::AllocJIS();
 		JISBindResult bindResult = rns2->BindSharedIPV4And6(&bbp, TRACE_FILE_AND_LINE_);
 		JISAllocator::DeallocJIS(rns2);
@@ -574,13 +574,13 @@ namespace JACKIE_INET
 		return 0;
 	}
 
-	void JISBerkley::GetSystemAddressViaJISSocket(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
+	void JISBerkley::GetSystemAddressViaJISSocket(JISSocket rns2Socket, JackieAddress *systemAddressOut)
 	{
 		WSAStartupSingleton::AddRef();
 		GetSystemAddressViaJISSocketIPV4And6(rns2Socket, systemAddressOut);
 		WSAStartupSingleton::Deref();
 	}
-	void JISBerkley::GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
+	void JISBerkley::GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket, JackieAddress *systemAddressOut)
 	{
 		static  sockaddr_in sa;
 		static socklen_t len = sizeof(sa);
@@ -605,7 +605,7 @@ namespace JACKIE_INET
 			systemAddressOut->address.addr4.sin_addr.s_addr = inet_addr__("127.0.0.1");
 		}
 	}
-	void JISBerkley::GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut)
+	void JISBerkley::GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket, JackieAddress *systemAddressOut)
 	{
 #if NET_SUPPORT_IPV6 ==1
 
@@ -649,7 +649,7 @@ namespace JACKIE_INET
 #endif
 	}
 
-	void JISBerkley::GetMyIPBerkley(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JISBerkley::GetMyIPBerkley(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 		WSAStartupSingleton::AddRef();
 #if NET_SUPPORT_IPV6 ==1
@@ -659,7 +659,7 @@ namespace JACKIE_INET
 #endif
 		WSAStartupSingleton::Deref();
 	}
-	void JISBerkley::GetMyIPBerkleyV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JISBerkley::GetMyIPBerkleyV4(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 		char buf[80]; if( gethostname(buf, 80) == SOCKET_ERROR ) return;
 		struct hostent *phe = gethostbyname(buf); if( phe == 0 ) return;
@@ -677,7 +677,7 @@ namespace JACKIE_INET
 			idx++;
 		}
 	}
-	void JISBerkley::GetMyIPBerkleyV4V6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR])
+	void JISBerkley::GetMyIPBerkleyV4V6(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
 		int idx = 0;
 

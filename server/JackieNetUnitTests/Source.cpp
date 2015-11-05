@@ -61,31 +61,31 @@ static void test_DomainNameToIP_func()
 static void test_size_func()
 {
 	std::cout << "JACKIE_INET_Address::test_size_func() starts...\n";
-	std::cout << "size()= " << JACKIE_INET::JACKIE_INET_Address::size() << "\n";
+	std::cout << "size()= " << JACKIE_INET::JackieAddress::size() << "\n";
 }
 static void test_ToHashCode_func()
 {
 	std::cout << "JACKIE_INET_Address::test_ToHashCode_func() starts...\n";
-	JACKIE_INET::JACKIE_INET_Address addr;
-	std::cout << "hash_code()= " << JACKIE_INET::JACKIE_INET_Address::ToHashCode(addr)
+	JACKIE_INET::JackieAddress addr;
+	std::cout << "hash_code()= " << JACKIE_INET::JackieAddress::ToHashCode(addr)
 		<< "\n";
 }
 static void test_Ctor_ToString_FromString_funcs()
 {
 	printf_s("JACKIE_INET_Address::test_Ctor_ToString_FromString_funcs() starts...\n");
 
-	JACKIE_INET::JACKIE_INET_Address default_ctor_addr;
+	JACKIE_INET::JackieAddress default_ctor_addr;
 	const char* str1 = default_ctor_addr.ToString();
 	printf_s("default_ctor_addr_to_str = %s\n", str1);
 
-	JACKIE_INET::JACKIE_INET_Address param_ctor_addr_localhost("localhost:12345");
+	JACKIE_INET::JackieAddress param_ctor_addr_localhost("localhost:12345");
 	const char* str2 = param_ctor_addr_localhost.ToString();
 	printf_s("param_ctor_addr_localhost = %s\n", str2);
 
 	// THIS IS WRONG, so when you use domain name, you have to seprate two-params ctor
 	//JACKIE_INET::JACKIE_INET_Address param_ctor_addr_domain("ZMD-SERVER:1234");
 
-	JACKIE_INET::JACKIE_INET_Address param_ctor_addr_domain("ZMD-SERVER", 1234);
+	JACKIE_INET::JackieAddress param_ctor_addr_domain("ZMD-SERVER", 1234);
 	const char* str3 = param_ctor_addr_domain.ToString();
 	printf_s("param_ctor_addr_domain = %s\n", str3);
 }
@@ -93,7 +93,7 @@ static void test_SetToLoopBack_func()
 {
 	printf_s("JACKIE_INET_Address::test_SetToLoopBack_func() starts...\n");
 
-	JACKIE_INET::JACKIE_INET_Address addr("192.168.1.108", 12345);
+	JACKIE_INET::JackieAddress addr("192.168.1.108", 12345);
 	const char* str = addr.ToString();
 	printf_s("addr = %s\n", str);
 
@@ -110,13 +110,13 @@ static void test_IsLoopback_func()
 {
 	printf_s("JACKIE_INET_Address::test_IsLoopback_func() starts...\n");
 
-	JACKIE_INET::JACKIE_INET_Address addr("LOCALHOST", 12345);
+	JACKIE_INET::JackieAddress addr("LOCALHOST", 12345);
 	const char* str = addr.ToString();
 	addr.IsLoopback() ?
 		printf_s("addr (%s) is loopback addr \n", str) :
 		printf_s("addr (%s) is not loopback addr \n", str);
 
-	JACKIE_INET::JACKIE_INET_Address addr1("192.168.1.103", 12345);
+	JACKIE_INET::JackieAddress addr1("192.168.1.103", 12345);
 	const char* str1 = addr1.ToString();
 	addr1.IsLoopback() ?
 		printf_s("addr (%s) is loopback addr \n", str1) :
@@ -126,13 +126,13 @@ static void test_IsLANAddress_func()
 {
 	printf_s("JACKIE_INET_Address::test_IsLoopback_func() starts...\n");
 
-	JACKIE_INET::JACKIE_INET_Address addr("localhost", 12345);
+	JACKIE_INET::JackieAddress addr("localhost", 12345);
 	const char* str = addr.ToString();
 	addr.IsLoopback() ?
 		printf_s("addr (%s) is LANA addr \n", str) :
 		printf_s("addr (%s) is not LANA addr \n", str);
 
-	JACKIE_INET::JACKIE_INET_Address addr1("www.baidu.com", 12345);
+	JACKIE_INET::JackieAddress addr1("www.baidu.com", 12345);
 	const char* str1 = addr1.ToString();
 	addr1.IsLoopback() ?
 		printf_s("addr (%s) is LANA addr \n", str1) :
@@ -146,10 +146,10 @@ static void test_JACKIE_INet_GUID_ToString_func()
 
 	printf_s("%s\n", JACKIE_INET::JACKIE_INet_GUID_Null.ToString());
 
-	JACKIE_INET::JACKIE_INet_GUID gui(12);
+	JACKIE_INET::JackieGUID gui(12);
 	printf_s("%s\n", gui.ToString());
 
-	printf_s("%d\n", JACKIE_INET::JACKIE_INet_GUID::ToUInt32(gui));
+	printf_s("%d\n", JACKIE_INET::JackieGUID::ToUInt32(gui));
 }
 
 //////////////////////// JACKIE_INET_Address_GUID_Wrapper starts /////////////////////////
@@ -162,8 +162,8 @@ static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 	printf_s("ToHashCode(%d)\n",
 		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper));
 
-	JACKIE_INET::JACKIE_INet_GUID gui(12);
-	JACKIE_INET::JACKIE_INET_Address adrr("localhost", (UInt16) 123456);
+	JACKIE_INET::JackieGUID gui(12);
+	JACKIE_INET::JackieAddress adrr("localhost", (UInt16) 123456);
 	JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper wrapper1(gui);
 	printf_s("ToString(%s)\n", wrapper1.ToString());
 	printf_s("ToHashCode(%d)\n",
@@ -205,7 +205,7 @@ using namespace JACKIE_INET;
 static void test_GetMyIP_Wins_Linux_funcs()
 {
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
-	JACKIE_INET_Address addr[MAX_COUNT_LOCAL_IP_ADDR];
+	JackieAddress addr[MAX_COUNT_LOCAL_IP_ADDR];
 	JISBerkley::GetMyIPBerkley(addr);
 	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
 	{
@@ -227,7 +227,7 @@ static void test_JISBerkley_All_funcs()
 	JackieINetSocket* sock = JISAllocator::AllocJIS();
 	sock->SetUserConnectionSocketIndex(0);
 
-	JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR];
+	JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR];
 	sock->GetMyIP(addresses);
 	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
 	{
@@ -332,7 +332,7 @@ static void test_MemoryPool_funcs()
 //////////////////////////////////////////////////////////////////////////
 
 /////////////////////// test_Queue_funcs ////////////////////////////
-#include "JackieNet/RingBufferQueue.h"
+#include "JackieNet/ArraryQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
 
@@ -380,7 +380,7 @@ static void test_Queue_funcs()
 		}
 	}
 
-	DataStructures::RingBufferQueue<int, 100001> queuee;
+	DataStructures::ArraryQueue<int, 100001> queuee;
 	queuee.PushTail(0);
 	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
 	{
@@ -426,11 +426,11 @@ static void test_ServerApplication_funcs()
 
 	Command* c = app->AllocCommand();
 	c->command = Command::BCS_SEND;
-	app->ExecuteComand(c);
+	app->PostComand(c);
 
 	// This sleep keeps RakNet responsive
 	for( packet = app->GetPacketOnce(); packet != 0;
-		app->ReclaimOnePacket(packet), packet = 0 )
+		app->ReclaimPacket(packet), packet = 0 )
 	{
 		/// user logics goes here
 		//Command* c = app->AllocCommand();
@@ -542,11 +542,11 @@ enum
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
-
-static int testcase = JackieStream_H;
+static int testcase = ServerApplication_H;
 static int testfunc = AllFuncs;
+
+//static int testcase = JackieStream_H;
+//static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)

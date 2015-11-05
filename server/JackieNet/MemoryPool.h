@@ -8,76 +8,86 @@
 #endif
 #include "DLLExport.h"
 #include "OverrideMemory.h"
+#include "BasicTypes.h"
 
-//////////////////////////////////////////////////////////////////////////
+///====================================================
 /// Very fast memory pool for allocating and deallocating structures that don't have 
 /// constructors or destructors (in other words, there no pointer type of 
-/// variables).Contains a list of pages, each of which has an array of 
-/// the user structures
-//////////////////////////////////////////////////////////////////////////
+/// variables that nneed to be deleted). 
+///=======================================================
 namespace DataStructures
 {
-	template <typename MemoryBlockType,
-		unsigned int BLOCKS_COUNT_PER_PAGE = 256,
-		unsigned int DS_MEMORY_POOL_MAX_FREE_PAGES = 4>
+	template <typename Type,
+		UInt32 CELLS_SIZE_PER_PAGE = 256,
+		/* if all cells in an usable page are reclaimed,
+		 * MAX_FREE_PAGES determins whether to free this page or not */
+		 UInt32 MAX_FREE_PAGES = 4>
 	class JACKIE_EXPORT MemoryPool
 	{
 		public:
-		struct MemoryWithPage;
+		struct Cell;
 		struct Page
 		{
-			MemoryWithPage** availableStack;
-			int availableStackSize;
-			MemoryWithPage* block;
+			Cell** freeCells; /// array that stores all the @Cell pointers
+			int freeCellsSize; /// the size of un-allocated cells
+			Cell* cell; /// array that stores @Cell itself
 			Page *next;
 			Page *prev;
 		};
-
-		struct MemoryWithPage
+		struct Cell
 		{
-			MemoryBlockType userMemory;
+			Type blockType;
 			Page *parentPage;
 		};
 
 		private:
-		//////////////////////////////////////////////////////////////////////////
-		// availablePage contains pages which have room to give the user new blocks.  
-		/// We return these blocks from the head of the list
-		/// unavailablePage are pages which are totally full, and from which we do not
-		/// return new blocks.
-		// Pages move from the head of unavailablePage to the tail of availablePage,
-		/// and from the head of availablePage to the tail of unavailablePage
-		//////////////////////////////////////////////////////////////////////////
-		Page *availablePage;
-		Page *unavailablePage;
-		unsigned int availablePagesSize;
-		unsigned int unavailablePagesSize;
-		unsigned int memoryPoolPageSize;
-		unsigned int blocksCountPerPage;
+		/// @Brief Contains pages which have free cell to allocate
+		Page *usablePage;
+		/// @Brief contains pages which have no free cell to allocate
+		Page *unUsablePage;
+		UInt32 mUsablePagesSize;
+		UInt32 mUnUsablePagesSize;
+		UInt32 mPerPageSizeByte;
+		UInt32 mCellSizePerPage;
 
+
+		///========================================
+		/// @Function InitPage 
+		/// @Brief
+		/// @Access  private  
+		/// @Param [in] [Page * page]  
+		/// @Param [in] [Page * prev]  
+		/// @Returns [bool]
+		/// @Remarks
+		/// @Notice
+		/// @Author mengdi[Jackie]
+		///========================================
 		bool InitPage(Page *page, Page *prev)
 		{
-			unsigned int i = 0;
+			UInt32 i = 0;
 
-			if( ( page->block = (MemoryWithPage*) jackieMalloc_Ex(memoryPoolPageSize, TRACE_FILE_AND_LINE_) )
+			///  allocate @Cell Array
+			if( ( page->cell = (Cell*) jackieMalloc_Ex(mPerPageSizeByte, TRACE_FILE_AND_LINE_) )
 				== 0 ) return false;
 
-			if( ( page->availableStack = (MemoryWithPage**) jackieMalloc_Ex(sizeof(MemoryWithPage*)*blocksCountPerPage, TRACE_FILE_AND_LINE_) ) == 0 )
+			/// allocate @Cell Pointers Array
+			if( ( page->freeCells = (Cell**) jackieMalloc_Ex(sizeof(Cell*)*mCellSizePerPage, TRACE_FILE_AND_LINE_) ) == 0 )
 			{
-				jackieFree_Ex(page->block, TRACE_FILE_AND_LINE_);
+				jackieFree_Ex(page->cell, TRACE_FILE_AND_LINE_);
 				return false;
 			}
 
-			MemoryWithPage *currentBlock = page->block;
-			MemoryWithPage **currentStack = page->availableStack;
-			while( i < blocksCountPerPage )
+			/// @freeCells stores all the pointers to the @Cell
+			Cell *currCell = page->cell;
+			Cell **currFreeCells = page->freeCells;
+			while( i < mCellSizePerPage )
 			{
-				currentBlock->parentPage = page;
-				currentStack[i] = currentBlock++;
+				currCell->parentPage = page;
+				currFreeCells[i] = currCell++;
 				i++;
 			}
-			page->availableStackSize = blocksCountPerPage;
-			page->next = availablePage;
+			page->freeCellsSize = mCellSizePerPage;
+			page->next = usablePage;
 			page->prev = prev;
 			return true;
 		}
@@ -86,113 +96,117 @@ namespace DataStructures
 		MemoryPool()
 		{
 #if _DISABLE_MEMORY_POOL == 0
-			availablePagesSize = unavailablePagesSize = 0;
-			memoryPoolPageSize = BLOCKS_COUNT_PER_PAGE* sizeof(MemoryWithPage);
-			blocksCountPerPage = BLOCKS_COUNT_PER_PAGE;
+			mUsablePagesSize = mUnUsablePagesSize = 0;
+			mPerPageSizeByte = CELLS_SIZE_PER_PAGE* sizeof(Cell);
+			mCellSizePerPage = CELLS_SIZE_PER_PAGE;
+			usablePage = unUsablePage = 0;
 #endif
 		}
 		~MemoryPool() { Clear(); }
 
-		MemoryBlockType* Allocate(void)
+		Type* Allocate(void)
 		{
 #if _DISABLE_MEMORY_POOL != 0
-			return(MemoryBlockType*) jackieMalloc_Ex(sizeof(MemoryBlockType), TRACE_FILE_AND_LINE_);
+			return(Type*) jackieMalloc_Ex(sizeof(Type), TRACE_FILE_AND_LINE_);
 #endif
-			if( availablePagesSize > 0 )
+
+			if( mUsablePagesSize > 0 )
 			{
-				Page *currentPage = availablePage;
-				MemoryBlockType *retValue = (MemoryBlockType*) currentPage->availableStack[--( currentPage->availableStackSize )];
-				if( currentPage->availableStackSize == 0 )
+				Page *currentPage = usablePage;
+				Type *retValue = (Type*) currentPage->freeCells[--( currentPage->freeCellsSize )];
+				if( currentPage->freeCellsSize == 0 )
 				{
-					--availablePagesSize;
-					availablePage = currentPage->next;
-					assert(availablePagesSize == 0 || availablePage->availableStackSize > 0);
+					--mUsablePagesSize;
+					usablePage = currentPage->next;
+					assert(mUsablePagesSize == 0 || usablePage->freeCellsSize > 0);
 					currentPage->next->prev = currentPage->prev;
 					currentPage->prev->next = currentPage->next;
-					if( unavailablePagesSize++ == 0 )
+					if( mUnUsablePagesSize++ == 0 )
 					{
-						unavailablePage = currentPage;
+						unUsablePage = currentPage;
 						currentPage->next = currentPage;
 						currentPage->prev = currentPage;
 					} else
 					{
-						currentPage->next = unavailablePage;
-						currentPage->prev = unavailablePage->prev;
-						unavailablePage->prev->next = currentPage;
-						unavailablePage->prev = currentPage;
+						currentPage->next = unUsablePage;
+						currentPage->prev = unUsablePage->prev;
+						unUsablePage->prev->next = currentPage;
+						unUsablePage->prev = currentPage;
 					}
 				}
-				assert(availablePagesSize == 0 || availablePage->availableStackSize > 0);
+				assert(mUsablePagesSize == 0 || usablePage->freeCellsSize > 0);
 				return retValue;
 			}
-			if( ( availablePage = (Page *) jackieMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
-			availablePagesSize = 1;
-			if( !InitPage(availablePage, availablePage) ) return 0;
-			assert(availablePage->availableStackSize > 1);
-			return (MemoryBlockType *) availablePage->availableStack[--availablePage->availableStackSize];
+
+			if( ( usablePage = (Page *) jackieMalloc_Ex(sizeof(Page), TRACE_FILE_AND_LINE_) ) == 0 ) return 0;
+			mUsablePagesSize = 1;
+			if( !InitPage(usablePage, usablePage) ) return 0;
+			assert(usablePage->freeCellsSize > 1);
+			return (Type *) usablePage->freeCells[--usablePage->freeCellsSize];
 		}
-		void Reclaim(MemoryBlockType *m)
+		void Reclaim(Type *m)
 		{
 #if _DISABLE_MEMORY_POOL != 0
 			jackieFree_Ex(m, TRACE_FILE_AND_LINE_);
 			return;
 #endif
-			/// find the page where this block is in and return it
-			MemoryWithPage *memoryWithPage = (MemoryWithPage*) m;
-			Page *currentPage = memoryWithPage->parentPage;
+			/// find the page where @m is in and return it
+			Cell *currCell = (Cell*) m;
+			Page *currPage = currCell->parentPage;
 
-			if( currentPage->availableStackSize == 0 )
+			/// this is an unavaiable page
+			if( currPage->freeCellsSize == 0 )
 			{
-				// reclaim m to currentPage
-				currentPage->availableStack[currentPage->availableStackSize++] = memoryWithPage;
+				/// firstly reclaim @currCell to currentPage
+				currPage->freeCells[currPage->freeCellsSize++] = currCell;
 
-				// remove currentPage from unavailable page list
-				currentPage->next->prev = currentPage->prev;
-				currentPage->prev->next = currentPage->next;
-				unavailablePagesSize--;
+				// then remove @currentPage from unavailable page list
+				currPage->next->prev = currPage->prev;
+				currPage->prev->next = currPage->next;
+				mUnUsablePagesSize--;
 
-				// update the unavailablePage  
-				if( unavailablePagesSize > 0 && currentPage == unavailablePage )
+				/// then update the @unavailablePage  
+				if( mUnUsablePagesSize > 0 && currPage == unUsablePage )
 				{
-					unavailablePage = unavailablePage->next;
+					unUsablePage = unUsablePage->next;
 				}
 
-				// then insert currentPage to the head of available page list
-				if( availablePagesSize++ == 0 )
+				/// then insert currentPage to the head of available page list
+				if( mUsablePagesSize++ == 0 )
 				{
-					availablePage = currentPage;
-					currentPage->next = currentPage;
-					currentPage->prev = currentPage;
+					usablePage = currPage;
+					currPage->next = currPage;
+					currPage->prev = currPage;
 				} else
 				{
-					currentPage->next = availablePage;
-					currentPage->prev = availablePage->prev;
-					availablePage->prev->next = currentPage;
-					availablePage->prev = currentPage;
+					currPage->next = usablePage;
+					currPage->prev = usablePage->prev;
+					usablePage->prev->next = currPage;
+					usablePage->prev = currPage;
 				}
 
-			} else
+			} else 	/// this is an avaiable page
 			{
-				// reclaim m to currentPage
-				currentPage->availableStack[currentPage->availableStackSize++] = memoryWithPage;
+				// first reclaim @m to currentPage
+				currPage->freeCells[currPage->freeCellsSize++] = currCell;
 
-				// all objects in currentPage are reclaimed
-				if( currentPage->availableStackSize == blocksCountPerPage &&
-					availablePagesSize >= DS_MEMORY_POOL_MAX_FREE_PAGES )
+				// all cells in @currentPage are reclaimed and becomes empty
+				if( currPage->freeCellsSize == mCellSizePerPage &&
+					mUsablePagesSize > MAX_FREE_PAGES )
 				{
 					/// After a certain point, just deallocate empty pages
 					/// rather than keep them around
-					if( currentPage == availablePage )
+					if( currPage == usablePage )
 					{
-						availablePage = currentPage->next;
-						assert(availablePage->availableStackSize > 0);
+						usablePage = currPage->next;
+						assert(usablePage->freeCellsSize > 0);
 					}
-					currentPage->prev->next = currentPage->next;
-					currentPage->next->prev = currentPage->prev;
-					availablePagesSize--;
-					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
-					jackieFree_Ex(currentPage, TRACE_FILE_AND_LINE_);
+					currPage->prev->next = currPage->next;
+					currPage->next->prev = currPage->prev;
+					mUsablePagesSize--;
+					jackieFree_Ex(currPage->freeCells, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currPage->cell, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currPage, TRACE_FILE_AND_LINE_);
 				}
 			}
 		}
@@ -203,39 +217,41 @@ namespace DataStructures
 #endif
 			Page *currentPage, *freedPage;
 
-			if( availablePagesSize > 0 )
+			if( mUsablePagesSize > 0 )
 			{
-				currentPage = availablePage;
+				currentPage = usablePage;
 				while( true )
 				{
-					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->freeCells, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->cell, TRACE_FILE_AND_LINE_);
 					freedPage = currentPage;
 					currentPage = currentPage->next;
-					if( currentPage == availablePage )
+					if( currentPage == usablePage )
 					{
 						jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-						availablePagesSize = 0;
+						mUsablePagesSize = 0;
 						break;
 					}
+					jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
 				}
 			}
 
-			if( unavailablePagesSize > 0 )
+			if( mUnUsablePagesSize > 0 )
 			{
-				currentPage = unavailablePage;
+				currentPage = unUsablePage;
 				while( true )
 				{
-					jackieFree_Ex(currentPage->availableStack, TRACE_FILE_AND_LINE_);
-					jackieFree_Ex(currentPage->block, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->freeCells, TRACE_FILE_AND_LINE_);
+					jackieFree_Ex(currentPage->cell, TRACE_FILE_AND_LINE_);
 					freedPage = currentPage;
 					currentPage = currentPage->next;
-					if( currentPage == availablePage )
+					if( currentPage == unUsablePage )
 					{
 						jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
-						unavailablePagesSize = 0;
+						mUnUsablePagesSize = 0;
 						break;
 					}
+					jackieFree_Ex(freedPage, TRACE_FILE_AND_LINE_);
 				}
 			}
 		}

@@ -85,9 +85,6 @@
     <ClInclude Include="atomic_ops.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="RingBufferQueue.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="LockFreeQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
@@ -165,6 +162,9 @@
     </ClInclude>
     <ClInclude Include="JackieSimpleMutex.h">
       <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="ArraryQueue.h">
+      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

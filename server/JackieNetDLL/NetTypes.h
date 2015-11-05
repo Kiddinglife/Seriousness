@@ -20,8 +20,8 @@ namespace JACKIE_INET
 	class   INetApplication;
 	class   JackieStream;
 	struct  Packet;
-	struct  JACKIE_INET_Address;
-	struct  JACKIE_INet_GUID;
+	struct  JackieAddress;
+	struct  JackieGUID;
 
 	/// @Internal Defines the default maximum transfer unit.
 	/// \li \em 17914 16 Mbit/Sec Token Ring
@@ -61,8 +61,8 @@ namespace JACKIE_INET
 
 	/// Index of an invalid JACKIE_INET_Address
 #ifndef SWIG
-	JACKIE_EXPORT extern const  JACKIE_INET_Address JACKIE_INET_Address_Null;
-	JACKIE_EXPORT extern const  JACKIE_INet_GUID JACKIE_INet_GUID_Null;
+	JACKIE_EXPORT extern const  JackieAddress JACKIE_INET_Address_Null;
+	JACKIE_EXPORT extern const  JackieGUID JACKIE_INet_GUID_Null;
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player
@@ -91,7 +91,7 @@ namespace JACKIE_INET
 	enum ConnectionAttemptResult
 	{
 		CONNECTION_ATTEMPT_STARTED,
-		INVALID_PARAMETER,
+		INVALID_PARAM,
 		CANNOT_RESOLVE_DOMAIN_NAME,
 		ALREADY_CONNECTED_TO_ENDPOINT,
 		CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS,
@@ -216,7 +216,7 @@ namespace JACKIE_INET
 	// 
 	/// Use JACKIE_INet_GUID for a unique per-instance of JackieApplication(RakPeer) to identify 
 	/// systems
-	struct JACKIE_EXPORT JACKIE_INET_Address /// JACKIE_INET_Address
+	struct JACKIE_EXPORT JackieAddress /// JACKIE_INET_Address
 	{
 		/// In6 Or In4 
 		/// JACKIE_INET_Address, with RAKNET_SUPPORT_IPV6 defined, 
@@ -241,24 +241,24 @@ namespace JACKIE_INET
 
 
 		/// Constructors
-		JACKIE_INET_Address();
-		JACKIE_INET_Address(const char *str);
-		JACKIE_INET_Address(const char *str, UInt16 port);
+		JackieAddress();
+		JackieAddress(const char *str);
+		JackieAddress(const char *str, UInt16 port);
 
-		JACKIE_INET_Address& operator = ( const JACKIE_INET_Address& input );
-		bool operator==( const JACKIE_INET_Address& right ) const;
-		bool operator!=( const JACKIE_INET_Address& right ) const;
-		bool operator > ( const JACKIE_INET_Address& right ) const;
-		bool operator < ( const JACKIE_INET_Address& right ) const;
+		JackieAddress& operator = ( const JackieAddress& input );
+		bool operator==( const JackieAddress& right ) const;
+		bool operator!=( const JackieAddress& right ) const;
+		bool operator > ( const JackieAddress& right ) const;
+		bool operator < ( const JackieAddress& right ) const;
 
 		/// @internal Return the size to write to a bitStream
 		static Int32 size(void);
 
 		/// Hash the JACKIE_INET_Address
-		static unsigned int ToHashCode(const JACKIE_INET_Address &sa);
+		static unsigned int ToHashCode(const JackieAddress &sa);
 
 		/// Return the IP version, either IPV4 or IPV6
-		unsigned char JACKIE_INET_Address::GetIPVersion(void) const;
+		unsigned char JackieAddress::GetIPVersion(void) const;
 
 		/// @internal Returns either IPPROTO_IP or IPPROTO_IPV6
 		unsigned char GetIPProtocol(void) const;
@@ -278,7 +278,7 @@ namespace JACKIE_INET
 		void SetPortNetworkOrder(UInt16 s);
 
 		/// set the port from another JACKIE_INET_Address structure
-		void SetPortNetworkOrder(const JACKIE_INET_Address& right);
+		void SetPortNetworkOrder(const JackieAddress& right);
 
 		/// Call SetToLoopback(), with whatever IP version is currently held. Defaults to IPV4
 		void SetToLoopBack(void);
@@ -336,16 +336,16 @@ namespace JACKIE_INET
 	/// and RakPeer::GetSystemAddressFromGuid() to go between JACKIE_INET_Address and 
 	/// JACKIE_INet_GUID Use RakPeer::GetGuidFromSystemAddress
 	/// (JACKIE_INET_Address_Null) to get your own GUID
-	struct JACKIE_EXPORT JACKIE_INet_GUID
+	struct JACKIE_EXPORT JackieGUID
 	{
 		/// Used internally for fast lookup. Optional (use -1 to do regular lookup).
 		/// Don't transmit this.
 		SystemIndex systemIndex;
 		UInt64 g;
 
-		JACKIE_INet_GUID();
-		explicit JACKIE_INet_GUID(UInt64 _g);
-		JACKIE_INet_GUID& operator = ( const JACKIE_INet_GUID& input );
+		JackieGUID();
+		explicit JackieGUID(UInt64 _g);
+		JackieGUID& operator = ( const JackieGUID& input );
 
 
 		/// Return the GUID as a static string. 
@@ -359,20 +359,20 @@ namespace JACKIE_INET
 
 		bool FromString(const char *source);
 
-		static unsigned long ToUInt32(const JACKIE_INet_GUID &g);
+		static unsigned long ToUInt32(const JackieGUID &g);
 		static int size();
 
-		bool operator==( const JACKIE_INet_GUID& right ) const;
-		bool operator!=( const JACKIE_INet_GUID& right ) const;
-		bool operator > ( const JACKIE_INet_GUID& right ) const;
-		bool operator < ( const JACKIE_INet_GUID& right ) const;
+		bool operator==( const JackieGUID& right ) const;
+		bool operator!=( const JackieGUID& right ) const;
+		bool operator > ( const JackieGUID& right ) const;
+		bool operator < ( const JackieGUID& right ) const;
 	};
 
 
 	struct JACKIE_EXPORT JACKIE_INET_Address_GUID_Wrapper
 	{
-		JACKIE_INet_GUID guid;
-		JACKIE_INET_Address systemAddress;
+		JackieGUID guid;
+		JackieAddress systemAddress;
 
 		SystemIndex GetSystemIndex(void) const
 		{
@@ -407,13 +407,13 @@ namespace JACKIE_INET
 			guid = input.guid;
 			systemAddress = input.systemAddress;
 		}
-		JACKIE_INET_Address_GUID_Wrapper(const JACKIE_INET_Address& input)
+		JACKIE_INET_Address_GUID_Wrapper(const JackieAddress& input)
 		{
 			guid = JACKIE_INet_GUID_Null;
 			systemAddress = input;
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const Packet& packet);
-		JACKIE_INET_Address_GUID_Wrapper(const JACKIE_INet_GUID& input)
+		JACKIE_INET_Address_GUID_Wrapper(const JackieGUID& input)
 		{
 			guid = input;
 			systemAddress = JACKIE_INET_Address_Null;
@@ -424,13 +424,13 @@ namespace JACKIE_INET
 			systemAddress = input.systemAddress;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INET_Address& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieAddress& input )
 		{
 			guid = JACKIE_INet_GUID_Null;
 			systemAddress = input;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INet_GUID& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieGUID& input )
 		{
 			guid = input;
 			systemAddress = JACKIE_INET_Address_Null;
@@ -448,14 +448,14 @@ namespace JACKIE_INET
 	struct JACKIE_EXPORT Packet
 	{
 		/// The system that send this packet.
-		JACKIE_INET_Address systemAddress;
+		JackieAddress systemAddress;
 
 		/// A unique identifier for the system that sent this packet, 
 		/// regardless of IP address (internal / external / remote system)
 		/// Only valid once a connection has been established 
 		/// (ID_CONNECTION_REQUEST_ACCEPTED, or ID_NEW_INCOMING_CONNECTION)
 		/// Until that time, will be JACKIE_INet_GUID_Null
-		JACKIE_INet_GUID guid;
+		JackieGUID guid;
 
 		/// The length of the data in bytes
 		unsigned int length;

@@ -54,7 +54,7 @@ namespace JACKIE_INET
 		char *data;
 		int length;
 		JISSendResult bytesWritten; // use 0 to init
-		JACKIE_INET_Address receiverINetAddress;
+		JackieAddress receiverINetAddress;
 		int ttl;
 	};
 
@@ -62,7 +62,7 @@ namespace JACKIE_INET
 	{
 		char data[MAXIMUM_MTU_SIZE];
 		JISRecvResult bytesRead;
-		JACKIE_INET_Address senderINetAddress;
+		JackieAddress senderINetAddress;
 		TimeUS timeRead;
 		JackieINetSocket *socket;
 	};
@@ -89,7 +89,7 @@ namespace JACKIE_INET
 	{
 		protected:
 		JISEventHandler *eventHandler;
-		JACKIE_INET_Address boundAddress;
+		JackieAddress boundAddress;
 		unsigned int userConnectionSocketIndex;
 		JISType socketType;
 
@@ -109,14 +109,14 @@ namespace JACKIE_INET
 		inline unsigned int GetUserConnectionSocketIndex(void) const { return userConnectionSocketIndex; }
 		inline void SetUserConnectionSocketIndex(unsigned int i) { userConnectionSocketIndex = i; }
 
-		inline JACKIE_INET_Address GetBoundAddress(void) const { return boundAddress; }
+		inline JackieAddress GetBoundAddress(void) const { return boundAddress; }
 
 		inline bool IsBerkleySocket(void) const
 		{
 			return socketType != JISType_CHROME && socketType != JISType_WINDOWS_STORE_8;
 		}
 
-		static void GetMyIP(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIP(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 		inline static void DomainNameToIP(const char *domainName, char ip[65])
 		{
 			DomainNameToIP(domainName, ip);
@@ -156,17 +156,17 @@ namespace JACKIE_INET
 		virtual ~JACKIE_ISocketTransceiver() { }
 
 		/// Called when SendTo would otherwise occur.
-		virtual int JackieINetSendTo(const char *data, int length, const JACKIE_INET_Address &systemAddress) = 0;
+		virtual int JackieINetSendTo(const char *data, int length, const JackieAddress &systemAddress) = 0;
 
 		/// Called when RecvFrom would otherwise occur. 
 		/// Return number of bytes read and Write data into dataOut
 		/// Return -1 to use JackieNet's normal recvfrom, 0 to abort JackieNet's normal 
 		/// recvfrom,and positive to return data
-		virtual int JackieINetRecvFrom(char dataOut[MAXIMUM_MTU_SIZE], JACKIE_INET_Address *senderOut, bool calledFromMainThread) = 0;
+		virtual int JackieINetRecvFrom(char dataOut[MAXIMUM_MTU_SIZE], JackieAddress *senderOut, bool calledFromMainThread) = 0;
 
 		/// RakNet needs to know whether an address is a dummy override address, 
 		/// so it won't be added as an external addresses
-		virtual bool IsFork(const JACKIE_INET_Address &systemAddress) const = 0;
+		virtual bool IsFork(const JackieAddress &systemAddress) const = 0;
 	};
 
 	class JACKIE_EXPORT JISBerkley : public JackieINetSocket
@@ -315,9 +315,9 @@ namespace JACKIE_INET
 		/// 2. use this host name in gethostbyname(...) to het a list of avaiable ip addrs
 		/// 3. if addrs num < MAX_COUNT_LOCAL_IP_ADDR, the rest of them will be filled with empty addr
 		//////////////////////////////////////////////////////////////////////////
-		static void GetMyIPBerkley(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-		static void GetMyIPBerkleyV4V6(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
-		static void GetMyIPBerkleyV4(JACKIE_INET_Address addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkley(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkleyV4V6(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR]);
+		static void GetMyIPBerkleyV4(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR]);
 
 		virtual void Print(void);
 
@@ -326,9 +326,9 @@ namespace JACKIE_INET
 		/// 1. Notice that you can only call this function after calling Bind(...) to associate @mem rns2Socket with @mem systemAddressOut
 		/// 2. Individually call this function will get unkonwn error, so they are marked as protected functions only for internal use
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		static void GetSystemAddressViaJISSocket(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
-		static void GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
-		static void GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket, JACKIE_INET_Address *systemAddressOut);
+		static void GetSystemAddressViaJISSocket(JISSocket rns2Socket, JackieAddress *systemAddressOut);
+		static void GetSystemAddressViaJISSocketIPV4(JISSocket rns2Socket, JackieAddress *systemAddressOut);
+		static void GetSystemAddressViaJISSocketIPV4And6(JISSocket rns2Socket, JackieAddress *systemAddressOut);
 	};
 #endif
 }
