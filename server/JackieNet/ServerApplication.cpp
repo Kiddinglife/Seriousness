@@ -16,12 +16,12 @@
 namespace JACKIE_INET
 {
 	////////////////////////////////////////////////// STATICS /////////////////////////////////////
-	static const unsigned int RemoteEndPointLookupHashMutiple = 8;
+	static const UInt32 RemoteEndPointLookupHashMutiple = 8;
 	static const int mtuSizesCount = 3;
 	static const int mtuSizes[mtuSizesCount] = { MAXIMUM_MTU_SIZE, 1200, 576 };
 	/// I set this because I limit ID_CONNECTION_REQUEST to 512 bytes, 
 	/// and the password is appended to that *incomePacket.
-	static const unsigned int MAX_OFFLINE_DATA_LENGTH = 400;
+	static const UInt32 MAX_OFFLINE_DATA_LENGTH = 400;
 	/// Used to distinguish between offline messages with data, 
 	/// and messages from the reliability layer. Should be different 
 	/// than any message that could result from messages from the reliability layer
@@ -77,12 +77,12 @@ namespace JACKIE_INET
 		unreliableTimeout = 1000;
 		maxOutgoingBPS = 0;
 
-		myGuid = JACKIE_INet_GUID_Null;
-		firstExternalID = JACKIE_INET_Address_Null;
+		myGuid = JACKIE_NULL_GUID;
+		firstExternalID = JACKIE_NULL_ADDRESS;
 
-		for( unsigned int index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
+		for( UInt32 index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
 		{
-			IPAddress[index] = JACKIE_INET_Address_Null;
+			IPAddress[index] = JACKIE_NULL_ADDRESS;
 		}
 
 #ifdef _DEBUG
@@ -116,9 +116,9 @@ namespace JACKIE_INET
 	}
 
 
-	JACKIE_INET::StartupResult ServerApplication::Start(unsigned int maxConn,
+	JACKIE_INET::StartupResult ServerApplication::Start(UInt32 maxConn,
 		BindSocket *bindLocalSockets,
-		unsigned int bindLocalSocketsCount,
+		UInt32 bindLocalSocketsCount,
 		Int32 threadPriority /*= -99999*/)
 	{
 		if( IsActive() ) return StartupResult::ALREADY_STARTED;
@@ -130,9 +130,10 @@ namespace JACKIE_INET
 			if( myGuid.g == 0 ) return StartupResult::COULD_NOT_GENERATE_GUID;
 		}
 
-		if( myGuid == JACKIE_INet_GUID_Null )
+		if( myGuid == JACKIE_NULL_GUID )
 		{
-			rnr.SeedMT((unsigned int) ( ( myGuid.g >> 32 ) ^ myGuid.g ));
+			rnr.SeedMT((UInt32) ( ( myGuid.g >> 32 ) ^ myGuid.g ));
+			myGuid.g = rnr.RandomMT();
 		}
 
 		if( threadPriority == -99999 )
@@ -153,7 +154,7 @@ namespace JACKIE_INET
 		assert(maxConn > 0); if( maxConn <= 0 ) return INVALID_MAX_CONNECTIONS;
 
 		/// Start to bind given sockets 
-		unsigned int index;
+		UInt32 index;
 		JackieINetSocket* sock;
 		JISBerkleyBindParams berkleyBindParams;
 		JISBindResult bindResult;
@@ -258,7 +259,7 @@ namespace JACKIE_INET
 		{
 			for( index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
 			{
-				if( IPAddress[index] == JACKIE_INET_Address_Null ) break;
+				if( IPAddress[index] == JACKIE_NULL_ADDRESS ) break;
 				IPAddress[index].SetPortHostOrder(( (JISBerkley*) bindedSockets[0] )->GetBoundAddress().GetPortHostOrder());
 			}
 		}
@@ -297,9 +298,9 @@ namespace JACKIE_INET
 			{
 				// remoteSystemList in Single thread
 				remoteSystemList[index].isActive = false;
-				remoteSystemList[index].systemAddress = JACKIE_INET_Address_Null;
-				remoteSystemList[index].guid = JACKIE_INet_GUID_Null;
-				remoteSystemList[index].myExternalSystemAddress = JACKIE_INET_Address_Null;
+				remoteSystemList[index].systemAddress = JACKIE_NULL_ADDRESS;
+				remoteSystemList[index].guid = JACKIE_NULL_GUID;
+				remoteSystemList[index].myExternalSystemAddress = JACKIE_NULL_ADDRESS;
 				remoteSystemList[index].status = RemoteEndPoint::NO_ACTION;
 				remoteSystemList[index].MTUSize = defaultMTUSize;
 				remoteSystemList[index].remoteSystemIndex = (SystemIndex) index;
@@ -333,7 +334,7 @@ namespace JACKIE_INET
 			ClearSocketQueryOutputs();
 			ClearAllRecvParamsQs();
 
-			firstExternalID = JACKIE_INET_Address_Null;
+			firstExternalID = JACKIE_NULL_ADDRESS;
 			updateCycleIsRunning = false;
 			endThreads = false;
 
@@ -390,7 +391,7 @@ namespace JACKIE_INET
 		return ALREADY_STARTED;
 	}
 
-	void ServerApplication::End(unsigned int blockDuration,
+	void ServerApplication::End(UInt32 blockDuration,
 		unsigned char orderingChannel,
 		PacketSendPriority disconnectionNotificationPriority)
 	{
@@ -410,7 +411,7 @@ namespace JACKIE_INET
 		JINFO << "Recv thread " << Index << " Reclaim All JISRecvParams";
 
 		JISRecvParams* recvParams = 0;
-		for( unsigned int index = 0; index < deAllocRecvParamQ[Index].Size(); index++ )
+		for( UInt32 index = 0; index < deAllocRecvParamQ[Index].Size(); index++ )
 		{
 			CHECK_EQ(deAllocRecvParamQ[Index].PopHead(recvParams), true);
 			JISRecvParamsPool[Index].Reclaim(recvParams);
@@ -425,16 +426,16 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ClearAllRecvParamsQs()
 	{
-		for( unsigned int index = 0; index < bindedSockets.Size(); index++ )
+		for( UInt32 index = 0; index < bindedSockets.Size(); index++ )
 		{
 			JISRecvParams *recvParams = 0;
-			for( unsigned int i = 0; i < allocRecvParamQ[index].Size(); i++ )
+			for( UInt32 i = 0; i < allocRecvParamQ[index].Size(); i++ )
 			{
 				CHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
 				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 				JISRecvParamsPool[index].Reclaim(recvParams);
 			}
-			for( unsigned int i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
+			for( UInt32 i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
 			{
 				CHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
 				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
@@ -452,7 +453,7 @@ namespace JACKIE_INET
 		JINFO << "User Thread Reclaims All Commands";
 
 		Command* bufferedCommand = 0;
-		for( unsigned int index = 0; index < deAllocCommandQ.Size(); index++ )
+		for( UInt32 index = 0; index < deAllocCommandQ.Size(); index++ )
 		{
 			CHECK_EQ(
 				deAllocCommandQ.PopHead(bufferedCommand),
@@ -473,14 +474,14 @@ namespace JACKIE_INET
 		Command *bcs = 0;
 
 		/// first reclaim the elem in 
-		for( unsigned int i = 0; i < allocCommandQ.Size(); i++ )
+		for( UInt32 i = 0; i < allocCommandQ.Size(); i++ )
 		{
 			CHECK_EQ(allocCommandQ.PopHead(bcs), true);
 			CHECK_NOTNULL(bcs);
 			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
-		for( unsigned int i = 0; i < deAllocCommandQ.Size(); i++ )
+		for( UInt32 i = 0; i < deAllocCommandQ.Size(); i++ )
 		{
 			CHECK_EQ(deAllocCommandQ.PopHead(bcs), true);
 			CHECK_NOTNULL(bcs);
@@ -495,16 +496,16 @@ namespace JACKIE_INET
 
 	void ServerApplication::InitIPAddress(void)
 	{
-		assert(IPAddress[0] == JACKIE_INET_Address_Null);
+		assert(IPAddress[0] == JACKIE_NULL_ADDRESS);
 		JackieINetSocket::GetMyIP(IPAddress);
 
 		// Sort the addresses from lowest to highest
 		int startingIdx = 0;
 		while( startingIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 &&
-			IPAddress[startingIdx] != JACKIE_INET_Address_Null )
+			IPAddress[startingIdx] != JACKIE_NULL_ADDRESS )
 		{
 			int lowestIdx = startingIdx;
-			for( int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && IPAddress[curIdx] != JACKIE_INET_Address_Null; curIdx++ )
+			for( int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && IPAddress[curIdx] != JACKIE_NULL_ADDRESS; curIdx++ )
 			{
 				if( IPAddress[curIdx] < IPAddress[startingIdx] )
 				{
@@ -523,7 +524,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::DeallocBindedSockets(void)
 	{
-		for( unsigned int index = 0; index < bindedSockets.Size(); index++ )
+		for( UInt32 index = 0; index < bindedSockets.Size(); index++ )
 		{
 			if( bindedSockets[index] != 0 ) JISAllocator::DeallocJIS(bindedSockets[index]);
 		}
@@ -534,34 +535,34 @@ namespace JACKIE_INET
 	}
 
 
-	Packet* ServerApplication::AllocPacket(unsigned int dataSize)
+	Packet* ServerApplication::AllocPacket(UInt32 dataSize)
 	{
 		JINFO << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
 		//p = new ( (void*) p ) Packet; we do not need call default ctor
-		p->data = (char*) jackieMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
+		p->data = (unsigned char*) jackieMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
-		p->isAllocatedFromPool = true;
-		p->guid = JACKIE_INet_GUID_Null;
+		p->freeInternalData = true;
+		p->guid = JACKIE_NULL_GUID;
 		p->wasGeneratedLocally = false;
 
 		return p;
 	}
-	Packet* ServerApplication::AllocPacket(unsigned dataSize, char *data)
+	Packet* ServerApplication::AllocPacket(UInt32 dataSize, unsigned char *data)
 	{
 		JINFO << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
 		//p = new ( (void*) p ) Packet; no custom ctor so no need to call default ctor
-		p->data = data;
+		p->data = (unsigned char*) data;
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
-		p->isAllocatedFromPool = true;
-		p->guid = JACKIE_INet_GUID_Null;
+		p->freeInternalData = true;
+		p->guid = JACKIE_NULL_GUID;
 		p->wasGeneratedLocally = false;
 
 		return p;
@@ -571,18 +572,15 @@ namespace JACKIE_INET
 		JINFO << "Network Thread Reclaims All Packets";
 
 		Packet* packet;
-		for( unsigned int index = 0; index < deAllocPacketQ.Size(); index++ )
+		for( UInt32 index = 0; index < deAllocPacketQ.Size(); index++ )
 		{
 			CHECK_EQ(deAllocPacketQ.PopHead(packet), true);
-			if( packet->isAllocatedFromPool )
+			if( packet->freeInternalData )
 			{
-				jackieFree_Ex(packet->data, TRACE_FILE_AND_LINE_);
 				//packet->~Packet(); no custom dtor so no need to call default dtor
-				packetPool.Reclaim(packet);
-			} else
-			{
-				jackieFree_Ex(packet, TRACE_FILE_AND_LINE_);
+				jackieFree_Ex(packet->data, TRACE_FILE_AND_LINE_);
 			}
+			packetPool.Reclaim(packet);
 		}
 	}
 	inline void ServerApplication::ReclaimPacket(Packet *packet)
@@ -678,7 +676,7 @@ namespace JACKIE_INET
 	{
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
-		unsigned int index;
+		UInt32 index;
 
 		const char* strAddr = recvParams->senderINetAddress.ToString();
 
@@ -692,12 +690,13 @@ namespace JACKIE_INET
 
 		JackieAddress connReqCancelAddr;
 		ConnectionRequest* connReq = 0;
-		for( unsigned int index = 0; index < connReqCancelQ.Size(); index++ )
-		{
-			CHECK_EQ(connReqCancelQ.PopHead(connReqCancelAddr), true);
 
+		connReqCancelQLock.Lock();
+		for( UInt32 index = 0; index < connReqCancelQ.Size(); index++ )
+		{
 			/// Cancel pending connection attempt, if there is one
-			for( unsigned int i = 0; i < connReqQ.Size(); i++ )
+			connReqQLock.Lock();
+			for( UInt32 i = 0; i < connReqQ.Size(); i++ )
 			{
 				if( connReqQ[i]->receiverAddr == connReqCancelAddr )
 				{
@@ -706,13 +705,94 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i]->client_handshake, TRACE_FILE_AND_LINE_);
 #endif
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
-					//connReqQ.RemoveAtIndex(i);
-					connReqQ[i] = 0;
+					connReqQ.RemoveAtIndex(i);
 					break;
 				}
 			}
+			connReqQLock.Unlock();
 		}
+		connReqCancelQLock.Unlock();
 	}
+
+	/// @TO-DO
+	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
+	{
+		JINFO << "Network Thread Process Connection Request Q";
+
+		if( connReqQ.IsEmpty() ) return;
+
+		if( timeUS == 0 )
+		{
+			timeUS = Get64BitsTimeUS();
+			timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
+		}
+
+		ConnectionRequest *connReq;
+		connReqQLock.Lock();
+		for( UInt32 index = 0; index < connReqQ.Size(); index++ )
+		{
+			connReq = connReqQ[index];
+			if( connReq->nextRequestTime < timeMS )
+			{
+				/// reach the max try times 
+				if( connReq->requestsMade == connReq->connAttemptTimes + 1 )
+				{
+
+					/// free data inside conn req
+					if( connReq->data != 0 )
+					{
+						jackieFree_Ex(connReq->data, TRACE_FILE_AND_LINE_);
+						connReq->data = 0;
+					}
+
+					/// Tell USER connection attempt failed
+					static UInt8 msgid;
+					Packet* packet = AllocPacket(sizeof(unsigned char), &msgid);
+					packet->data[0] = ID_CONNECTION_ATTEMPT_FAILED;
+					packet->systemAddress = connReq->receiverAddr;
+					packet->freeInternalData = false;
+					CHECK_EQ(allocPacketQ.PushTail(packet), true);
+
+#if LIBCAT_SECURITY==1
+					CAT_AUDIT_PRINTF("AUDIT: Connection attempt FAILED so deleting rcs->client_handshake object %x\n", rcs->client_handshake);
+					JACKIE_INET::OP_DELETE(connReq->client_handshake,
+						TRACE_FILE_AND_LINE_);
+#endif
+					JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
+
+					/// remove this conn request fron  queue
+					connReqQ.RemoveAtIndex(index);
+				} else /// try to connect again
+				{
+					/// more times try to request connection, less mtu used
+					int MTUSizeIndex = connReq->requestsMade /
+						( connReq->connAttemptTimes / mtuSizesCount );
+					if( MTUSizeIndex >= mtuSizesCount )
+						MTUSizeIndex = mtuSizesCount - 1;
+
+					connReq->requestsMade++;
+					connReq->nextRequestTime = timeMS + connReq->connAttemptIntervalMS;
+
+					/// @TO-DO
+					JackieStream bitStream;
+					//bitStream.Write((MessageID) ID_OPEN_CONNECTION_REQUEST_1);
+					//bitStream.WriteAlignedBytes((const unsigned char*) OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+					//bitStream.Write((MessageID) RAKNET_PROTOCOL_VERSION);
+					//bitStream.PadWithZeroToByteLength(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
+
+#ifdef _DEBUG
+					JINFO << "The " << (int) connReq->requestsMade
+						<< " times to try to connect to remote sever [" << connReq->receiverAddr.ToString() << "]";
+#endif
+
+					/// @TO-DO i am now in here
+
+				}
+			}
+		}
+		connReqQLock.Unlock();
+	}
+
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		JINFO << "Network Thread Process Alloc CommandQ";
@@ -721,7 +801,7 @@ namespace JACKIE_INET
 		RemoteEndPoint* remoteEndPoint = 0;
 
 		/// process command queue
-		for( unsigned int index = 0; index < allocCommandQ.Size(); index++ )
+		for( UInt32 index = 0; index < allocCommandQ.Size(); index++ )
 		{
 
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
@@ -785,110 +865,14 @@ namespace JACKIE_INET
 		JINFO << "Network Thread Process Alloc JISRecvParamsQ";
 
 		JISRecvParams* recvParams = 0;
-		for( unsigned int outter = 0; outter < bindedSockets.Size(); outter++ )
+		for( UInt32 outter = 0; outter < bindedSockets.Size(); outter++ )
 		{
-			for( unsigned int inner = 0; inner < allocRecvParamQ[outter].Size(); inner++ )
+			for( UInt32 inner = 0; inner < allocRecvParamQ[outter].Size(); inner++ )
 			{
 				/// no need to check if recvParams == 0, because we never push 0 pointer
 				CHECK_EQ(allocRecvParamQ[outter].PopHead(recvParams), true);
 				ProcessOneRecvParam(recvParams);
 				ReclaimOneJISRecvParams(recvParams, inner);
-			}
-		}
-	}
-
-	/// @TO-DO
-	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
-	{
-		JINFO << "Network Thread Process Connection Request Q";
-
-		if( timeUS == 0 )
-		{
-			timeUS = Get64BitsTimeUS();
-			timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
-		}
-
-		ConnectionRequest *connReq;
-		bool isMaxConnAttemptTimes;
-		bool isNllAdress;
-
-		for( unsigned int index = 0; index < connReqQ.Size(); index++ )
-		{
-			CHECK_EQ(connReqQ.PopHead(connReq), true);
-
-			/// this connReq has been cancelled
-			if( connReq == 0 ) continue;
-
-			if( connReq->nextRequestTime < timeMS )
-			{
-				connReq->requestsMade == connReq->connAttemptTimes + 1 ?
-					isMaxConnAttemptTimes = true : isMaxConnAttemptTimes = false;
-
-				connReq->receiverAddr == JACKIE_INET_Address_Null ?
-					isNllAdress = true : isNllAdress = false;
-
-				/// If too many requests made or a hole then remove this if possible,
-				/// otherwise invalidate it
-				if( isMaxConnAttemptTimes || isNllAdress )
-				{
-
-					/// free data inside conn req
-					if( connReq->data != 0 )
-					{
-						jackieFree_Ex(connReq->data, TRACE_FILE_AND_LINE_);
-						connReq->data = 0;
-					}
-
-					/// Tell USER connection attempt failed
-					if( isMaxConnAttemptTimes && !isNllAdress &&
-						connReq->actionToTake == ConnectionRequest::CONNECT )
-					{
-						char msgid;
-						Packet* packet = AllocPacket(sizeof(msgid), &msgid);
-						packet->data[0] = ID_CONNECTION_ATTEMPT_FAILED;
-						packet->systemAddress = connReq->receiverAddr;
-						CHECK_EQ(allocPacketQ.PushTail(packet), true);
-					}
-
-#if LIBCAT_SECURITY==1
-					CAT_AUDIT_PRINTF("AUDIT: Connection attempt FAILED so deleting rcs->client_handshake object %x\n", rcs->client_handshake);
-					JACKIE_INET::OP_DELETE(connReq->client_handshake,
-						TRACE_FILE_AND_LINE_);
-#endif
-					JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
-
-					/// remove this conn request fron  queue
-					//connReqQ.RemoveAtIndex(index);
-					connReqQ[index] = 0;
-
-				} else ///  isMaxConnAttemptTimes and isNllAdress are both false
-				{
-					/// more times try to request connection, less mtu used
-					int MTUSizeIndex = connReq->requestsMade /
-						( connReq->connAttemptTimes / mtuSizesCount );
-					if( MTUSizeIndex >= mtuSizesCount )
-						MTUSizeIndex = mtuSizesCount - 1;
-
-					connReq->requestsMade++;
-					connReq->nextRequestTime = timeUS + connReq->connAttemptIntervalMS;
-
-					/// @TO-DO
-					JackieStream bitStream;
-					//bitStream.Write((MessageID) ID_OPEN_CONNECTION_REQUEST_1);
-					//bitStream.WriteAlignedBytes((const unsigned char*) OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-					//bitStream.Write((MessageID) RAKNET_PROTOCOL_VERSION);
-					//bitStream.PadWithZeroToByteLength(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
-
-#ifdef _DEBUG
-					char str[256];
-					connReq->receiverAddr.ToString(true, str);
-					JINFO << "The " << connReq->requestsMade
-						<< " times to try to connect to remote sever [" << str << "]";
-#endif
-
-					/// @TO-DO i am now in here
-
-				}
 			}
 		}
 	}
@@ -902,7 +886,7 @@ namespace JACKIE_INET
 		{
 			if( incomePacket->length >= sizeof(char) + sizeof(Time) )
 			{
-				char* data = &incomePacket->data[sizeof(char)];
+				char* data = (char*) &incomePacket->data[sizeof(char)];
 				//#ifdef _DEBUG
 				//				RakAssert(IsActive());
 				//				RakAssert(data);
@@ -924,7 +908,7 @@ namespace JACKIE_INET
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieAddress&
 		sa, bool neededBySendThread, bool onlyWantActiveEndPoint) const
 	{
-		if( sa == JACKIE_INET_Address_Null ) return 0;
+		if( sa == JACKIE_NULL_ADDRESS ) return 0;
 
 		if( neededBySendThread )
 		{
@@ -942,7 +926,7 @@ namespace JACKIE_INET
 			/// Active EndPoints take priority.  But if matched end point is inactice, 
 			/// return the first EndPoint match found
 			Int32 inActiveEndPointIndex = -1;
-			for( unsigned int index = 0; index < maxConnections; index++ )
+			for( UInt32 index = 0; index < maxConnections; index++ )
 			{
 				if( remoteSystemList[index].systemAddress == sa )
 				{
@@ -965,7 +949,7 @@ namespace JACKIE_INET
 		JACKIE_INET_Address_GUID_Wrapper& senderWrapper, bool neededBySendThread,
 		bool onlyWantActiveEndPoint) const
 	{
-		if( senderWrapper.guid != JACKIE_INet_GUID_Null )
+		if( senderWrapper.guid != JACKIE_NULL_GUID )
 			return GetRemoteEndPoint(senderWrapper.guid, onlyWantActiveEndPoint);
 		else
 			return GetRemoteEndPoint(senderWrapper.systemAddress, neededBySendThread,
@@ -974,8 +958,8 @@ namespace JACKIE_INET
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieGUID&
 		senderGUID, bool onlyWantActiveEndPoint) const
 	{
-		if( senderGUID == JACKIE_INet_GUID_Null ) return 0;
-		for( unsigned int i = 0; i < maxConnections; i++ )
+		if( senderGUID == JACKIE_NULL_GUID ) return 0;
+		for( UInt32 i = 0; i < maxConnections; i++ )
 		{
 			if( remoteSystemList[i].guid == senderGUID &&
 				( onlyWantActiveEndPoint == false || remoteSystemList[i].isActive ) )
@@ -993,7 +977,7 @@ namespace JACKIE_INET
 	}
 	Int32 ServerApplication::GetRemoteEndPointIndex(const JackieAddress &sa) const
 	{
-		unsigned int hashindex = JackieAddress::ToHashCode(sa);
+		UInt32 hashindex = JackieAddress::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 		RemoteEndPointIndex* curr = remoteSystemLookup[hashindex];
 		while( curr != 0 )
@@ -1006,11 +990,11 @@ namespace JACKIE_INET
 	}
 
 
-	void ServerApplication::RefRemoteEndPoint(const JackieAddress &sa, unsigned int index)
+	void ServerApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 	{
 		RemoteEndPoint* remote = remoteSystemList + index;
 		JackieAddress old = remote->systemAddress;
-		if( old != JACKIE_INET_Address_Null )
+		if( old != JACKIE_NULL_ADDRESS )
 		{
 			// The system might be active if rerouting
 			CHECK_EQ(remoteSystemList[index].isActive, false);
@@ -1024,7 +1008,7 @@ namespace JACKIE_INET
 		DeRefRemoteEndPoint(sa);
 		remoteSystemList[index].systemAddress = sa;
 
-		unsigned int hashindex = JackieAddress::ToHashCode(sa);
+		UInt32 hashindex = JackieAddress::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 
 		RemoteEndPointIndex *rsi = 0;
@@ -1047,7 +1031,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::DeRefRemoteEndPoint(const JackieAddress &sa)
 	{
-		unsigned int hashindex = JackieAddress::ToHashCode(sa);
+		UInt32 hashindex = JackieAddress::ToHashCode(sa);
 		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
 
 		RemoteEndPointIndex *cur = remoteSystemLookup[hashindex];
@@ -1088,11 +1072,11 @@ namespace JACKIE_INET
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
-		JINFO << "User Thread Packet Go Through PluginCBs";
-		unsigned int i;
+		JINFO << "User Thread Packet Go Through PluginCBs with packet indentity " << (int) incomePacket->data[0];
+		UInt32 i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
-			switch( incomePacket->data[0] )
+			switch( (UInt32) incomePacket->data[0] )
 			{
 				case ID_DISCONNECTION_NOTIFICATION:
 					pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
@@ -1194,7 +1178,7 @@ namespace JACKIE_INET
 
 		JINFO << "User Thread Packet Go Through Plugin";
 
-		unsigned int i;
+		UInt32 i;
 		PluginActionType pluginResult;
 
 		for( i = 0; i < pluginListTS.Size(); i++ )
@@ -1232,7 +1216,7 @@ namespace JACKIE_INET
 	void ServerApplication::UpdatePlugins(void)
 	{
 		JINFO << "User Thread Update Plugins";
-		unsigned int i;
+		UInt32 i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
 			pluginListTS[i]->Update();
@@ -1290,7 +1274,7 @@ namespace JACKIE_INET
 	{
 		TIMED_FUNC();
 		//// @NOTICE I moved this code to JISbEKELY::RecvFrom()
-		//// unsigned int index;
+		//// UInt32 index;
 		//static JISRecvParams recv;
 		//#if !defined(WINDOWS_STORE_RT) && !defined(__native_client__)
 		//
@@ -1399,7 +1383,7 @@ namespace JACKIE_INET
 			/// or TriggerEvent() is called by recv thread
 			serv->RunNetworkUpdateCycleOnce();
 			serv->quitAndDataEvents.WaitEvent(5);
-			JackieSleep(1000);
+			JackieSleep(3000);
 		}
 		JINFO << "Send polling thread Stops....";
 
@@ -1482,7 +1466,11 @@ namespace JACKIE_INET
 		JackieAddress addr;
 		bool ret = addr.FromString(host, port,
 			bindedSockets[ConnectionSocketIndex]->GetBoundAddress().GetIPVersion());
-		if( !ret ) return CANNOT_RESOLVE_DOMAIN_NAME;
+		if( !ret || addr == JACKIE_NULL_ADDRESS ) return CANNOT_RESOLVE_DOMAIN_NAME;
+
+		if( GetRemoteEndPoint(addr, false, true) != 0 )
+			return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
+
 
 		if( GetRemoteEndPoint(addr, false, true) != 0 )
 			return ALREADY_CONNECTED_TO_ENDPOINT;
@@ -1504,13 +1492,26 @@ namespace JACKIE_INET
 
 #if LIBCAT_SECURITY==1
 		CAT_AUDIT_PRINTF("AUDIT: In SendConnectionRequest()\n");
-		if( !GenerateConnectionRequestChallenge(rcs, publicKey) )
+		if( !GenerateConnectionRequestChallenge(connReq, publicKey) )
 			return SECURITY_INITIALIZATION_FAILED;
 #else
 		(void) publicKey;
 #endif
 
-		return CONNECTION_ATTEMPT_STARTED;
+		connReqCancelQLock.Lock();
+		for( UInt32 Index = 0; Index < connReqQ.Size(); Index++ )
+		{
+			if( connReqQ[Index]->receiverAddr == addr )
+			{
+				connReqCancelQLock.Unlock();
+				JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
+				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
+			}
+		}
+		CHECK_EQ(connReqQ.PushTail(connReq), true);
+		connReqCancelQLock.Unlock();
+
+		return CONNECTION_ATTEMPT_POSTED;
 	}
 
 }

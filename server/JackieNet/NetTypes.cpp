@@ -9,8 +9,8 @@ namespace JACKIE_INET
 	static const char* IPV4_LOOPBACK = "127.0.0.1";
 
 #ifndef SWIG
-	const JackieAddress JACKIE_INET_Address_Null;
-	const JackieGUID JACKIE_INet_GUID_Null;
+	const JackieAddress JACKIE_NULL_ADDRESS;
+	const JackieGUID JACKIE_NULL_GUID;
 #endif
 
 	BindSocket::BindSocket()
@@ -256,7 +256,7 @@ namespace JACKIE_INET
 				address.addr4.sin_addr.s_addr = inet_addr__(ip);
 			} else
 			{
-				*this = JACKIE_INET_Address_Null;
+				*this = JACKIE_NULL_ADDRESS;
 				return false;
 			}
 		} else
@@ -425,7 +425,7 @@ namespace JACKIE_INET
 		bool b = FromString(str, '\0', ipVersion);
 		if( b == false )
 		{
-			*this = JACKIE_INET_Address_Null;
+			*this = JACKIE_NULL_ADDRESS;
 			return false;
 		}
 		address.addr4.sin_port = htons(port);
@@ -461,7 +461,7 @@ namespace JACKIE_INET
 	void JackieAddress::ToString_IPV4(bool writePort, char *dest, char portDelineator)
 		const
 	{
-		if( *this == JACKIE_INET_Address_Null )
+		if( *this == JACKIE_NULL_ADDRESS )
 		{
 			strcpy(dest, "UNASSIGNED_SYSTEM_ADDRESS");
 			return;
@@ -487,7 +487,7 @@ namespace JACKIE_INET
 		int ret;
 		(void) ret;
 
-		if( *this == JACKIE_INET_Address_Null )
+		if( *this == JACKIE_NULL_ADDRESS )
 		{
 			strcpy(dest, "UNASSIGNED_SYSTEM_ADDRESS");
 			return;
@@ -567,7 +567,7 @@ namespace JACKIE_INET
 	}
 	void JackieGUID::ToString(char *dest) const
 	{
-		if( *this == JACKIE_INet_GUID_Null )
+		if( *this == JACKIE_NULL_GUID )
 			strcpy(dest, "JACKIE_INet_GUID_Null");
 		else
 			//sprintf(dest, "%u.%u.%u.%u.%u.%u", g[0], g[1], g[2], g[3], g[4], g[5]);
@@ -601,18 +601,18 @@ namespace JACKIE_INET
 	}
 	unsigned long JACKIE_INET_Address_GUID_Wrapper::ToHashCode(const JACKIE_INET_Address_GUID_Wrapper &aog)
 	{
-		if( aog.guid != JACKIE_INet_GUID_Null )
+		if( aog.guid != JACKIE_NULL_GUID )
 			return JackieGUID::ToUInt32(aog.guid);
 		return JackieAddress::ToHashCode(aog.systemAddress);
 	}
 	const char *JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort) const
 	{
-		if( guid != JACKIE_INet_GUID_Null ) return guid.ToString();
+		if( guid != JACKIE_NULL_GUID ) return guid.ToString();
 		return systemAddress.ToString(writePort);
 	}
 	void JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort, char *dest) const
 	{
-		if( guid != JACKIE_INet_GUID_Null ) return guid.ToString(dest);
+		if( guid != JACKIE_NULL_GUID ) return guid.ToString(dest);
 		return systemAddress.ToString(writePort, dest);
 	}
 

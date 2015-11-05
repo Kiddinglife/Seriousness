@@ -61,8 +61,8 @@ namespace JACKIE_INET
 
 	/// Index of an invalid JACKIE_INET_Address
 #ifndef SWIG
-	JACKIE_EXPORT extern const  JackieAddress JACKIE_INET_Address_Null;
-	JACKIE_EXPORT extern const  JackieGUID JACKIE_INet_GUID_Null;
+	JACKIE_EXPORT extern const  JackieAddress JACKIE_NULL_ADDRESS;
+	JACKIE_EXPORT extern const  JackieGUID JACKIE_NULL_GUID;
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player
@@ -90,7 +90,7 @@ namespace JACKIE_INET
 
 	enum ConnectionAttemptResult
 	{
-		CONNECTION_ATTEMPT_STARTED,
+		CONNECTION_ATTEMPT_POSTED,
 		INVALID_PARAM,
 		CANNOT_RESOLVE_DOMAIN_NAME,
 		ALREADY_CONNECTED_TO_ENDPOINT,
@@ -376,20 +376,20 @@ namespace JACKIE_INET
 
 		SystemIndex GetSystemIndex(void) const
 		{
-			if( guid != JACKIE_INet_GUID_Null )
+			if( guid != JACKIE_NULL_GUID )
 				return guid.systemIndex; else return systemAddress.systemIndex;
 		}
 
 		bool IsUndefined(void) const
 		{
-			return guid == JACKIE_INet_GUID_Null &&
-				systemAddress == JACKIE_INET_Address_Null;
+			return guid == JACKIE_NULL_GUID &&
+				systemAddress == JACKIE_NULL_ADDRESS;
 		}
 
 		void SetUndefined(void)
 		{
-			guid = JACKIE_INet_GUID_Null;
-			systemAddress = JACKIE_INET_Address_Null;
+			guid = JACKIE_NULL_GUID;
+			systemAddress = JACKIE_NULL_ADDRESS;
 		}
 
 		/// Firstly try to return the hashcode of @guid if guid != null
@@ -409,14 +409,14 @@ namespace JACKIE_INET
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const JackieAddress& input)
 		{
-			guid = JACKIE_INet_GUID_Null;
+			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const Packet& packet);
 		JACKIE_INET_Address_GUID_Wrapper(const JackieGUID& input)
 		{
 			guid = input;
-			systemAddress = JACKIE_INET_Address_Null;
+			systemAddress = JACKIE_NULL_ADDRESS;
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INET_Address_GUID_Wrapper& input )
 		{
@@ -426,20 +426,20 @@ namespace JACKIE_INET
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieAddress& input )
 		{
-			guid = JACKIE_INet_GUID_Null;
+			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 			return *this;
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieGUID& input )
 		{
 			guid = input;
-			systemAddress = JACKIE_INET_Address_Null;
+			systemAddress = JACKIE_NULL_ADDRESS;
 			return *this;
 		}
 		bool operator==( const JACKIE_INET_Address_GUID_Wrapper& right ) const
 		{
-			return ( guid != JACKIE_INet_GUID_Null && guid == right.guid ) ||
-				( systemAddress != JACKIE_INET_Address_Null &&
+			return ( guid != JACKIE_NULL_GUID && guid == right.guid ) ||
+				( systemAddress != JACKIE_NULL_ADDRESS &&
 				systemAddress == right.systemAddress );
 		}
 	};
@@ -468,7 +468,7 @@ namespace JACKIE_INET
 
 		/// @internal
 		/// Indicates whether to delete the data, or to simply delete the packet.
-		bool isAllocatedFromPool;
+		bool freeInternalData;
 
 		/// @internal  If true, this message is meant for the user, not for the plugins,
 		/// so do not process it through plugins

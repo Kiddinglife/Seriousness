@@ -2,7 +2,7 @@
  * \file NetTypes.h
  * \author mengdi
  * \date Oct 2015
- * RakNetTypes.h, INetApplication = RakPeerInterface
+ * RakNetTypes.h, INetApplication = ServerApplication
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
@@ -83,8 +83,8 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
-	JACKIE_EXPORT extern const  JackieAddress JACKIE_INET_Address_Null;
-	JACKIE_EXPORT extern const  JackieGUID JACKIE_INet_GUID_Null;
+	JACKIE_EXPORT extern const  JackieAddress JACKIE_NULL_ADDRESS;
+	JACKIE_EXPORT extern const  JackieGUID JACKIE_NULL_GUID;
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player
@@ -115,7 +115,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	enum ConnectionAttemptResult
 	{
-		CONNECTION_ATTEMPT_STARTED,
+		CONNECTION_ATTEMPT_POSTED,
 		INVALID_PARAM,
 		CANNOT_RESOLVE_DOMAIN_NAME,
 		ALREADY_CONNECTED_TO_ENDPOINT,
@@ -147,11 +147,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	enum PublicKeyMode
 	{
 		/// The connection is insecure. 
-		/// You can also just pass 0 for the pointer to PublicKey in RakPeerInterface::Connect()
+		/// You can also just pass 0 for the pointer to PublicKey in ServerApplication::Connect()
 		INSECURE_CONNECTION,
 
-		/// Accept whatever public key the server gives us. This is vulnerable to man in the 
-		/// middle, but does not require distribution of the public key in advance of connecting.
+		/// Accept whatever public key the server gives us. This is vulnerable to man-in-the 
+		///-middle-cheat-attaks, but does not require distribution of the public key in advance of connecting.
 		ACCEPT_ANY_PUBLIC_KEY,
 
 		/// Use a known remote server public key. 
@@ -168,7 +168,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		USE_TWO_WAY_AUTHENTICATION
 	};
 
-	/// Passed to RakPeerInterface::Connect()
+	/// Passed to ServerApplication::Connect()
 	struct  JACKIE_EXPORT JACKIE_Public_Key
 	{
 		/// How to interpret the public key, see above
@@ -397,20 +397,20 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		SystemIndex GetSystemIndex(void) const
 		{
-			if( guid != JACKIE_INet_GUID_Null )
+			if( guid != JACKIE_NULL_GUID )
 				return guid.systemIndex; else return systemAddress.systemIndex;
 		}
 
 		bool IsUndefined(void) const
 		{
-			return guid == JACKIE_INet_GUID_Null &&
-				systemAddress == JACKIE_INET_Address_Null;
+			return guid == JACKIE_NULL_GUID &&
+				systemAddress == JACKIE_NULL_ADDRESS;
 		}
 
 		void SetUndefined(void)
 		{
-			guid = JACKIE_INet_GUID_Null;
-			systemAddress = JACKIE_INET_Address_Null;
+			guid = JACKIE_NULL_GUID;
+			systemAddress = JACKIE_NULL_ADDRESS;
 		}
 
 		/// Firstly try to return the hashcode of @guid if guid != null
@@ -430,14 +430,14 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const JackieAddress& input)
 		{
-			guid = JACKIE_INet_GUID_Null;
+			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 		}
 		JACKIE_INET_Address_GUID_Wrapper(const Packet& packet);
 		JACKIE_INET_Address_GUID_Wrapper(const JackieGUID& input)
 		{
 			guid = input;
-			systemAddress = JACKIE_INET_Address_Null;
+			systemAddress = JACKIE_NULL_ADDRESS;
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INET_Address_GUID_Wrapper& input )
 		{
@@ -447,20 +447,20 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieAddress& input )
 		{
-			guid = JACKIE_INet_GUID_Null;
+			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 			return *this;
 		}
 		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieGUID& input )
 		{
 			guid = input;
-			systemAddress = JACKIE_INET_Address_Null;
+			systemAddress = JACKIE_NULL_ADDRESS;
 			return *this;
 		}
 		bool operator==( const JACKIE_INET_Address_GUID_Wrapper& right ) const
 		{
-			return ( guid != JACKIE_INet_GUID_Null && guid == right.guid ) ||
-				( systemAddress != JACKIE_INET_Address_Null &&
+			return ( guid != JACKIE_NULL_GUID && guid == right.guid ) ||
+				( systemAddress != JACKIE_NULL_ADDRESS &&
 				systemAddress == right.systemAddress );
 		}
 	};
@@ -608,7 +608,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		//////////////////////////////////////////////////////////////////////////
 		/// however the user will get either ID_SND_RECEIPT_ACKED or ID_SND_RECEIPT_LOSS
-		/// based on the result of sending this message when calling RakPeerInterface::Receive
+		/// based on the result of sending this message when calling ServerApplication::Receive
 		/// (). Bytes 1-4 will contain the number returned from the Send() function. On 
 		/// disconnect or shutdown, all messages not previously acked should be considered 
 		/// lost.
@@ -624,7 +624,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		//////////////////////////////////////////////////////////////////////////
 		/// The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when 
-		/// calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
+		/// calling ServerApplication::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
 		/// message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain 
 		/// the number returned from the Send() function. On disconnect or shutdown, all 
 		/// messages not previously acked should be considered lost. This does not return 
@@ -634,7 +634,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		//////////////////////////////////////////////////////////////////////////
 		/// The user will also get ID_SND_RECEIPT_ACKED after the message is delivered when 
-		/// calling RakPeerInterface::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
+		/// calling ServerApplication::Receive(). ID_SND_RECEIPT_ACKED is returned when the 
 		/// message arrives, not necessarily the order when it was sent. Bytes 1-4 will contain 
 		/// the number returned from the Send() function. On disconnect or shutdown, all 
 		/// messages not previously acked should be considered lost. This does not return 
@@ -759,12 +759,12 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned int bitSize;
 
 		/// The data from the sender
-		char *data;
+		unsigned char *data;
 
 		/// @internal
 		/// Indicates whether to delete the data, or to simply delete the packet.
 		/// if true, this packet is allocated by pool if false, by rakAllloc_Ex function
-		bool isAllocatedFromPool;
+		bool freeInternalData;
 
 		/// @internal  If true, this message is meant for the user, not for the plugins,
 		/// so do not process it through plugins

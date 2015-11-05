@@ -144,7 +144,7 @@ static void test_JACKIE_INet_GUID_ToString_func()
 {
 	std::cout << "JACKIE_INet_GUID::test_ToString_func() starts...\n";
 
-	printf_s("%s\n", JACKIE_INET::JACKIE_INet_GUID_Null.ToString());
+	printf_s("%s\n", JACKIE_INET::JACKIE_NULL_GUID.ToString());
 
 	JACKIE_INET::JackieGUID gui(12);
 	printf_s("%s\n", gui.ToString());
@@ -213,102 +213,6 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	}
 }
 
-#include "JackieNet/IServerApplication.h"
-class myhandler : public IServerApplication
-{
-	public:
-	void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) { }
-	JISRecvParams *AllocJISRecvParams(UInt32 index) { static JISRecvParams recv; return &recv; }
-};
-static void test_JISBerkley_All_funcs()
-{
-	std::cout << "test_JISBerkley_All_funcs starts...\n";
-
-	JackieINetSocket* sock = JISAllocator::AllocJIS();
-	sock->SetUserConnectionSocketIndex(0);
-
-	JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR];
-	sock->GetMyIP(addresses);
-	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
-	{
-		if( addresses[i] == JACKIE_INET_Address_Null ) break;
-		JACKIE_NET_DEBUG_PRINTF("my avaible IP (%s)\n", addresses[i].ToString());
-	}
-
-	if( sock->IsBerkleySocket() )
-	{
-		JISBerkley* bsock = ( (JISBerkley*) sock );
-
-		myhandler handler;
-
-		JISBerkleyBindParams bbp;
-		bbp.port = 36005;
-		bbp.hostAddress = "127.0.0.1";
-		bbp.addressFamily = AF_INET;
-		bbp.type = SOCK_DGRAM;
-		bbp.protocol = 0;
-		bbp.isBlocKing = false;
-		bbp.isBroadcast = true;
-		bbp.setIPHdrIncl = false;
-		bbp.doNotFragment = false;
-		bbp.pollingThreadPriority = 0;
-		bbp.eventHandler = &handler;
-		bbp.remotePortJackieNetWasStartedOn_PS3_PS4_PSP2 = 0;
-
-		if( JISBerkley::IsPortInUse(bbp.port, bbp.hostAddress, bbp.addressFamily, bbp.type) )
-		{
-			printf_s("isportinuse(true)\n");
-		} else
-		{
-			printf_s("isportinuse(false)\n");
-		}
-
-		JISBindResult br = bsock->Bind(&bbp, TRACE_FILE_AND_LINE_);
-		printf_s("%s, bound addr (%s)\n", JISBindResultToString(br), bsock->GetBoundAddress().ToString());
-
-		if( JISBerkley::IsPortInUse(bbp.port, bbp.hostAddress, bbp.addressFamily, bbp.type) )
-		{
-			printf_s("Isportinuse(true)\n");
-		} else
-		{
-			printf_s("Isportinuse(false)\n");
-		}
-
-		switch( br )
-		{
-			case JISBindResult_FAILED_BIND_SOCKET:
-				JISAllocator::DeallocJIS(sock);
-				return;
-				break;
-
-			case JISBindResult_FAILED_SEND_RECV_TEST:
-				JISAllocator::DeallocJIS(sock);
-				return;
-				break;
-
-			default:
-				JACKIE_ASSERT(br == JISBindResult_SUCCESS);
-				break;
-		}
-
-		printf_s("Start CreateRecvPollingThread...\n");
-
-		int ret;
-		char* data = "JackieNet";
-		JISSendParams sendParams;
-		sendParams.data = data;
-		sendParams.length = strlen(data) + 1;
-		sendParams.receiverINetAddress = bsock->GetBoundAddress();
-		do { ret = bsock->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
-
-		JISRecvParams* recvParams = handler.AllocJISRecvParams(0);
-		recvParams->socket = bsock;
-		ret = bsock->RecvFrom(recvParams);
-		if( ret >= 0 ) printf_s("recv(%s)\n", recvParams->data);
-		printf_s("Start Polling Recv in another thread...\n");
-
-	}
-}
 //////////////////////////////////////////////////////////////////////////
 
 ////////////////////////// test_MemoryPool_funcs ///////////////////////////
@@ -404,50 +308,55 @@ static void test_ServerApplication_funcs()
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::BindSocket socketDescriptor;
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; //USE_BLOBKING_SOCKET
-	socketDescriptor.port = 0;
+	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; //USE_BLOBKING_SOCKET
+	socketDescriptor.port = 32000;
 	socketDescriptor.socketFamily = AF_INET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
 	app->Start(4, &socketDescriptor, 1);
 
-	int ret;
-	char* data = "JackieNet";
-	JISSendParams sendParams;
-	sendParams.data = data;
-	sendParams.length = strlen(data) + 1;
-	sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
-	do { ret = ( ( JACKIE_INET::JISBerkley* )app->bindedSockets[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+	app->Connect("127.0.0.1", 32000);
+	//int ret;
+	//char* data = "JackieNet";
+	//JISSendParams sendParams;
+	//sendParams.data = data;
+	//sendParams.length = strlen(data) + 1;
+	//sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
+	//do { ret = ( ( JACKIE_INET::JISBerkley* )app->bindedSockets[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+
+
 
 	Packet* packet = 0;
 	//// Loop for input
-	//while( 1 )
-	//{
-
-	Command* c = app->AllocCommand();
-	c->command = Command::BCS_SEND;
-	app->PostComand(c);
-
-	// This sleep keeps RakNet responsive
-	for( packet = app->GetPacketOnce(); packet != 0;
-		app->ReclaimPacket(packet), packet = 0 )
+	while( 1 )
 	{
-		/// user logics goes here
+
+		//Command* c = app->AllocCommand();
+		//c->command = Command::BCS_SEND;
+		//app->PostComand(c);
+
+		// This sleep keeps RakNet responsive
+		for( packet = app->GetPacketOnce(); packet != 0;
+			app->ReclaimPacket(packet), packet = 0 )
+		{
+
+			/// user logics goes here
+			//Command* c = app->AllocCommand();
+			//c->command = Command::BCS_SEND;
+			//app->ExecuteComand(c);
+
+		}
+
+		/// another way to use
+		//packet = app->GetPacketOnce();
 		//Command* c = app->AllocCommand();
 		//c->command = Command::BCS_SEND;
 		//app->ExecuteComand(c);
+		//if( packet != 0 ) app->ReclaimOnePacket(packet);
+
+		JackieSleep(1000);
+		break;
 	}
-
-	/// another way to use
-	//packet = app->GetPacketOnce();
-	//Command* c = app->AllocCommand();
-	//c->command = Command::BCS_SEND;
-	//app->ExecuteComand(c);
-	//if( packet != 0 ) app->ReclaimOnePacket(packet);
-
-	//JackieSleep(1500);
-	//break;
-	//}
 
 	Sleep(1001);
 	app->StopRecvThread();
@@ -655,9 +564,6 @@ int main(int argc, char** argv)
 			break;
 		case NetTime_h:
 			test_NetTime_h_All_funcs();
-			break;
-		case JACKIE_INet_Socket_h:
-			test_JISBerkley_All_funcs();
 			break;
 		case MemoryPool_h:
 			test_MemoryPool_funcs();

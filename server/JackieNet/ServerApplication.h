@@ -55,9 +55,9 @@ namespace JACKIE_INET
 
 
 		/// Store the maximum number of peers allowed to connect
-		unsigned int maxConnections;
+		UInt32 maxConnections;
 		///Store the maximum incoming connection allowed 
-		unsigned int maxPassiveConnections;
+		UInt32 maxPassiveConnections;
 
 
 		char incomingPassword[256];
@@ -79,7 +79,7 @@ namespace JACKIE_INET
 		/// added to this list of pointers. Threadsafe because RemoteEndPoint is preallocated, 
 		/// and the list is only added to, not removed from
 		RemoteEndPoint** activeSystemList;
-		unsigned int activeSystemListSize;
+		UInt32 activeSystemListSize;
 
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
@@ -99,21 +99,21 @@ namespace JACKIE_INET
 
 		int defaultMTUSize;
 		bool trackFrequencyTable;
-		unsigned int bytesSentPerSecond;
-		unsigned int  bytesReceivedPerSecond;
+		UInt32 bytesSentPerSecond;
+		UInt32  bytesReceivedPerSecond;
 		/// Do we occasionally ping the other systems?
 		bool occasionalPing;
 		bool allowInternalRouting;
 		/// How long it has been since things were updated by a call
 		/// to receiveUpdate thread uses this to determine how long to sleep for
-		/// unsigned int lastUserUpdateCycle;
+		/// UInt32 lastUserUpdateCycle;
 		/// True to allow connection accepted packets from anyone. 
 		/// False to only allow these packets from servers we requested a connection to.
 		bool allowConnectionResponseIPMigration;
 		int splitMessageProgressInterval;
 		TimeMS unreliableTimeout;
 		TimeMS defaultTimeoutTime;
-		unsigned int maxOutgoingBPS;
+		UInt32 maxOutgoingBPS;
 		bool limitConnectionFrequencyFromTheSameIP;
 
 		// Nobody would use the internet simulator in a final build.
@@ -130,7 +130,7 @@ namespace JACKIE_INET
 		/// or ID_SND_RECEIPT_LOSS and is only returned with the reliability 
 		/// types that DOES NOT contain 'NOT' in the name
 		JackieSimpleMutex sendReceiptSerialMutex;
-		unsigned int sendReceiptSerial;
+		UInt32 sendReceiptSerial;
 
 
 		/// in Multi-threads app, used only by send thread to alloc packet
@@ -172,11 +172,6 @@ namespace JACKIE_INET
 		LockFreeQueue<Packet*> allocPacketQ;
 		/// shared by recv thread and send thread
 		LockFreeQueue<Packet*> deAllocPacketQ;
-
-		LockFreeQueue<JackieAddress> connReqCancelQ;
-
-		LockFreeQueue<ConnectionRequest*> connReqQ;
-		JackieSimpleMutex connReqQMutex;
 #else
 
 		/// shared between recv and send thread
@@ -192,11 +187,13 @@ namespace JACKIE_INET
 		/// shared by recv thread and send thread
 		ArraryQueue<Packet*> deAllocPacketQ;
 
-		ArraryQueue<JackieAddress> connReqCancelQ;
-
-		ArraryQueue<ConnectionRequest*> connReqQ;
-
 #endif
+
+
+		ArraryQueue<JackieAddress, 8> connReqCancelQ;
+		JackieSimpleMutex connReqCancelQLock;
+		ArraryQueue<ConnectionRequest*, 8> connReqQ;
+		JackieSimpleMutex connReqQLock;
 
 		// Threadsafe, and not thread safe
 		LockFreeQueue<IPlugin*> pluginListTS;
@@ -228,10 +225,10 @@ namespace JACKIE_INET
 		void AdjustTimestamp(Packet*& incomePacket) const;
 
 		public:
-		virtual StartupResult Start(unsigned int maxConnections,
+		virtual StartupResult Start(UInt32 maxConnections,
 			BindSocket *socketDescriptors,
-			unsigned int socketDescriptorCount, Int32 threadPriority = -99999);
-		void End(unsigned int blockDuration, unsigned char orderingChannel = 0,
+			UInt32 socketDescriptorCount, Int32 threadPriority = -99999);
+		void End(UInt32 blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
 
 
@@ -240,10 +237,10 @@ namespace JACKIE_INET
 		/// Mac address is a poor solution because 
 		/// you can't have multiple connections from the same system
 		UInt64 CreateUniqueRandness(void);
-		unsigned int GetSystemIndexFromGuid(const JackieGUID& input) const;
+		UInt32 GetSystemIndexFromGuid(const JackieGUID& input) const;
 
 
-		unsigned int MaxConnections() const { return maxConnections; }
+		UInt32 MaxConnections() const { return maxConnections; }
 
 		///========================================
 		/// @Function CancelConnectionRequest 
@@ -272,8 +269,8 @@ namespace JACKIE_INET
 
 		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
 		/// for the furture use of recv thread by popout
-		Packet* AllocPacket(unsigned int dataSize);
-		Packet* AllocPacket(unsigned dataSize, char *data);
+		Packet* AllocPacket(UInt32 dataSize);
+		Packet* AllocPacket(UInt32 dataSize, UInt8 *data);
 		/// send thread will take charge of dealloc packet in multi-threads env
 		void ReclaimAllPackets(void);
 
@@ -337,9 +334,9 @@ namespace JACKIE_INET
 		///========================================
 		ConnectionAttemptResult Connect(const char* host, UInt16 port,
 			const char *pwd = 0, UInt32 pwdLen = 0, JACKIE_Public_Key *publicKey = 0,
-			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 6,
-			UInt32 ConnectionAttemptIntervalMS = 1000, TimeMS timeout = 0, 
-			UInt32 extraData=0);
+			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 3,
+			UInt32 ConnectionAttemptIntervalMS = 500, TimeMS timeout = 0,
+			UInt32 extraData = 0);
 
 		///========================================
 		/// function  StopRecvPollingThread 
@@ -366,7 +363,7 @@ namespace JACKIE_INET
 		RemoteEndPoint* GetRemoteEndPoint(const JackieGUID& senderGUID,
 			bool onlyWantActiveEndPoint) const;
 		Int32 GetRemoteEndPointIndex(const JackieAddress &sa) const;
-		void RefRemoteEndPoint(const JackieAddress &sa, unsigned int index);
+		void RefRemoteEndPoint(const JackieAddress &sa, UInt32 index);
 		void DeRefRemoteEndPoint(const JackieAddress &sa);
 
 

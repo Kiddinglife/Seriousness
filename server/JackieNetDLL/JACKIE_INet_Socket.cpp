@@ -593,7 +593,7 @@ namespace JACKIE_INET
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
 			fprintf_s(stderr, "JISBerkley::GetSystemAddressViaJISSocketIPV4()::getsockname__()::failed with errno code (%s)\n", strerror(errno));
 #endif
-			*systemAddressOut = JACKIE_INET_Address_Null;
+			*systemAddressOut = JACKIE_NULL_ADDRESS;
 			return;
 		}
 
@@ -620,7 +620,7 @@ namespace JACKIE_INET
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
 			fprintf_s(stderr, "JISBerkley::GetSystemAddressViaJISSocketIPV4And6()::getsockname__()::failed with errno code (%s)\n", strerror(errno));
 #endif
-			*systemAddressOut = JACKIE_INET_Address_Null
+			*systemAddressOut = JACKIE_NULL_ADDRESS
 				return;
 		}
 
@@ -673,7 +673,7 @@ namespace JACKIE_INET
 
 		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
 		{
-			addresses[idx] = JACKIE_INET_Address_Null;
+			addresses[idx] = JACKIE_NULL_ADDRESS;
 			idx++;
 		}
 	}
@@ -712,7 +712,7 @@ namespace JACKIE_INET
 
 		while( idx < MAX_COUNT_LOCAL_IP_ADDR )
 		{
-			addresses[idx] = JACKIE_INET_Address_Null;
+			addresses[idx] = JACKIE_NULL_ADDRESS;
 			idx++;
 		}
 	}

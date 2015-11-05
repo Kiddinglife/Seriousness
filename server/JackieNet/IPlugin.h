@@ -82,7 +82,7 @@ namespace JACKIE_INET
 		JackieGUID GetMyGUIDUnified(void) const
 		{
 			if( serverApplication != 0 ) return serverApplication->GetMyGUID();
-			return JACKIE_INet_GUID_Null;
+			return JACKIE_NULL_GUID;
 		}
 
 		/// Called when the interface is attached
@@ -139,7 +139,10 @@ namespace JACKIE_INET
 		/// \param[in] packet Packet to be returned to the user
 		/// \param[in] failedConnectionReason Why the connection failed
 		virtual void OnFailedConnectionAttempt(Packet *packet,
-			ConnectionAttemptFailReason failedConnectionAttemptReason) { }
+			ConnectionAttemptFailReason failedConnectionAttemptReason)
+		{
+			JINFO << "User Thread Plugin CB On Failed Connection Attempt";
+		}
 
 
 		/// Called on a send or receive of a message within the reliability layer

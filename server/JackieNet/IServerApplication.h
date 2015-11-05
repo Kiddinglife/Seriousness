@@ -99,7 +99,7 @@ namespace JACKIE_INET
 			return ALREADY_STARTED;
 		}
 
-		virtual const JackieGUID& GetMyGUID(void) const { return JACKIE_INet_GUID_Null; };
+		virtual const JackieGUID& GetMyGUID(void) const { return JACKIE_NULL_GUID; };
 	};
 
 
