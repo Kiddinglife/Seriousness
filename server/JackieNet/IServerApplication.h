@@ -20,7 +20,7 @@
 namespace JACKIE_INET
 {
 	// Forward declarations
-	class JackieStream;
+	class JackieBits;
 	class PluginInterface2;
 	struct RPCMap;
 	struct RakNetStatistics;

@@ -98,6 +98,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
+      <AdditionalIncludeDirectories>../ThirdParty;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,6 +144,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>../ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -181,7 +183,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="JackieStream.cpp" />
+    <ClCompile Include="JackieSpinLock.cpp" />
+    <ClCompile Include="JackieBits.cpp" />
     <ClCompile Include="GlobalFunctions.cpp" />
     <ClCompile Include="IPlugin.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
@@ -193,6 +196,7 @@
     <ClCompile Include="OverrideMemory.cpp" />
     <ClCompile Include="RandomSeedCreator.cpp" />
     <ClCompile Include="ReliabilityLayer.cpp" />
+    <ClCompile Include="SecurityHandShake.cpp" />
     <ClCompile Include="ServerApplication.cpp" />
     <ClCompile Include="ThreadConditionSignalEvent.cpp" />
     <ClCompile Include="WSAStartupSingleton.cpp" />
@@ -200,7 +204,8 @@
   <ItemGroup>
     <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="atomic_ops.h" />
-    <ClInclude Include="JackieStream.h" />
+    <ClInclude Include="JackieSpinLock.h" />
+    <ClInclude Include="JackieBits.h" />
     <ClInclude Include="EasyLog.h" />
     <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />
@@ -224,6 +229,7 @@
     <ClInclude Include="OverrideMemory.h" />
     <ClInclude Include="OverrideNetDefines.h" />
     <ClInclude Include="ReliabilityLayer.h" />
+    <ClInclude Include="SecurityHandShake.h" />
     <ClInclude Include="ServerApplication.h" />
     <ClInclude Include="SocketDefines.h" />
     <ClInclude Include="SockOSIncludes.h" />

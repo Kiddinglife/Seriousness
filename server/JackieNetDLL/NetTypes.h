@@ -18,7 +18,7 @@ namespace JACKIE_INET
 {
 	/// Forward declarations
 	class   INetApplication;
-	class   JackieStream;
+	class   JackieBits;
 	struct  Packet;
 	struct  JackieAddress;
 	struct  JackieGUID;

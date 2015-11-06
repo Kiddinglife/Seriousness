@@ -28,20 +28,20 @@ namespace JACKIE_INET
 {
 
 	/// This class allows you to write and read native types as a string of bits.  
-	class JACKIE_EXPORT JackieStream
+	class JACKIE_EXPORT JackieBits
 	{
 		/*private:*/
 		public:
-		BitSize bitsAllocCount;
+		BitSize mBitsAllocCount;
 		BitSize mWritePosBits;
 		BitSize mReadPosBits;
-		char *base;
+		unsigned  char *data;
 		/// true if the internal buffer is copy of the data passed to the constructor
-		bool mUseHeapBuf;
-		char mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
+		bool mNeedFree;
+		unsigned  char mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
 
 		public:
-		STATIC_FACTORY_DECLARATIONS(JackieStream);
+		STATIC_FACTORY_DECLARATIONS(JackieBits);
 
 		/// Getters and Setters
 		BitSize WritePosBits() const { return mWritePosBits; }
@@ -49,8 +49,8 @@ namespace JACKIE_INET
 		void WritePosBits(BitSize val) { mWritePosBits = val; }
 		BitSize ReadPosBits() const { return mReadPosBits; }
 		void ReadPosBits(BitSize val) { mReadPosBits = val; }
-		char * Buffer() const { return base; }
-		void Buffer(char * val) { base = val; }
+		unsigned char * Buffer() const { return data; }
+		void Buffer(unsigned unsigned char * val) { data = val; }
 
 		///========================================
 		/// @Param [in] [ BitSize initialBytesToAllocate]:
@@ -61,12 +61,12 @@ namespace JACKIE_INET
 		/// how many bytes you need and it is greater than 256.
 		/// @Author mengdi[Jackie]
 		///========================================
-		JackieStream(const BitSize initialBytesToAllocate);
+		JackieBits(const BitSize initialBytesToAllocate);
 
 		///========================================
 		/// @Brief  Initialize by immediately setting the +data to a predefined pointer.
 		/// @Access  public  
-		/// @Param [in] [char * data]  
+		/// @Param [in] [unsigned char * data]  
 		/// @Param [in] [const  BitSize len]  unit of byte
 		/// @Param [in] [bool copy]  
 		/// true to make an deep copy of the +data . 
@@ -77,9 +77,9 @@ namespace JACKIE_INET
 		/// JACKIE_INET::JackieStream js(packet->data, packet->length, false);
 		/// @Author mengdi[Jackie]
 		///========================================
-		JackieStream(char* data, const BitSize len, bool copy);
-		JackieStream();
-		~JackieStream();
+		JackieBits(unsigned char* data, const BitSize len, bool copy);
+		JackieBits();
+		~JackieBits();
 
 		///========================================
 		/// @Function  Reuse 
@@ -96,47 +96,55 @@ namespace JACKIE_INET
 		BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
 
 		///========================================
-		/// @Function ReadBits
-		/// @Brief   Read numbers of bit into dest array
-		/// @Access public
-		/// @Param [out] [unsigned char * dest]  The destination array
-		/// @Param [in] [BitSize bitsRead] The number of bits to read
-		/// @Param [in] [const bool alignRight]  If true bits will be right aligned
-		/// @Returns bool True if [bitsRead] number of bits are read
-		/// @Remarks
-		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
-		/// 2.user data are aligned to the right side of byte boundary.
-		/// @Notice
-		/// 1.Use True to read to user data 
-		/// 2.Use False to read this stream to another stream 
-		/// @Author mengdi[Jackie]
+		/// @func AppendBitsCouldRealloc 
+		/// @brief reallocates (if necessary) in preparation of writing @bits2Append
+		/// @access  public  
+		/// @author mengdi[Jackie]
 		///========================================
-		bool ReadBits(char *dest, BitSize bitsRead, bool alignRight = true);
+		void AppendBitsCouldRealloc(const BitSize bits2Append);
 
 		///========================================
-		/// @Function  WriteBits 
-		/// @Brief  write @bitsCount number of bits into @input
-		/// @Access      public  
-		/// @Param [in] [const char * src] source array
-		/// @Param [in] [BitSize bitsSize] the number of bits to write
-		/// @Param [in] [bool rightAligned] if true particial bits will be right aligned
-		/// @Returns void
-		/// @Remarks
+		/// @func   ReadBits
+		/// @brief   Read numbers of bit into dest array
+		/// @access public
+		/// @param [out] [unsigned unsigned char * dest]  The destination array
+		/// @param [in] [BitSize bitsRead] The number of bits to read
+		/// @param [in] [const bool alignRight]  If true bits will be right aligned
+		/// @returns bool True if [bitsRead] number of bits are read
+		/// @remarks
 		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
 		/// 2.user data are aligned to the right side of byte boundary.
-		/// @Notice
+		/// @notice
+		/// 1.use True to read to user data 
+		/// 2.use False to read this stream to another stream 
+		/// @author mengdi[Jackie]
+		///========================================
+		bool ReadBits(unsigned char *dest, BitSize bitsRead, bool alignRight = true);
+
+		///========================================
+		/// @func  WriteBits 
+		/// @brief  write @bitsCount number of bits into @input
+		/// @access      public  
+		/// @param [in] [const unsigned char * src] source array
+		/// @param [in] [BitSize bits2Write] the number of bits to write
+		/// @param [in] [bool rightAligned] if true particial bits will be right aligned
+		/// @returns void
+		/// @remarks
+		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
+		/// 2.user data are aligned to the right side of byte boundary.
+		/// @notice
 		/// 1.Use true to write user data to jackie stream 
 		/// 2.Use False to write this jackie stream internal data to another stream
 		/// @Author mengdi[Jackie]
 		///========================================
-		void WriteBits(const char* src, BitSize bitsSize, bool rightAligned = true);
+		void WriteBits(const unsigned char* src, BitSize bits2Write, bool rightAligned = true);
 
-		/// Can only print 4096 size of char no materr is is bit or byte
+		/// Can only print 4096 size of unsigned char no materr is is bit or byte
 		/// mainly used for dump binary data
 		void PrintBit(void);
-		static void PrintBit(char* outstr, BitSize bitsPrint, char* src);
+		static void PrintBit(char* outstr, BitSize bitsPrint, unsigned char* src);
 		void PrintHex(void);
-		static void PrintHex(char* outstr, BitSize bitsPrint, char* src);
+		static void PrintHex(char* outstr, BitSize bitsPrint, unsigned char* src);
 	};
 }
 #endif  //__BITSTREAM_H__

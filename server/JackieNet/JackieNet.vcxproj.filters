@@ -62,10 +62,16 @@
     <ClCompile Include="JackieINetSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JackieStream.cpp">
+    <ClCompile Include="JackieSimpleMutex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JackieSimpleMutex.cpp">
+    <ClCompile Include="SecurityHandShake.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieSpinLock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieBits.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -151,20 +157,26 @@
     <ClInclude Include="ReliabilityLayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JACKIE_Atomic.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="JackieINetSocket.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieStream.h">
-      <Filter>Header Files\Ultils</Filter>
     </ClInclude>
     <ClInclude Include="JackieSimpleMutex.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
     <ClInclude Include="ArraryQueue.h">
       <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="SecurityHandShake.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieSpinLock.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JACKIE_Atomic.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieBits.h">
+      <Filter>Header Files\Ultils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

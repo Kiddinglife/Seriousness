@@ -162,7 +162,7 @@ namespace JACKIE_INET
 		for( index = 0; index < bindLocalSocketsCount; index++ )
 		{
 			do { sock = JISAllocator::AllocJIS(); } while( sock == 0 );
-			CHECK_EQ(bindedSockets.PushTail(sock), true);
+			DCHECK_EQ(bindedSockets.PushTail(sock), true);
 
 #if defined(__native_client__)
 			NativeClientBindParameters ncbp;
@@ -239,7 +239,7 @@ namespace JACKIE_INET
 
 					default:
 						assert(bindResult == JISBindResult_SUCCESS);
-						JINFO << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
+						JDEBUG << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
 						sock->SetUserConnectionSocketIndex(index);
 						break;
 				}
@@ -387,7 +387,7 @@ namespace JACKIE_INET
 		//		RakNet::SendToThread::AddRef();
 		//#endif
 
-		JINFO << "Startup Application Succeeds....";
+		JDEBUG << "Startup Application Succeeds....";
 		return ALREADY_STARTED;
 	}
 
@@ -403,23 +403,23 @@ namespace JACKIE_INET
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index)
 	{
-		JINFO << "Network Thread Reclaims One JISRecvParams";
-		CHECK_EQ(deAllocRecvParamQ[index].PushTail(s), true);
+		JDEBUG << "Network Thread Reclaims One JISRecvParams";
+		DCHECK_EQ(deAllocRecvParamQ[index].PushTail(s), true);
 	}
 	void ServerApplication::ReclaimAllJISRecvParams(UInt32 Index)
 	{
-		JINFO << "Recv thread " << Index << " Reclaim All JISRecvParams";
+		JDEBUG << "Recv thread " << Index << " Reclaim All JISRecvParams";
 
 		JISRecvParams* recvParams = 0;
 		for( UInt32 index = 0; index < deAllocRecvParamQ[Index].Size(); index++ )
 		{
-			CHECK_EQ(deAllocRecvParamQ[Index].PopHead(recvParams), true);
+			DCHECK_EQ(deAllocRecvParamQ[Index].PopHead(recvParams), true);
 			JISRecvParamsPool[Index].Reclaim(recvParams);
 		}
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams(UInt32 Index)
 	{
-		JINFO << "Recv Thread" << Index << " Alloc An JISRecvParams";
+		JDEBUG << "Recv Thread" << Index << " Alloc An JISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool[Index].Allocate(); } while( ptr == 0 );
 		return ptr;
@@ -431,13 +431,13 @@ namespace JACKIE_INET
 			JISRecvParams *recvParams = 0;
 			for( UInt32 i = 0; i < allocRecvParamQ[index].Size(); i++ )
 			{
-				CHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
+				DCHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
 				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 				JISRecvParamsPool[index].Reclaim(recvParams);
 			}
 			for( UInt32 i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
 			{
-				CHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
+				DCHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
 				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 				JISRecvParamsPool[index].Reclaim(recvParams);
 			}
@@ -450,21 +450,21 @@ namespace JACKIE_INET
 
 	void ServerApplication::ReclaimAllCommands()
 	{
-		JINFO << "User Thread Reclaims All Commands";
+		JDEBUG << "User Thread Reclaims All Commands";
 
 		Command* bufferedCommand = 0;
 		for( UInt32 index = 0; index < deAllocCommandQ.Size(); index++ )
 		{
-			CHECK_EQ(
+			DCHECK_EQ(
 				deAllocCommandQ.PopHead(bufferedCommand),
 				true);
-			CHECK_NOTNULL(bufferedCommand);
+			DCHECK_NOTNULL(bufferedCommand);
 			commandPool.Reclaim(bufferedCommand);
 		}
 	}
 	Command* ServerApplication::AllocCommand()
 	{
-		JINFO << "User Thread Alloc An Command";
+		JDEBUG << "User Thread Alloc An Command";
 		Command* ptr = 0;
 		do { ptr = commandPool.Allocate(); } while( ptr == 0 );
 		return ptr;
@@ -476,15 +476,15 @@ namespace JACKIE_INET
 		/// first reclaim the elem in 
 		for( UInt32 i = 0; i < allocCommandQ.Size(); i++ )
 		{
-			CHECK_EQ(allocCommandQ.PopHead(bcs), true);
-			CHECK_NOTNULL(bcs);
+			DCHECK_EQ(allocCommandQ.PopHead(bcs), true);
+			DCHECK_NOTNULL(bcs);
 			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
 		for( UInt32 i = 0; i < deAllocCommandQ.Size(); i++ )
 		{
-			CHECK_EQ(deAllocCommandQ.PopHead(bcs), true);
-			CHECK_NOTNULL(bcs);
+			DCHECK_EQ(deAllocCommandQ.PopHead(bcs), true);
+			DCHECK_NOTNULL(bcs);
 			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
@@ -537,7 +537,7 @@ namespace JACKIE_INET
 
 	Packet* ServerApplication::AllocPacket(UInt32 dataSize)
 	{
-		JINFO << "Network Thread Alloc One Packet";
+		JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -553,7 +553,7 @@ namespace JACKIE_INET
 	}
 	Packet* ServerApplication::AllocPacket(UInt32 dataSize, unsigned char *data)
 	{
-		JINFO << "Network Thread Alloc One Packet";
+		JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while( p == 0 );
 
@@ -569,12 +569,12 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ReclaimAllPackets()
 	{
-		JINFO << "Network Thread Reclaims All Packets";
+		JDEBUG << "Network Thread Reclaims All Packets";
 
 		Packet* packet;
 		for( UInt32 index = 0; index < deAllocPacketQ.Size(); index++ )
 		{
-			CHECK_EQ(deAllocPacketQ.PopHead(packet), true);
+			DCHECK_EQ(deAllocPacketQ.PopHead(packet), true);
 			if( packet->freeInternalData )
 			{
 				//packet->~Packet(); no custom dtor so no need to call default dtor
@@ -585,8 +585,8 @@ namespace JACKIE_INET
 	}
 	inline void ServerApplication::ReclaimPacket(Packet *packet)
 	{
-		JINFO << "User Thread Reclaims One Packet";
-		CHECK_EQ(deAllocPacketQ.PushTail(packet), true);
+		JDEBUG << "User Thread Reclaims One Packet";
+		DCHECK_EQ(deAllocPacketQ.PushTail(packet), true);
 	}
 
 
@@ -638,7 +638,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 	{
-		JINFO << "Process One RecvParam";
+		JDEBUG << "Process One RecvParam";
 
 #if LIBCAT_SECURITY==1
 #ifdef CAT_AUDIT
@@ -651,7 +651,7 @@ namespace JACKIE_INET
 #endif
 #endif // LIBCAT_SECURITY
 
-		CHECK_NE(recvParams->senderINetAddress.GetPortHostOrder(), 0);
+		DCHECK_NE(recvParams->senderINetAddress.GetPortHostOrder(), 0);
 
 		bool isOfflinerecvParams = true;
 		if( ProcessOneOfflineRecvParam(recvParams, &isOfflinerecvParams) ) return;
@@ -686,7 +686,13 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessConnectionRequestCancelQ(void)
 	{
-		JINFO << "Network Thread Process ConnectionRequest Cancel Q";
+		JDEBUG << "Network Thread Process ConnectionRequest CancelQ";
+
+		if( connReqCancelQ.IsEmpty() )
+		{
+			JDEBUG << "ConnectionRequestCancelQ is EMPTY";
+			return;
+		}
 
 		JackieAddress connReqCancelAddr;
 		ConnectionRequest* connReq = 0;
@@ -717,9 +723,13 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
-		JINFO << "Network Thread Process Connection Request Q";
+		JDEBUG << "Network Thread Process ConnectionRequestQ";
 
-		if( connReqQ.IsEmpty() ) return;
+		if( connReqQ.IsEmpty() )
+		{
+			JDEBUG << "ConnectionRequestQ is EMPTY";
+			return;
+		}
 
 		if( timeUS == 0 )
 		{
@@ -728,6 +738,7 @@ namespace JACKIE_INET
 		}
 
 		ConnectionRequest *connReq;
+
 		connReqQLock.Lock();
 		for( UInt32 index = 0; index < connReqQ.Size(); index++ )
 		{
@@ -751,7 +762,7 @@ namespace JACKIE_INET
 					packet->data[0] = ID_CONNECTION_ATTEMPT_FAILED;
 					packet->systemAddress = connReq->receiverAddr;
 					packet->freeInternalData = false;
-					CHECK_EQ(allocPacketQ.PushTail(packet), true);
+					DCHECK_EQ(allocPacketQ.PushTail(packet), true);
 
 #if LIBCAT_SECURITY==1
 					CAT_AUDIT_PRINTF("AUDIT: Connection attempt FAILED so deleting rcs->client_handshake object %x\n", rcs->client_handshake);
@@ -774,16 +785,14 @@ namespace JACKIE_INET
 					connReq->nextRequestTime = timeMS + connReq->connAttemptIntervalMS;
 
 					/// @TO-DO
-					JackieStream bitStream;
+					JackieBits bitStream;
 					//bitStream.Write((MessageID) ID_OPEN_CONNECTION_REQUEST_1);
 					//bitStream.WriteAlignedBytes((const unsigned char*) OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
 					//bitStream.Write((MessageID) RAKNET_PROTOCOL_VERSION);
 					//bitStream.PadWithZeroToByteLength(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
-#ifdef _DEBUG
-					JINFO << "The " << (int) connReq->requestsMade
+					JDEBUG << "The " << (int) connReq->requestsMade
 						<< " times to try to connect to remote sever [" << connReq->receiverAddr.ToString() << "]";
-#endif
 
 					/// @TO-DO i am now in here
 
@@ -795,7 +804,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
-		JINFO << "Network Thread Process Alloc CommandQ";
+		JDEBUG << "Network Thread Process Alloc CommandQ";
 
 		Command* cmd = 0;
 		RemoteEndPoint* remoteEndPoint = 0;
@@ -805,14 +814,14 @@ namespace JACKIE_INET
 		{
 
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
-			CHECK_EQ(allocCommandQ.PopHead(cmd), true);
-			CHECK_NOTNULL(cmd);
-			CHECK_NOTNULL(cmd->data);
+			DCHECK_EQ(allocCommandQ.PopHead(cmd), true);
+			DCHECK_NOTNULL(cmd);
+			DCHECK_NOTNULL(cmd->data);
 
 			switch( cmd->command )
 			{
 				case Command::BCS_SEND:
-					JINFO << "BCS_SEND";
+					JDEBUG << "BCS_SEND";
 					/// GetTime is a very slow call so do it once and as late as possible
 					if( timeUS == 0 )
 					{
@@ -833,7 +842,7 @@ namespace JACKIE_INET
 					}
 					break;
 				case Command::BCS_CLOSE_CONNECTION:
-					JINFO << "BCS_CLOSE_CONNECTION";
+					JDEBUG << "BCS_CLOSE_CONNECTION";
 					CloseConnectionInternally(false, true, cmd);
 					break;
 				case Command::BCS_CHANGE_SYSTEM_ADDRESS: //re-rout
@@ -848,21 +857,21 @@ namespace JACKIE_INET
 					}
 					break;
 				case Command::BCS_GET_SOCKET:
-					JINFO << "BCS_GET_SOCKET";
+					JDEBUG << "BCS_GET_SOCKET";
 					break;
 				default:
 					JERROR << "Not Found Matched BufferedCommand";
 					break;
 			}
 
-			JINFO << "Network Thread Reclaims One Command";
-			CHECK_EQ(deAllocCommandQ.PushTail(cmd), true);
+			JDEBUG << "Network Thread Reclaims One Command";
+			DCHECK_EQ(deAllocCommandQ.PushTail(cmd), true);
 		}
 
 	}
 	void ServerApplication::ProcessAllocJISRecvParamsQ(void)
 	{
-		JINFO << "Network Thread Process Alloc JISRecvParamsQ";
+		JDEBUG << "Network Thread Process Alloc JISRecvParamsQ";
 
 		JISRecvParams* recvParams = 0;
 		for( UInt32 outter = 0; outter < bindedSockets.Size(); outter++ )
@@ -870,7 +879,7 @@ namespace JACKIE_INET
 			for( UInt32 inner = 0; inner < allocRecvParamQ[outter].Size(); inner++ )
 			{
 				/// no need to check if recvParams == 0, because we never push 0 pointer
-				CHECK_EQ(allocRecvParamQ[outter].PopHead(recvParams), true);
+				DCHECK_EQ(allocRecvParamQ[outter].PopHead(recvParams), true);
 				ProcessOneRecvParam(recvParams);
 				ReclaimOneJISRecvParams(recvParams, inner);
 			}
@@ -880,7 +889,7 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void ServerApplication::AdjustTimestamp(Packet*& incomePacket) const
 	{
-		JINFO << "@TO-DO AdjustTimestamp()";
+		JDEBUG << "@TO-DO AdjustTimestamp()";
 
 		if( (unsigned char) incomePacket->data[0] == ID_TIMESTAMP )
 		{
@@ -917,7 +926,7 @@ namespace JACKIE_INET
 			{
 				if( !onlyWantActiveEndPoint || remoteSystemList[index].isActive )
 				{
-					CHECK_EQ(remoteSystemList[index].systemAddress, sa);
+					DCHECK_EQ(remoteSystemList[index].systemAddress, sa);
 					return &remoteSystemList[index];
 				}
 			}
@@ -997,7 +1006,7 @@ namespace JACKIE_INET
 		if( old != JACKIE_NULL_ADDRESS )
 		{
 			// The system might be active if rerouting
-			CHECK_EQ(remoteSystemList[index].isActive, false);
+			DCHECK_EQ(remoteSystemList[index].isActive, false);
 			// Remove the reference if the reference is pointing to this inactive system
 			if( GetRemoteEndPoint(old) == remote )
 			{
@@ -1059,20 +1068,20 @@ namespace JACKIE_INET
 	//@TO-DO
 	bool ServerApplication::SendRightNow(TimeUS currentTime, bool useCallerAlloc, Command* bufferedCommand)
 	{
-		JINFO << "@TO-DO::SendRightNow()";
+		JDEBUG << "@TO-DO::SendRightNow()";
 		return true;
 	}
 	//@TO-DO
 	void ServerApplication::CloseConnectionInternally(bool sendDisconnectionNotification, bool performImmediate, Command* bufferedCommand)
 	{
-		JINFO << "@TO-DO::CloseConnectionInternally()";
+		JDEBUG << "@TO-DO::CloseConnectionInternally()";
 	}
 
 
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
-		JINFO << "User Thread Packet Go Through PluginCBs with packet indentity " << (int) incomePacket->data[0];
+		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity " << (int) incomePacket->data[0];
 		UInt32 i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
@@ -1176,7 +1185,7 @@ namespace JACKIE_INET
 	void ServerApplication::PacketGoThroughPlugins(Packet*& incomePacket)
 	{
 
-		JINFO << "User Thread Packet Go Through Plugin";
+		JDEBUG << "User Thread Packet Go Through Plugin";
 
 		UInt32 i;
 		PluginActionType pluginResult;
@@ -1215,7 +1224,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::UpdatePlugins(void)
 	{
-		JINFO << "User Thread Update Plugins";
+		JDEBUG << "User Thread Update Plugins";
 		UInt32 i;
 		for( i = 0; i < pluginListTS.Size(); i++ )
 		{
@@ -1255,8 +1264,8 @@ namespace JACKIE_INET
 		{
 			//////////////////////////////////////////////////////////////////////////
 			/// Get one income packet from bufferedPacketsQueue
-			CHECK_EQ(allocPacketQ.PopHead(incomePacket), true);
-			CHECK_NOTNULL(incomePacket->data);
+			DCHECK_EQ(allocPacketQ.PopHead(incomePacket), true);
+			DCHECK_NOTNULL(incomePacket->data);
 			//////////////////////////////////////////////////////////////////////////
 			AdjustTimestamp(incomePacket);
 			//////////////////////////////////////////////////////////////////////////
@@ -1272,7 +1281,7 @@ namespace JACKIE_INET
 	}
 	bool ServerApplication::RunNetworkUpdateCycleOnce()
 	{
-		TIMED_FUNC();
+		//TIMED_FUNC();
 		//// @NOTICE I moved this code to JISbEKELY::RecvFrom()
 		//// UInt32 index;
 		//static JISRecvParams recv;
@@ -1335,7 +1344,7 @@ namespace JACKIE_INET
 
 		if( ( (JISBerkley*) bindedSockets[index] )->RecvFrom(recvParams) > 0 )
 		{
-			CHECK_EQ(allocRecvParamQ[index].PushTail(recvParams), true);
+			DCHECK_EQ(allocRecvParamQ[index].PushTail(recvParams), true);
 
 			if( incomeDatagramEventHandler != 0 )
 			{
@@ -1359,13 +1368,13 @@ namespace JACKIE_INET
 
 		serv->isRecvPollingThreadActive.Increment();
 
-		JINFO << "Recv thread " << "is running in backend....";
+		JDEBUG << "Recv thread " << "is running in backend....";
 		while( !serv->endThreads )
 		{
 			serv->RunRecvCycleOnce(index);
 			JackieSleep(1000);
 		}
-		JINFO << "Recv polling thread Stops....";
+		JDEBUG << "Recv polling thread Stops....";
 
 		serv->isRecvPollingThreadActive.Decrement();
 		jackieFree_Ex(arguments, TRACE_FILE_AND_LINE_);
@@ -1376,16 +1385,16 @@ namespace JACKIE_INET
 		ServerApplication *serv = (ServerApplication*) arguments;
 		serv->isNetworkUpdateThreadActive = true;
 
-		JINFO << "Send polling thread is running in backend....";
+		JDEBUG << "Send polling thread is running in backend....";
 		while( !serv->endThreads )
 		{
 			/// Normally, buffered sending packets go out every other 10 ms.
 			/// or TriggerEvent() is called by recv thread
 			serv->RunNetworkUpdateCycleOnce();
 			serv->quitAndDataEvents.WaitEvent(5);
-			JackieSleep(3000);
+			JackieSleep(1000);
 		}
-		JINFO << "Send polling thread Stops....";
+		JDEBUG << "Send polling thread Stops....";
 
 		serv->isNetworkUpdateThreadActive = false;
 		return 0;
@@ -1426,8 +1435,10 @@ namespace JACKIE_INET
 
 	void ServerApplication::CancelConnectionRequest(const JackieAddress& target)
 	{
-		JINFO << "User Thread Cancel Connection Request To " << target.ToString();
-		CHECK_EQ(connReqCancelQ.PushTail(target), true);
+		JDEBUG << "User Thread Cancel Connection Request To " << target.ToString();
+		connReqCancelQLock.Lock();
+		DCHECK_EQ(connReqCancelQ.PushTail(target), true);
+		connReqCancelQLock.Unlock();
 	}
 
 	JACKIE_INET::ConnectionAttemptResult ServerApplication::Connect(const char* host, UInt16 port, const char *pwd /*= 0*/, UInt32 pwdLen /*= 0*/, JACKIE_Public_Key *publicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, UInt32 ConnectionAttemptTimes /*= 6*/, UInt32 ConnectionAttemptIntervalMS /*= 1000*/, TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
@@ -1490,7 +1501,7 @@ namespace JACKIE_INET
 		connReq->pwdLen = pwdLen;
 		memcpy(connReq->pwd, pwd, pwdLen);
 
-#if LIBCAT_SECURITY==1
+#if LIBCAT_SECURITY ==1
 		CAT_AUDIT_PRINTF("AUDIT: In SendConnectionRequest()\n");
 		if( !GenerateConnectionRequestChallenge(connReq, publicKey) )
 			return SECURITY_INITIALIZATION_FAILED;
@@ -1508,7 +1519,7 @@ namespace JACKIE_INET
 				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
 			}
 		}
-		CHECK_EQ(connReqQ.PushTail(connReq), true);
+		DCHECK_EQ(connReqQ.PushTail(connReq), true);
 		connReqCancelQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;

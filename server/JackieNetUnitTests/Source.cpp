@@ -2,7 +2,8 @@
 //#define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
-#define ELPP_FORCE_USE_STD_THREAD
+//#define ELPP_FORCE_USE_STD_THREAD
+//#define ELPP_DISABLE_INFO_LOGS
 #include "980easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
@@ -285,7 +286,6 @@ static void test_Queue_funcs()
 	}
 
 	DataStructures::ArraryQueue<int, 100001> queuee;
-	queuee.PushTail(0);
 	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
 	{
 		for( int i = 0; i < 100000; i++ )
@@ -354,8 +354,8 @@ static void test_ServerApplication_funcs()
 		//app->ExecuteComand(c);
 		//if( packet != 0 ) app->ReclaimOnePacket(packet);
 
-		JackieSleep(1000);
-		break;
+		JackieSleep(1500);
+		//break;
 	}
 
 	Sleep(1001);
@@ -366,22 +366,22 @@ static void test_ServerApplication_funcs()
 }
 //////////////////////////////////////////////////////////////////////////
 
-#include "JackieNet/JackieStream.h"
+#include "JackieNet/JackieBits.h"
 static void test_JackieStream__funcs()
 {
 	char str[ ] = "Hel";
-	JackieStream s4(str, sizeof(str), false);
+	JackieBits s4(str, sizeof(str), false);
 	s4.PrintBit();
 
 	char src[4] = { 0 };
 	char stri[1024];
 
-	JackieStream::PrintBit(stri, 32, src);
+	JackieBits::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
 
-	s4.ReadBits(src, 15,false);
+	s4.ReadBits(src, 15, false);
 
-	JackieStream::PrintBit(stri, 32, src);
+	JackieBits::PrintBit(stri, 32, src);
 	printf_s("%s", stri);
 }
 enum
@@ -448,14 +448,15 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 //
+//
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
-
-static int testcase = JackieStream_H;
+static int testcase = ServerApplication_H;
 static int testfunc = AllFuncs;
+
+//static int testcase = JackieStream_H;
+//static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
@@ -476,8 +477,8 @@ int main(int argc, char** argv)
 
 	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
 	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread]\nInFile[%fbase] AtLine[%line]\n%msg\n");
-	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n");
+	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] AtLine[%line]\n%msg\n");
+	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%logger][tid %thread] AtLine[%line]\n%msg\n");
 	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread][line %line]\n%msg\n");
 
 

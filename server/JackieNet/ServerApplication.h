@@ -12,7 +12,7 @@
 #include "DLLExport.h"
 #include "ReliabilityLayer.h"
 #include "IServerApplication.h"
-#include "JackieStream.h"
+#include "JackieBits.h"
 //#include "SingleProducerConsumer.h"
 #include "JackieSimpleMutex.h"
 //#include "DS_OrderedList.h"
@@ -29,6 +29,7 @@
 #include "IPlugin.h"
 #include "RandomSeedCreator.h"
 #include "JackieINetSocket.h"
+#include "SecurityHandShake.h"
 
 using namespace DataStructures;
 
@@ -47,7 +48,7 @@ namespace JACKIE_INET
 #endif
 
 		Ultils::RandomSeedCreator rnr;
-		JackieStream sendBitStream;
+		JackieBits sendBitStream;
 
 		JackieGUID myGuid;
 		JackieAddress IPAddress[MAX_COUNT_LOCAL_IP_ADDR];
@@ -83,8 +84,6 @@ namespace JACKIE_INET
 
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
-
-
 
 		bool(*recvHandler)( JISRecvParams* );
 		void(*userUpdateThreadPtr)( IServerApplication *, void * );
@@ -217,7 +216,7 @@ namespace JACKIE_INET
 		void ProcessOneRecvParam(JISRecvParams* recvParams);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
-		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieStream &updateBitStream);
+		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieBits &updateBitStream);
 		void ProcessConnectionRequestCancelQ(void);
 		void ProcessAllocJISRecvParamsQ(void);
 		void ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS);
