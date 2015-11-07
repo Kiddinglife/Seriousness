@@ -1,42 +1,47 @@
 #include "JackieBits.h"
-#include "EasyLog.h"
 
 namespace JACKIE_INET
 {
 	STATIC_FACTORY_DEFINITIONS(JackieBits, JackieBits);
 
 	JackieBits::JackieBits() :
-		mBitsAllocCount(BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE)),
+		mBitsAllocSize(BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE)),
 		mWritePosBits(0),
 		mReadPosBits(0),
 		data(mStacBuffer),
-		mNeedFree(false)
+		mNeedFree(false),
+		mReadOnly(false)
 	{
+		//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
 	}
 
-	JackieBits::JackieBits(const BitSize initialBytesToAllocate)
+	JackieBits::JackieBits(const BitSize initialBytesToAllocate) :
+		mWritePosBits(0),
+		mReadPosBits(0),
+		mReadOnly(false)
 	{
-		mWritePosBits = 0;
-		mReadPosBits = 0;
-
 		if( initialBytesToAllocate <= JACKIESTREAM_STACK_ALLOC_SIZE )
 		{
 			data = mStacBuffer;
-			mBitsAllocCount = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
+			mBitsAllocSize = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
 			mNeedFree = false;
+			DCHECK_NOTNULL(data);
+			//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
 		} else
 		{
 			data = (unsigned char*) jackieMalloc_Ex(initialBytesToAllocate, TRACE_FILE_AND_LINE_);
-			mBitsAllocCount = BYTES_TO_BITS(initialBytesToAllocate);
+			mBitsAllocSize = BYTES_TO_BITS(initialBytesToAllocate);
 			mNeedFree = true;
 			DCHECK_NOTNULL(data);
+			//memset(data, 0, initialBytesToAllocate);
 		}
 	}
-	JackieBits::JackieBits(unsigned char* src, const BitSize len, bool copy) :
-		mBitsAllocCount(BYTES_TO_BITS(len)),
+	JackieBits::JackieBits(unsigned char* src, const ByteSize len, bool copy/*=false*/) :
+		mBitsAllocSize(BYTES_TO_BITS(len)),
 		mWritePosBits(BYTES_TO_BITS(len)),
 		mReadPosBits(0),
-		mNeedFree(copy)
+		mNeedFree(copy),
+		mReadOnly(!copy)
 	{
 		if( mNeedFree )
 		{
@@ -46,11 +51,15 @@ namespace JACKIE_INET
 				{
 					data = mStacBuffer;
 					mNeedFree = false;
-					mBitsAllocCount = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
+					mBitsAllocSize = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
+					DCHECK_NOTNULL(data);
+					//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
 				} else
 				{
 					data = (unsigned char*) jackieMalloc_Ex(len, TRACE_FILE_AND_LINE_);
 					mNeedFree = true;
+					DCHECK_NOTNULL(data);
+					//memset(data, 0, len);
 				}
 				memcpy(data, src, len);
 			} else
@@ -66,25 +75,32 @@ namespace JACKIE_INET
 	}
 	JackieBits::~JackieBits()
 	{
-		if( mNeedFree && mBitsAllocCount > ( JACKIESTREAM_STACK_ALLOC_SIZE << 3 ) )
+		if( mNeedFree && mBitsAllocSize > ( JACKIESTREAM_STACK_ALLOC_SIZE << 3 ) )
 			jackieFree_Ex(data, TRACE_FILE_AND_LINE_);
 		/// realloc and free are more efficient than delete and new  
 		/// because it will not call ctor and dtor
 	}
 
-	/// AddBitsAndReallocate
 	void JackieBits::AppendBitsCouldRealloc(const BitSize bits2Append)
 	{
+		DCHECK_EQ(mReadOnly, false);
+		DCHECK_GT(bits2Append, 0);
+
 		BitSize newBitsAllocCount = bits2Append + mWritePosBits;
 
 		/// see if one or more new bytes need to be allocated
 		if( newBitsAllocCount > 0 &&
-			( ( mBitsAllocCount - 1 ) >> 3 ) < ( ( newBitsAllocCount - 1 ) >> 3 ) )
+			( ( mBitsAllocSize - 1 ) >> 3 ) < ( ( newBitsAllocCount - 1 ) >> 3 ) )
 		{
-			// If this assert hits then we need to specify true for the third parameter in the constructor
+			// If this assert hits then we need to specify copy as true 
+			// in @ctor JackieBits(unsigned char* src, const ByteSize len, bool copy)
 			// It needs to reallocate to hold all the data and can't do it unless we allocated to begin with
 			// Often hits if you call Write or Serialize on a read-only bitstream
-			DCHECK_EQ(mNeedFree, true);
+			//if( mReadOnly )
+			//{
+			//	JERROR << "this jackie bits is read-only, cannot be written !";
+			//	CHECK_EQ(mReadOnly, false);
+			//}
 
 			// Less memory efficient but saves on news and deletes
 			/// Cap to 1 meg buffer to save on huge allocations
@@ -99,7 +115,7 @@ namespace JACKIE_INET
 				if( bytes2Alloc > JACKIESTREAM_STACK_ALLOC_SIZE )
 				{
 					data = (unsigned char *) jackieMalloc_Ex(bytes2Alloc, TRACE_FILE_AND_LINE_);
-					memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocCount));
+					memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
 				}
 			} else
 			{
@@ -109,18 +125,17 @@ namespace JACKIE_INET
 			DCHECK_NOTNULL(data);
 		}
 
-		if( newBitsAllocCount > mBitsAllocCount )
+		if( newBitsAllocCount > mBitsAllocSize )
 		{
-			mBitsAllocCount = newBitsAllocCount;
+			mBitsAllocSize = newBitsAllocCount;
 		}
 	}
 
-	bool JackieBits::ReadBits(unsigned char *dest, BitSize bits2Read, bool alignRight /*= true*/)
+	bool JackieBits::ReadBitsTo(unsigned char *dest, BitSize bits2Read, bool alignRight /*= true*/)
 	{
 		DCHECK_GT(bits2Read, 0);
-
-		if( bits2Read <= 0 ) return false;
-		if( bits2Read > ( mWritePosBits - mReadPosBits ) ) return false;
+		if( bits2Read == 0 ) return false;
+		if( bits2Read > GetPayLoadBits() ) return false;
 
 		/// get offset that overlaps one byte boudary, &7 is same to %8, but faster
 		const BitSize startReadPosBits = mReadPosBits & 7;
@@ -172,13 +187,178 @@ namespace JACKIE_INET
 		return true;
 	}
 
-	void JackieBits::WriteBits(const unsigned char* src, BitSize bits2Write, bool rightAligned /*= true*/)
+	bool JackieBits::WriteBitsFrom(const unsigned char* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
+		DCHECK_EQ(mReadOnly, false);
+		if( mReadOnly ) return false;
+		if( bits2Write == 0 ) return false;
+
 		AppendBitsCouldRealloc(bits2Write);
 
+		/// get offset that overlaps one byte boudary, &7 is same to %8, but faster
+		/// @startWritePosBits could be zero
+		const BitSize startWritePosBits = mWritePosBits & 7;
+
+		// If currently aligned and numberOfBits is a multiple of 8, just memcpy for speed
+		if( startWritePosBits == 0 && ( bits2Write & 7 ) == 0 )
+		{
+			memcpy(data + ( mWritePosBits >> 3 ), src, bits2Write >> 3);
+			mWritePosBits += bits2Write;
+			return true;
+		}
+
+		UInt8 dataByte;
+		const UInt8* inputPtr = src;
+
+		while( bits2Write > 0 )
+		{
+			dataByte = *( inputPtr++ );
+
+			/// if @dataByte is the last byte to write, we have to convert this byte into 
+			/// stream internal data by shifting the bits in this last byte to left-aligned
+			if( bits2Write < 8 && rightAligned ) dataByte <<= 8 - bits2Write;
+
+			/// The folowing if-else block will write one byte each time
+			if( startWritePosBits == 0 )
+			{
+				/// startWritePosBits == 0  means there are no overlapped bits to be further 
+				/// processed and so we can directly write @dataByte into stream
+				data[mWritePosBits >> 3] = dataByte;
+			} else
+			{
+				/// startWritePosBits != 0 means there are  overlapped bits to be further 
+				/// processed and so we cannot directly write @dataBytedirectly into stream
+				/// we have process overlapped bits before writting
+
+				/// firstly write the as the same number of bits from @dataByte intot
+				/// @data[mWritePosBits >> 3] to that in the right-half of 
+				/// @data[mWritePosBits >> 3]
+				data[mWritePosBits >> 3] |= dataByte >> startWritePosBits;
+
+				/// then to see if we have remaining bits in @dataByte to write 
+				/// 1. startWritePosBits > 0 means @data[mWritePosBits >> 3] is a partial byte
+				/// 2. bits2Write > ( 8 - startWritePosBits ) means the rest space in 
+				/// @data[mWritePosBits >> 3] cannot hold all remaining bits in @dataByte
+				/// we have to write these reamining bits to the next byte 
+				if( startWritePosBits > 0 && bits2Write > ( 8 - startWritePosBits ) )
+				{
+					/// write remaining bits into the  byte next to @data[mWritePosBits >> 3]
+					data[( mWritePosBits >> 3 ) + 1] = ( dataByte << ( 8 - startWritePosBits ) );
+				}
+			}
+
+			/// we wrote one complete byte in above codes just now
+			if( bits2Write >= 8 )
+			{
+				mWritePosBits += 8;
+				bits2Write -= 8;
+			} else ///  it is the last (could be partial) byte we wrote in the above codes,
+			{
+				mWritePosBits += bits2Write;
+				bits2Write = 0;
+			}
+		}
+		return true;
 	}
 
-	void JackieBits::PrintBit(char* out, BitSize mWritePosBits, unsigned char* mBuffer)
+	bool JackieBits::WriteFrom(JackieBits *jackieBits, BitSize bits2Write)
+	{
+		DCHECK_EQ(mReadOnly, false);
+		if( mReadOnly ) return false;
+		if( bits2Write == 0 ) return false;
+		if( bits2Write > jackieBits->GetPayLoadBits() ) return false;
+
+		/// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
+		BitSize numberOfBitsMod8 = ( jackieBits->mReadPosBits & 7 );
+		if( numberOfBitsMod8 == 0 )
+		{
+			return this->WriteBitsFrom(jackieBits->data + ( jackieBits->mReadPosBits >> 3 ),
+				bits2Write, false);
+		}
+
+		/// if numberOfBitsMod8 > 0, this means there are bits to write in the byte of
+		/// @jackieBits->data[[jackieBits->mReadPosBits >> 3]]
+		AppendBitsCouldRealloc(bits2Write);
+		BitSize partialBits2Write = ( 8 - numberOfBitsMod8 );
+
+		while( partialBits2Write-- > 0 )
+		{
+			numberOfBitsMod8 = mWritePosBits & 7;
+			if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
+				( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
+				data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 ); // Write bit 1
+			else // write bit 0
+				data[mWritePosBits >> 3] = ( data[mWritePosBits >> 3]
+				>> ( 8 - numberOfBitsMod8 ) ) << ( 8 - numberOfBitsMod8 );
+			jackieBits->mReadPosBits++;
+			mWritePosBits++;
+			bits2Write--;
+		}
+
+		/// after writting partial bits, numberOfBitsMod8 must be zero
+		/// we can now safely call WriteBits() for further process
+		DCHECK_EQ(( jackieBits->mReadPosBits & 7 ), 0);
+		return this->WriteBitsFrom(jackieBits->data + ( jackieBits->mReadPosBits >> 3 ),
+			bits2Write, false);
+
+		//AppendBitsCouldRealloc(bits2Write);
+		///// write all bytes for efficiency
+		//if( numberOfBitsMod8 == 0 && ( mWritePosBits & 7 ) == 0 )
+		//{
+		//	int readOffsetBytes = jackieBits->mReadPosBits >> 3;
+		//	int numBytes = bits2Write >> 3;
+		//	memcpy(data + ( mWritePosBits >> 3 ),
+		//		jackieBits->Data() + readOffsetBytes, numBytes);
+		//	bits2Write -= BYTES_TO_BITS(numBytes);
+		//	jackieBits->mReadPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
+		//	mWritePosBits += BYTES_TO_BITS(numBytes);
+		//}
+
+		///// write remaining bits one by one
+		///*	bool isOne;*/
+		//while( bits2Write-- > 0 && jackieBits->mReadPosBits + 1 <=
+		//	jackieBits->mWritePosBits )
+		//{
+		//	numberOfBitsMod8 = mWritePosBits & 7;
+		//	//if( numberOfBitsMod8 == 0 )
+		//	//{
+		//	/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+		//	//if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
+		//	//	( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
+		//	//	// Write 1
+		//	//	data[mWritePosBits >> 3] = 0x80;
+		//	//else
+		//	//	data[mWritePosBits >> 3] = 0;
+		//	//} else
+		//	//{
+		//	//	/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+		//	//	if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
+		//	//		( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
+		//	//	{
+		//	//		/// set dest bit to 1 if the src bit is 1,do-nothing if the src bit is 0
+		//	//		data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 );
+		//	//	}
+		//	//}
+
+		//	if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
+		//		( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
+		//		data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 ); // Write bit 1
+		//	else // write bit 0
+		//		data[mWritePosBits >> 3] = ( data[mWritePosBits >> 3]
+		//		>> ( 8 - numberOfBitsMod8 ) ) << ( 8 - numberOfBitsMod8 );
+		//	jackieBits->mReadPosBits++;
+		//	mWritePosBits++;
+		//}
+	}
+
+
+	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite)
+	{
+		AlignWritePosBits2ByteBoundary();
+		WriteFrom((const Int8*) src, numberOfBytesToWrite);
+	}
+
+	void JackieBits::PrintBit(char* out, BitSize mWritePosBits, UInt8* mBuffer)
 	{
 		printf_s("%s[%dbits %dbytes]:\n", "BitsDumpResult",
 			mWritePosBits, BITS_TO_BYTES(mWritePosBits));
@@ -215,7 +395,7 @@ namespace JACKIE_INET
 		PrintBit(out, mWritePosBits, data);
 		printf_s("%s\n", out);
 	}
-	void JackieBits::PrintHex(char* out, BitSize mWritePosBits, unsigned char* mBuffer)
+	void JackieBits::PrintHex(char* out, BitSize mWritePosBits, UInt8* mBuffer)
 	{
 		printf_s("%s[%d bytes]:\n", "HexDumpResult", BITS_TO_BYTES(mWritePosBits));
 		for( BitSize Index = 0; Index < BITS_TO_BYTES(mWritePosBits); Index++ )

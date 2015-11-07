@@ -24,10 +24,10 @@ typedef uint64_t                 UInt64;
 
 //#elif !defined(_STDINT_H) && !defined(_SN_STDINT_H) && !defined(_SYS_STDINT_H_) && !defined(_STDINT) && !defined(_MACHTYPES_H_) && !defined(_STDINT_H_)
 #else
-typedef signed char            Int8;
+typedef char            Int8;
 typedef unsigned char       UInt8;
 
-typedef signed short          Int16;
+typedef short          Int16;
 typedef unsigned short     UInt16;
 
 typedef __int32				      Int32;
@@ -37,7 +37,7 @@ typedef unsigned __int32    UInt32;
 typedef unsigned __int64  UInt64;
 typedef signed __int64   	  Int64;
 #else
-typedef signed long long   	          Int64;
+typedef long long   	          Int64;
 typedef unsigned long long int    UInt64;
 #endif
 

@@ -61,7 +61,9 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #define USE_NON_BLOBKING_SOCKET true
 #define USE_BLOBKING_SOCKET false
 
-	/// Given a number of bits, return how many bytes are needed to represent that.
+	/// Given a number of bits, 
+	/// return how many bytes are needed to hold all bits.
+	/// For example, 17 bits will need 3 bytes to hold. 
 #define BITS_TO_BYTES(x) (((x)+7)>>3)
 #define BYTES_TO_BITS(x) ((x)<<3)
 

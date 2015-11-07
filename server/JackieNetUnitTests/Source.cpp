@@ -369,20 +369,15 @@ static void test_ServerApplication_funcs()
 #include "JackieNet/JackieBits.h"
 static void test_JackieStream__funcs()
 {
-	char str[ ] = "Hel";
-	JackieBits s4(str, sizeof(str), false);
-	s4.PrintBit();
-
-	char src[4] = { 0 };
-	char stri[1024];
-
-	JackieBits::PrintBit(stri, 32, src);
-	printf_s("%s", stri);
-
-	s4.ReadBits(src, 15, false);
-
-	JackieBits::PrintBit(stri, 32, src);
-	printf_s("%s", stri);
+	TIMED_FUNC(test);
+	for (unsigned int Index = 0; Index < 10000; Index++)
+	{
+		char strr[ ] = "1";
+		JackieBits s5((UInt8*) strr, sizeof(strr));
+		JackieBits s4;
+		s4.WriteFrom(s5);
+		s4.Reuse();
+	}
 }
 enum
 {
@@ -451,12 +446,12 @@ enum
 //
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
-
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
-
-//static int testcase = JackieStream_H;
+//
+//static int testcase = ServerApplication_H;
 //static int testfunc = AllFuncs;
+
+static int testcase = JackieStream_H;
+static int testfunc = AllFuncs;
 
 
 int main(int argc, char** argv)
