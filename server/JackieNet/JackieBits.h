@@ -602,6 +602,13 @@ namespace JACKIE_INET
 			WriteFrom((UInt32) ( ( varCopy + 1.0 )*2147483648.0 ));
 		}
 
+		template <class destType, class srcType >
+		void WriteCasted(const srcType &value)
+		{
+			destType val = (destType) value;
+			WriteFrom(val);
+		}
+
 		inline static bool DoEndianSwap(void)
 		{
 #ifndef DO_NOT_SWAP_ENDIAN
@@ -623,6 +630,7 @@ namespace JACKIE_INET
 				dest[i] = src[length - i - 1];
 			}
 		}
+
 		/// Can only print 4096 size of UInt8 no materr is is bit or byte
 		/// mainly used for dump binary data
 		void PrintBit(void);
