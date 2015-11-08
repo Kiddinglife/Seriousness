@@ -370,14 +370,22 @@ static void test_ServerApplication_funcs()
 static void test_JackieStream__funcs()
 {
 	TIMED_FUNC(test);
-	for (unsigned int Index = 0; Index < 10000; Index++)
-	{
-		char strr[ ] = "1";
-		JackieBits s5((UInt8*) strr, sizeof(strr));
-		JackieBits s4;
-		s4.WriteFrom(s5);
-		s4.Reuse();
-	}
+	//for( unsigned int Index = 0; Index < 10000; Index++ )
+	//{
+	//	char strr[ ] = "1";
+	//	JackieBits s5((UInt8*) strr, sizeof(strr), false);
+	//	JackieBits s4;
+	//	s4.WriteFrom(s5);
+	//	s4.Reuse();
+	//}
+
+	short strr = -5;
+	JackieBits s5((UInt8*) &strr, sizeof(strr), false);
+	s5.PrintBit();
+
+	JackieBits s6;
+	s6.WriteMiniFrom((UInt8*) &strr, sizeof(strr)*8, false);
+	s6.PrintBit();
 }
 enum
 {

@@ -146,7 +146,7 @@ namespace JACKIE_INET
 		/// 2.Use False to write this jackie stream internal data to another stream
 		/// @Author mengdi[Jackie]
 		///========================================
-		bool WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned = true);
+		void WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned = true);
 
 
 		///========================================
@@ -156,28 +156,24 @@ namespace JACKIE_INET
 		/// default is right aligned[true]
 		/// @author mengdi[Jackie]
 		///========================================
-		inline bool WriteFrom(const Int8* src, const ByteSize bytes2Write)
+		inline void WriteBytesFrom(const Int8* src, const ByteSize bytes2Write)
 		{
-			DCHECK_EQ(mReadOnly, false);
-			if( mReadOnly ) return false;
-			if( bytes2Write == 0 ) return false;
-
-			return WriteBitsFrom((const UInt8*) src, BYTES_TO_BITS(bytes2Write), true);
+			WriteBitsFrom((UInt8*) src, BYTES_TO_BITS(bytes2Write), true);
 		}
 
-		/// \brief Write one JackieBits to another.
-		/// \param[in] bits2Write bits to write
-		/// \param JackieBits the JackieBits to copy from
-		bool WriteFrom(JackieBits *jackieBits, BitSize bits2Write);
-		inline bool WriteFrom(JackieBits &jackieBits, BitSize bits2Write)
+		/// @brief Write one JackieBits to another.
+		/// @param[in] [bits2Write] bits to write
+		/// @param[in] [JackieBits] the JackieBits to copy from
+		void WriteFrom(JackieBits *jackieBits, BitSize bits2Write);
+		inline void WriteFrom(JackieBits &jackieBits, BitSize bits2Write)
 		{
-			return WriteFrom(&jackieBits, bits2Write);
+			WriteFrom(&jackieBits, bits2Write);
 		}
-		inline bool WriteFrom(JackieBits *jackieBits)
+		inline void WriteFrom(JackieBits *jackieBits)
 		{
-			return WriteFrom(jackieBits, jackieBits->GetPayLoadBits());
+			WriteFrom(jackieBits, jackieBits->GetPayLoadBits());
 		}
-		inline bool WriteFrom(JackieBits &jackieBits) { return WriteFrom(&jackieBits); }
+		inline void WriteFrom(JackieBits &jackieBits) { WriteFrom(&jackieBits); }
 
 		///========================================
 		/// @func WriteBitZero 
@@ -185,16 +181,14 @@ namespace JACKIE_INET
 		/// @notice @mReadOnly must be false
 		/// @author mengdi[Jackie]
 		///========================================
-		inline bool WriteBitZero(void)
+		inline void WriteBitZero(void)
 		{
 			DCHECK_EQ(mReadOnly, false);
-			if( mReadOnly ) return false;
 
 			AppendBitsCouldRealloc(1);
 			BitSize shit = 8 - ( mWritePosBits & 7 );
 			data[mWritePosBits >> 3] = ( ( data[mWritePosBits >> 3] >> shit ) << shit );
 			mWritePosBits++;
-			return true;
 
 			//AppendBitsCouldRealloc(1);
 			// New bytes need to be zeroed
@@ -208,16 +202,15 @@ namespace JACKIE_INET
 		/// @notice @mReadOnly must be false
 		/// @author mengdi[Jackie]
 		///========================================
-		inline bool WriteBitOne(void)
+		inline void WriteBitOne(void)
 		{
 			DCHECK_EQ(mReadOnly, false);
-			if( mReadOnly ) return false;
 
 			AppendBitsCouldRealloc(1);
 			BitSize shit = mWritePosBits & 7;
 			data[mWritePosBits >> 3] |= 0x80 >> shit; // Write bit 1
 			mWritePosBits++;
-			return true;
+
 			//AddBitsAndReallocate(1);
 			//BitSize_t numberOfBitsMod8 = mWritePosBits & 7;
 			//if( numberOfBitsMod8 == 0 )
@@ -226,12 +219,6 @@ namespace JACKIE_INET
 			//	data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 ); // Set the bit to 1
 			//mWritePosBits++;
 		}
-
-		/// \brief Align the next write and/or read to a byte boundary.  
-		/// \details This can be used to 'waste' bits to byte align for efficiency reasons It
-		/// can also be used to force coalesced bitstreams to start on byte
-		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
-		/// calculate the same offset when aligning.
 
 		///========================================
 		/// @func AlignWritePosBits2ByteBoundary 
@@ -258,12 +245,384 @@ namespace JACKIE_INET
 		/// @param [in] [const ByteSize numberOfBytesToWrite]  
 		/// @returns [void]
 		/// @notice this is faster than WriteBits() but
-		/// wastes the bits to do the alignment and requires you to call
-		/// ReadAlignedBits() at the corresponding read position.
+		/// wastes the bits to do the alignment for @mWritePosBits and
+		/// requires you to call ReadAlignedBits() at the corresponding 
+		/// read position.
 		/// @author mengdi[Jackie]
 		///========================================
 		void WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite);
 
+		///========================================
+		/// @func WriteFrom 
+		/// @brief write a float into 2 bytes, spanning the range 
+		/// between @param[floatMin] and @param[floatMax]
+		/// @access  public  
+		/// @param [in] [float src]  value to write into stream
+		/// @param [in] [float floatMin] Predetermined mini value of f
+		/// @param [in] [float floatMax] Predetermined max value of f
+		/// @return bool
+		/// @notice calculate the proparation of the @src 
+		/// @author mengdi[Jackie]
+		///========================================
+		void WriteFrom(float src, float floatMin, float floatMax);
+
+		/// \brief Write any integral type to a bitstream.  
+		/// \details Undefine __BITSTREAM_NATIVE_END if you need endian swapping.
+		/// \param[in] inTemplateVar The value to write
+
+		///========================================
+		/// @func WriteFrom 
+		/// @brief write any integral type to a bitstream.  
+		/// @access  public  
+		/// @param [in] [const templateType & src] 
+		/// it is user data that is right aligned in default
+		/// @return void
+		/// @notice will swap endian internally 
+		/// if DO_NOT_SWAP_ENDIAN not defined
+		/// @author mengdi[Jackie]
+		///========================================
+		template <class IntergralType>
+		void WriteFrom(const IntergralType &src)
+		{
+			if( sizeof(IntergralType) == 1 )
+			{
+				WriteBitsFrom((UInt8*) &src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+			} else
+			{
+#ifndef DO_NOT_SWAP_ENDIAN
+				if( DoEndianSwap() )
+				{
+					/// Reverse Bytes
+					//UInt8 result[sizeof(IntergralType)];
+					//for( UInt32 i = 0; i < sizeof(IntergralType); i++ )
+					//{
+					//	result[i] = ( (UInt8*) src )[sizeof(IntergralType) - i - 1];
+					//}
+					UInt8 output[sizeof(IntergralType)];
+					ReverseBytes((UInt8*) &src, output, sizeof(IntergralType));
+					WriteBitsFrom(output, BYTES_TO_BITS(sizeof(IntergralType)), true);
+				} else
+#endif
+					WriteBitsFrom((UInt8*) &src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+			}
+		}
+
+		///========================================
+		/// @func WriteFrom 
+		/// @access  public  
+		/// @brief Write a bool to a bitstream.
+		/// @param [in] [const bool & src] The value to write
+		/// @return [bool] true succeed, false failed
+		/// @author mengdi[Jackie]
+		///========================================
+		template <>
+		inline void WriteFrom(const bool &src)
+		{
+			if( src == true )
+				WriteBitOne();
+			else
+				WriteBitZero();
+		}
+
+		///========================================
+		/// @func WriteFrom 
+		/// @brief write a JackieAddress to stream
+		/// @access  public  
+		/// @param [in] [const JackieAddress & src]  
+		/// @return [bool]  true succeed, false failed
+		/// @remark
+		/// @notice  will not endian swap the address or port
+		/// @author mengdi[Jackie]
+		///========================================
+		template <> inline void WriteFrom(const JackieAddress &src)
+		{
+			UInt8 version = src.GetIPVersion();
+			WriteFrom(version);
+
+			if( version == 4 )
+			{
+				/// Hide the address so routers don't modify it
+				JackieAddress addr = src;
+				UInt32 binaryAddress = ~src.address.addr4.sin_addr.s_addr;
+				UInt16 p = addr.GetPortNetworkOrder();
+				// Don't endian swap the address or port
+				WriteBitsFrom((UInt8*) &binaryAddress,
+					BYTES_TO_BITS(sizeof(binaryAddress)), true);
+				WriteBitsFrom((UInt8*) &p, BYTES_TO_BITS(sizeof(p)), true);
+			} else
+			{
+#if NET_SUPPORT_IPV6 == 1
+				// Don't endian swap
+				WriteBitsFrom((UInt8*) &src.address.addr6, 
+					BYTES_TO_BITS(sizeof(src.address.addr6)), true);
+#endif
+			}
+		}
+
+
+		///========================================
+		/// @func WriteFrom 
+		/// @brief write three bytes into stream
+		/// @access  public  
+		/// @param [in] [const UInt24 & inTemplateVar]  
+		/// @return [void]  true succeed, false failed
+		/// @remark
+		/// @notice will align write-position to byte-boundary internally
+		/// @see  AlignWritePosBits2ByteBoundary()
+		/// @author mengdi[Jackie]
+		///========================================
+		template <> inline void WriteFrom(const UInt24 &inTemplateVar)
+		{
+			AlignWritePosBits2ByteBoundary();
+			AppendBitsCouldRealloc(BYTES_TO_BITS(3));
+
+			if( !IsBigEndian() )
+			{
+				data[( mWritePosBits >> 3 ) + 0] = ( (UInt8 *) &inTemplateVar.val )[0];
+				data[( mWritePosBits >> 3 ) + 1] = ( (UInt8 *) &inTemplateVar.val )[1];
+				data[( mWritePosBits >> 3 ) + 2] = ( (UInt8 *) &inTemplateVar.val )[2];
+			} else
+			{
+				data[( mWritePosBits >> 3 ) + 0] = ( (UInt8 *) &inTemplateVar.val )[3];
+				data[( mWritePosBits >> 3 ) + 1] = ( (UInt8 *) &inTemplateVar.val )[2];
+				data[( mWritePosBits >> 3 ) + 2] = ( (UInt8 *) &inTemplateVar.val )[1];
+			}
+
+			mWritePosBits += BYTES_TO_BITS(3);
+		}
+
+
+		///========================================
+		/// @func WriteFrom 
+		/// @access  public  
+		/// @param [in] [const JackieGUID & inTemplateVar]  
+		/// @return void
+		/// @author mengdi[Jackie]
+		///========================================
+		template <>inline void WriteFrom(const JackieGUID &inTemplateVar)
+		{
+			WriteFrom(inTemplateVar.g);
+		}
+
+		///========================================
+		/// @func WriteChangedFrom 
+		/// @brief write any changed integral type to a bitstream.
+		/// @access  public  
+		/// @param [in] const templateType & latestVal 
+		/// @param [in] const templateType & lastVal  
+		/// @return void 
+		/// @notice 
+		/// If the current value is different from the last value
+		/// the current value will be written.  Otherwise, a single bit will be written
+		/// @author mengdi[Jackie]
+		///========================================
+		template <class templateType>
+		inline void WriteChangedFrom(const templateType &latestVal,
+			const templateType &lastVal)
+		{
+			if( latestVal == lastVal )
+			{
+				WriteFrom(false);
+			} else
+			{
+				WriteFrom(true);
+				WriteFrom(latestVal);
+			}
+		}
+
+
+		///========================================
+		/// @func WriteChangedFrom 
+		/// @brief write a bool delta. Same thing as just calling Write
+		/// @access  public  
+		/// @param [in] const bool & currentValue  
+		/// @param [in] const bool & lastValue  
+		/// @return void 
+		/// @author mengdi[Jackie]
+		///========================================
+		template <> inline void WriteChangedFrom(const bool &currentValue,
+			const bool &lastValue)
+		{
+			(void) lastValue;
+			WriteFrom(currentValue);
+		}
+
+		/// \brief WriteDelta when you don't know what the last value is, or there is no last value.
+		/// \param[in] currentValue The current value to write
+
+		///========================================
+		/// @func WriteChangedFrom 
+		/// @brief 
+		/// writeDelta when you don't know what the last value is, or there is no last value.
+		/// @access  public  
+		/// @param [in] const templateType & currentValue  
+		/// @return void  
+		/// @author mengdi[Jackie]
+		///========================================
+		template <class templateType>
+		inline void WriteChangedFrom(const templateType &currentValue)
+		{
+			WriteFrom(true);
+			WriteFrom(currentValue);
+		}
+
+		///========================================
+		/// @func WriteMiniChangedFrom 
+		/// @brief write any integral type to a bitstream.  
+		/// @access  public  
+		/// @param [in] const templateType & currVal 
+		/// The current value to write 
+		/// @param [in] const templateType & lastValue  
+		///  The last value to compare against
+		/// @return void 
+		/// @notice
+		/// If the current value is different from the last value. the current
+		/// value will be written.  Otherwise, a single bit will be written
+		/// For floating point, this is lossy, using 2 bytes for a float and 
+		/// 4 for a double. The range must be between -1 and +1.
+		/// For non-floating point, this is lossless, but only has benefit
+		/// if you use less than half the bits of the type
+		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is
+		/// true for types larger than 1 byte
+		/// @author mengdi[Jackie]
+		///========================================
+		template <class templateType> inline void WriteMiniChangedFrom(const templateType
+			&currVal, const templateType &lastValue)
+		{
+			if( currVal == lastValue )
+			{
+				WriteFrom(false);
+			} else
+			{
+				WriteFrom(true);
+				WriteMiniFrom(currVal);
+			}
+		}
+
+		/// \brief Write a bool delta.  Same thing as just calling Write
+		/// \param[in] currentValue The current value to write
+		/// \param[in] lastValue The last value to compare against
+		template <>
+		inline void WriteMiniChangedFrom(const bool &currentValue, const bool
+			&lastValue)
+		{
+			(void) lastValue;
+			WriteFrom(currentValue);
+		}
+
+		/// \brief Same as WriteChangedFrom() 
+		/// when we have an unknown second parameter
+		template <class templateType>
+		inline void WriteMiniChangedFrom(const templateType &currentValue)
+		{
+			WriteFrom(true);
+			WriteMiniFrom(currentValue);
+		}
+
+		///========================================
+		/// @func WriteCompressed 
+		/// @access  public  
+		/// @param [in] const UInt8 * src  
+		/// @param [in] const BitSize bits2Write  write size in bits
+		/// @param [in] const bool isUnsigned  
+		/// @return void 
+		/// @notice when @src points to a native type, compress and write it.
+		/// @author mengdi[Jackie]
+		///========================================
+		void WriteMiniFrom(const UInt8* src, const BitSize bits2Write,
+			const bool isUnsigned);
+
+		///========================================
+		/// @func WriteMiniFrom 
+		/// @brief Write any integral type to a bitstream.  
+		/// @access  public  
+		/// @param [in] const IntergralType & src  
+		/// @return void 
+		/// @notice
+		/// 1.Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// 2.For floating point, this is lossy, using 2 bytes for a float and 4 for 
+		/// a double.  The range must be between -1 and +1.
+		/// 3.For non-floating point, this is lossless, but only has benefit 
+		/// if you use less than half the bits of the type
+		/// 4.If you are not using DO_NOT_SWAP_ENDIAN the opposite is true 
+		/// for types larger than 1 byte
+		/// @author mengdi[Jackie]
+		///========================================
+		template <class IntergralType>
+		inline void WriteMiniFrom(const IntergralType &src)
+		{
+			if( sizeof(src) == 1 )
+				WriteMiniFrom((UInt8*) & src, sizeof(templateType) << 3, true);
+			else
+			{
+#ifndef DO_NOT_SWAP_ENDIAN
+				if( DoEndianSwap() )
+				{
+					JINFO << "swap";
+					UInt8 output[sizeof(templateType)];
+					ReverseBytes((UInt8*) &src, output, sizeof(templateType));
+					WriteMiniFrom(output, sizeof(templateType) << 3, true);
+				} else
+#endif
+					WriteMiniFrom((UInt8*) &src, sizeof(templateType) << 3, true);
+			}
+		}
+		template <> inline void WriteMiniFrom(const JackieAddress &src)
+		{
+			WriteFrom(src);
+		}
+		template <> inline void WriteMiniFrom(const JackieGUID &src)
+		{
+			WriteFrom(src);
+		}
+		template <> inline void WriteMiniFrom(const UInt24 &var)
+		{
+			WriteFrom(var);
+		}
+		template <> inline void WriteMiniFrom(const bool &src)
+		{
+			WriteFrom(src);
+		}
+		///@notice only For values between -1 and 1
+		template <> inline void WriteMiniFrom(const float &src)
+		{
+			DCHECK(src > -1.01f && src < 1.01f);
+			float varCopy = src;
+			if( varCopy < -1.0f ) varCopy = -1.0f;
+			if( varCopy > 1.0f ) varCopy = 1.0f;
+			WriteFrom((UInt16) ( ( varCopy + 1.0f )*32767.5f ));
+		}
+		///@notice For values between -1 and 1
+		template <> inline void WriteMiniFrom(const double &src)
+		{
+			DCHECK(src > -1.01f && src < 1.01f);
+			double varCopy = src;
+			if( varCopy < -1.0f ) varCopy = -1.0f;
+			if( varCopy > 1.0f ) varCopy = 1.0f;
+			WriteFrom((UInt32) ( ( varCopy + 1.0 )*2147483648.0 ));
+		}
+
+		inline static bool DoEndianSwap(void)
+		{
+#ifndef DO_NOT_SWAP_ENDIAN
+			return IsNetworkOrder() == false;
+#else
+			return false;
+#endif
+		}
+		inline static bool IsNetworkOrder(void)
+		{
+			static int a = 0x01;
+			return *( (char*) & a ) != 1;
+		}
+		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
+		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
+		{
+			for( UInt32 i = 0; i < length; i++ )
+			{
+				dest[i] = src[length - i - 1];
+			}
+		}
 		/// Can only print 4096 size of UInt8 no materr is is bit or byte
 		/// mainly used for dump binary data
 		void PrintBit(void);
