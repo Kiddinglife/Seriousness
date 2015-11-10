@@ -558,20 +558,25 @@ namespace JACKIE_INET
 		inline void WriteMiniFrom(const IntergralType &src)
 		{
 			if (sizeof(src) == 1)
+			{
 				WriteMiniFrom((UInt8*)& src, sizeof(templateType) << 3, true);
+			}
 			else
 			{
 #ifndef DO_NOT_SWAP_ENDIAN
 				if (DoEndianSwap())
 				{
-					JINFO << "swap";
 					UInt8 output[sizeof(templateType)];
 					ReverseBytes((UInt8*)&src, output, sizeof(templateType));
 					WriteMiniFrom(output, sizeof(templateType) << 3, true);
 				}
 				else
-#endif
+				{
 					WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
+				}
+#else
+				WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
+#endif
 			}
 		}
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
@@ -616,6 +621,300 @@ namespace JACKIE_INET
 			WriteFrom(val);
 		}
 
+		///==================================
+		/// @method WriteBitsFromIntegerRange
+		/// @access public 
+		/// @returns void
+		/// @param [in] const templateType value 
+		/// value Integer value to write, which should be
+		/// between @param mini and @param max
+		/// @param [in] const templateType mini
+		/// @param [in] const templateType max
+		/// @param [in] bool allowOutsideRange
+		/// If true, all sends will take an extra bit,
+		/// however value can deviate from outside \a minimum and \a maximum.
+		/// If false, will assert if the value deviates. 
+		/// This should match the corresponding value passed to Read().
+		/// @brief 
+		/// given the minimum and maximum values for an integer type, 
+		/// figure out the minimum number of bits to represent the range
+		/// Then write only those bits
+		/// @notice
+		/// a static is used so that the required number of bits for
+		/// (maximum-minimum pair) is only calculated once. 
+		/// This does require that @param mini and @param max are fixed 
+		/// values for a given line of code for the life of the program
+		/// @see
+		///===================================
+		template <class IntegerType> void WriteFromIntegerRange(
+			const IntegerType value,
+			const IntegerType mini,
+			const IntegerType max,
+			bool allowOutsideRange = false)
+		{
+			static int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) -
+				GetLeadingZeroSize(IntegerType(max - mini));
+			WriteFromIntegerRange(value, mini, max, requiredBits, allowOutsideRange);
+		}
+
+		template <class IntegerType>
+		void WriteFromIntegerRange(
+			const IntegerType value,
+			const IntegerType minimum,
+			const IntegerType maximum,
+			const int requiredBits,
+			bool allowOutsideRange = false)
+		{
+			DCHECK(max >= mini);
+			DCHECK(allowOutsideRange == true ||
+				(value >= minimum && value <= maximum));
+
+			if (allowOutsideRange)
+			{
+				if (value <mini || value>max)  ///< out of range
+				{
+					WriteFrom(true);
+					WriteFrom(value);
+					return;
+				}
+				WriteFrom(false); ///< inside range
+			}
+
+			templateType valueBeyondMini = value - mini;
+			if (IsBigEndian())
+			{/// because bits are written from low byte to high byte
+				/// so we have to reverse the bytes to put the low bits in the low memory
+				/// address to ensure they are written correctly
+				UInt8 output[sizeof(templateType)];
+				ReverseBytes((UInt8*)&valueBeyondMini, output, sizeof(templateType));
+				WriteBitsFrom(output, requiredBits);
+			}
+			else
+			{
+				WriteBitsFrom((UInt8*)&valueBeyondMini, requiredBits);
+			}
+		}
+
+		///========================================
+		/// @method WriteNormVector
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType x
+		/// @param [in] templateType y
+		/// @param [in] templateType z
+		/// @brief
+		/// Write a normalized 3D vector, using (at most) 4 bytes + 3 bits
+		/// instead of 12 - 24 bytes. Accurate to 1/32767.5.
+		/// @notice
+		/// Will further compress y or z axis aligned vectors.
+		/// templateType for this function must be a float or double
+		/// @see
+		///========================================
+		template <class templateType> void WriteNormVector(
+			templateType x,
+			templateType y,
+			templateType z)
+		{
+			DCHECK(
+				x <= 1.01 &&
+				y <= 1.01 &&
+				z <= 1.01 &&
+				x >= -1.01 &&
+				y >= -1.01 &&
+				z >= -1.01);
+			WriteFrom((float)x, -1.0f, 1.0f);
+			WriteFrom((float)y, -1.0f, 1.0f);
+			WriteFrom((float)z, -1.0f, 1.0f);
+		}
+
+		// templateType for this function must be a float or double
+		///========================================
+		/// @method WriteVector
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType x
+		/// @param [in] templateType y
+		/// @param [in] templateType z
+		/// @brief Write a vector, using 10 bytes instead of 12.
+		/// @notice
+		/// Loses accuracy to about 3/10ths and only saves 2 bytes, 
+		/// so only use if accuracy is not important
+		/// @see
+		///========================================
+		template <class templateType> void WriteVector(
+			templateType x,
+			templateType y,
+			templateType z)
+		{
+			templateType magnitude = sqrt(x * x + y * y + z * z);
+			WriteFrom((float)magnitude);
+			if (magnitude > 0.00001f)
+			{
+				WriteMiniFrom((float)(x / magnitude));
+				WriteMiniFrom((float)(y / magnitude));
+				WriteMiniFrom((float)(z / magnitude));
+				//	Write((unsigned short)((x/magnitude+1.0f)*32767.5f));
+				//	Write((unsigned short)((y/magnitude+1.0f)*32767.5f));
+				//	Write((unsigned short)((z/magnitude+1.0f)*32767.5f));
+			}
+		}
+
+		///========================================
+		/// @method WriteNormQuat
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType w
+		/// @param [in] templateType x
+		/// @param [in] templateType y
+		/// @param [in] templateType z
+		/// @brief 
+		/// Write a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.  
+		/// Slightly lossy.
+		/// @notice
+		/// templateType for this function must be a float or double
+		/// @see
+		///========================================
+		template <class templateType> void WriteNormQuat(
+			templateType w,
+			templateType x,
+			templateType y,
+			templateType z)
+		{
+			WriteFrom((bool)(w < 0.0));
+			WriteFrom((bool)(x < 0.0));
+			WriteFrom((bool)(y < 0.0));
+			WriteFrom((bool)(z < 0.0));
+			WriteFrom((unsigned short)(fabs(x)*65535.0));
+			WriteFrom((unsigned short)(fabs(y)*65535.0));
+			WriteFrom((unsigned short)(fabs(z)*65535.0));
+			// Leave out w and calculate it on the target
+		}
+
+		///========================================
+		/// @method WriteOrthMatrix
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType m00
+		/// @param [in] templateType m01
+		/// @param [in] templateType m02
+		/// @param [in] templateType m10
+		/// @param [in] templateType m11
+		/// @param [in] templateType m12
+		/// @param [in] templateType m20
+		/// @param [in] templateType m21
+		/// @param [in] templateType m22
+		/// @brief
+		/// Write an orthogonal matrix by creating a quaternion, 
+		/// and writing 3 components of the quaternion in 2 bytes each.
+		/// @notice
+		/// Lossy, although the result is renormalized
+		/// Use 6 bytes instead of 36
+		/// templateType for this function must be a float or double
+		/// @see
+		///========================================
+		template <class templateType> void WriteOrthMatrix(
+			templateType m00, templateType m01, templateType m02,
+			templateType m10, templateType m11, templateType m12,
+			templateType m20, templateType m21, templateType m22)
+		{
+			double qw;
+			double qx;
+			double qy;
+			double qz;
+
+			// Convert matrix to quat
+			// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+			float sum;
+			sum = 1 + m00 + m11 + m22;
+			if (sum < 0.0f) sum = 0.0f;
+			qw = sqrt(sum) / 2;
+			sum = 1 + m00 - m11 - m22;
+			if (sum < 0.0f) sum = 0.0f;
+			qx = sqrt(sum) / 2;
+			sum = 1 - m00 + m11 - m22;
+			if (sum < 0.0f) sum = 0.0f;
+			qy = sqrt(sum) / 2;
+			sum = 1 - m00 - m11 + m22;
+			if (sum < 0.0f) sum = 0.0f;
+			qz = sqrt(sum) / 2;
+			if (qw < 0.0) qw = 0.0;
+			if (qx < 0.0) qx = 0.0;
+			if (qy < 0.0) qy = 0.0;
+			if (qz < 0.0) qz = 0.0;
+			qx = _copysign((double)qx, (double)(m21 - m12));
+			qy = _copysign((double)qy, (double)(m02 - m20));
+			qz = _copysign((double)qz, (double)(m10 - m01));
+
+			WriteNormQuat(qw, qx, qy, qz);
+		}
+
+		inline static int GetLeadingZeroSize(Int8 x)
+		{
+			return GetLeadingZeroSize((UInt8)x);
+		}
+		inline static  int GetLeadingZeroSize(UInt8 x)
+		{
+			UInt8 y;
+			int n;
+
+			n = 8;
+			y = x >> 4;  if (y != 0) { n = n - 4;  x = y; }
+			y = x >> 2;  if (y != 0) { n = n - 2;  x = y; }
+			y = x >> 1;  if (y != 0) return n - 2;
+			return (int)(n - x);
+		}
+		inline static int GetLeadingZeroSize(Int16 x)
+		{
+			return GetLeadingZeroSize((UInt16)x);
+		}
+		inline static  int GetLeadingZeroSize(UInt16 x)
+		{
+			UInt16 y;
+			int n;
+
+			n = 16;
+			y = x >> 8;  if (y != 0) { n = n - 8;  x = y; }
+			y = x >> 4;  if (y != 0) { n = n - 4;  x = y; }
+			y = x >> 2;  if (y != 0) { n = n - 2;  x = y; }
+			y = x >> 1;  if (y != 0) return n - 2;
+			return (int)(n - x);
+		}
+		inline static  int GetLeadingZeroSize(Int32 x)
+		{
+			return GetLeadingZeroSize((UInt32)x);
+		}
+		inline static  int GetLeadingZeroSize(UInt32 x)
+		{
+			UInt32 y;
+			int n;
+
+			n = 32;
+			y = x >> 16;  if (y != 0) { n = n - 16;  x = y; }
+			y = x >> 8;  if (y != 0) { n = n - 8;  x = y; }
+			y = x >> 4;  if (y != 0) { n = n - 4;  x = y; }
+			y = x >> 2;  if (y != 0) { n = n - 2;  x = y; }
+			y = x >> 1;  if (y != 0) return n - 2;
+			return (int)(n - x);
+		}
+		inline static  int GetLeadingZeroSize(Int64 x)
+		{
+			return GetLeadingZeroSize((UInt64)x);
+		}
+		inline static  int GetLeadingZeroSize(UInt64 x)
+		{
+			UInt64 y;
+			int n;
+
+			n = 64;
+			y = x >> 32;  if (y != 0) { n = n - 32;  x = y; }
+			y = x >> 16;  if (y != 0) { n = n - 16;  x = y; }
+			y = x >> 8;  if (y != 0) { n = n - 8;  x = y; }
+			y = x >> 4;  if (y != 0) { n = n - 4;  x = y; }
+			y = x >> 2;  if (y != 0) { n = n - 2;  x = y; }
+			y = x >> 1;  if (y != 0) return n - 2;
+			return (int)(n - x);
+		}
+
 		inline static bool DoEndianSwap(void)
 		{
 #ifndef DO_NOT_SWAP_ENDIAN
@@ -632,6 +931,7 @@ namespace JACKIE_INET
 		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
 		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
 		{
+			JINFO << "ReverseBytes";
 			for (UInt32 i = 0; i < length; i++)
 			{
 				dest[i] = src[length - i - 1];

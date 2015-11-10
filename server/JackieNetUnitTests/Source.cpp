@@ -18,7 +18,7 @@ static void test_superfastfunction_func()
 {
 	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
 	char* name = "jackie";
-	std::cout << "name hash code = " << ( name, strlen(name) + 1, strlen(name) + 1 );
+	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
 }
 static void test_isDomainIPAddr_func()
 {
@@ -164,7 +164,7 @@ static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper));
 
 	JACKIE_INET::JackieGUID gui(12);
-	JACKIE_INET::JackieAddress adrr("localhost", (UInt16) 123456);
+	JACKIE_INET::JackieAddress adrr("localhost", (UInt16)123456);
 	JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper wrapper1(gui);
 	printf_s("ToString(%s)\n", wrapper1.ToString());
 	printf_s("ToHashCode(%d)\n",
@@ -208,7 +208,7 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
 	JackieAddress addr[MAX_COUNT_LOCAL_IP_ADDR];
 	JISBerkley::GetMyIPBerkley(addr);
-	for( int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++ )
+	for (int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++)
 	{
 		printf_s("(%s)\n", addr[i].ToString());
 	}
@@ -226,7 +226,7 @@ static void test_MemoryPool_funcs()
 {
 	std::cout << "test_MemoryPool_funcs starts...\n";
 	DataStructures::MemoryPool<TestMemoryPool> memoryPool;
-	for( int i = 0; i < 100000; i++ )
+	for (int i = 0; i < 100000; i++)
 	{
 		TestMemoryPool* test = memoryPool.Allocate();
 		test->allocationId = i;
@@ -244,9 +244,9 @@ static void test_MemoryPool_funcs()
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
 	TIMED_FUNC();
-	for( int i = 0; i < 10; i++ )
+	for (int i = 0; i < 10; i++)
 	{
-		( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->PushTail(i);
+		((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->PushTail(i);
 	}
 	return 0;
 }
@@ -254,11 +254,11 @@ JACKIE_THREAD_DECLARATION(lockfreeproducer)
 JACKIE_THREAD_DECLARATION(lockfreeconsumer)
 {
 
-	for( int i = 0; i < ( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->Size()
-		; i++ )
+	for (int i = 0; i < ((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->Size()
+		; i++)
 	{
 		int t;
-		( ( DataStructures::LockFreeQueue<int, 4 * 100000>* )arguments )->PopHead(t);
+		((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->PopHead(t);
 	}
 	return 0;
 }
@@ -270,16 +270,16 @@ static void test_Queue_funcs()
 	DataStructures::LockFreeQueue<int, 4 * 100000> lockfree;
 	TIMED_BLOCK(LockFreeQueueTimer, "LockFreeQueue")
 	{
-		for( int i = 0; i < 10; i++ )
+		for (int i = 0; i < 10; i++)
 		{
 			lockfree.PushTail(i);
 		}
-		for( int i = 0; i < 10; i++ )
+		for (int i = 0; i < 10; i++)
 		{
 			int t;
 			lockfree.PopHead(t);
 		}
-		for( unsigned int i = 0; i < lockfree.Size(); i++ )
+		for (unsigned int i = 0; i < lockfree.Size(); i++)
 		{
 			printf_s("%d, ", lockfree[i]);
 		}
@@ -288,11 +288,11 @@ static void test_Queue_funcs()
 	DataStructures::ArraryQueue<int, 100001> queuee;
 	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
 	{
-		for( int i = 0; i < 100000; i++ )
+		for (int i = 0; i < 100000; i++)
 		{
 			queuee.PushTail(i);
 		}
-		for( int i = 0; i < 100000; i++ )
+		for (int i = 0; i < 100000; i++)
 		{
 			int t;
 			queuee.PopHead(t);
@@ -328,7 +328,7 @@ static void test_ServerApplication_funcs()
 
 	Packet* packet = 0;
 	//// Loop for input
-	while( 1 )
+	while (1)
 	{
 
 		//Command* c = app->AllocCommand();
@@ -336,8 +336,8 @@ static void test_ServerApplication_funcs()
 		//app->PostComand(c);
 
 		// This sleep keeps RakNet responsive
-		for( packet = app->GetPacketOnce(); packet != 0;
-			app->ReclaimPacket(packet), packet = 0 )
+		for (packet = app->GetPacketOnce(); packet != 0;
+			app->ReclaimPacket(packet), packet = 0)
 		{
 
 			/// user logics goes here
@@ -380,12 +380,23 @@ static void test_JackieStream__funcs()
 	//}
 
 	short strr = -5;
-	JackieBits s5((UInt8*) &strr, sizeof(strr), false);
+	JackieBits s5((UInt8*)&strr, sizeof(strr), false);
 	s5.PrintBit();
 
 	JackieBits s6;
-	s6.WriteMiniFrom((UInt8*) &strr, sizeof(strr)*8, false);
+	s6.WriteMiniFrom((UInt8*)&strr, sizeof(strr) * 8, false);
 	s6.PrintBit();
+
+	JINFO << "NumberOfLeadingZeroes " << JackieBits::GetLeadingZeroSize(1);
+
+	Int8 str[256];
+	int a = 5;
+	JackieBits::PrintBit(str, 32, (UInt8*)&a);
+	JINFO << str;
+	UInt8 b[4];
+	JackieBits::ReverseBytes((UInt8*)&a, b, 4);
+	JackieBits::PrintBit(str, 32, b);
+	JINFO << str;
 }
 enum
 {
@@ -504,85 +515,85 @@ int main(int argc, char** argv)
 	//JDEBUG << "test debug";
 
 	START_EASYLOGGINGPP(argc, argv);
-	switch( testcase )
+	switch (testcase)
 	{
-		case GlobalFunctions_h:
-			switch( testfunc )
-			{
-				case superfastfunction_func:
-					test_superfastfunction_func();
-					break;
-				case isDomainIPAddr_func:
-					test_isDomainIPAddr_func();
-					break;
-				case Itoa_func:
-					test_itoa_func();
-					break;
-				case DomainNameToIP_func:
-					test_DomainNameToIP_func();
-					break;
-				default:
-					test_superfastfunction_func();
-					test_isDomainIPAddr_func();
-					test_itoa_func();
-					test_DomainNameToIP_func();
-					break;
-			}
+	case GlobalFunctions_h:
+		switch (testfunc)
+		{
+		case superfastfunction_func:
+			test_superfastfunction_func();
 			break;
-		case JACKIE_INET_Address_h:
-			switch( testfunc )
-			{
-				case size_func:
-					test_size_func();
-					break;
-				case ToHashCode_func:
-					test_ToHashCode_func();
-					break;
-				case Ctor_ToString_FromString_funcs:
-					test_Ctor_ToString_FromString_funcs();
-					break;
-				case SetToLoopBack_func:
-					test_SetToLoopBack_func();
-					break;
-				case IsLoopback_func:
-					test_IsLoopback_func();
-					break;
-				case IsLANAddress_func:
-					test_IsLANAddress_func();
-					break;
-				default:
-					test_size_func();
-					test_ToHashCode_func();
-					test_Ctor_ToString_FromString_funcs();
-					test_SetToLoopBack_func();
-					test_IsLoopback_func();
-					test_IsLANAddress_func();
-					break;
-			}
+		case isDomainIPAddr_func:
+			test_isDomainIPAddr_func();
 			break;
-		case JACKIE_INet_GUID_h:
-			test_JACKIE_INet_GUID_ToString_func();
+		case Itoa_func:
+			test_itoa_func();
 			break;
-		case CLASS_JACKIE_INET_Address_GUID_Wrapper:
-			test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
-			break;
-		case NetTime_h:
-			test_NetTime_h_All_funcs();
-			break;
-		case MemoryPool_h:
-			test_MemoryPool_funcs();
-			break;
-		case CircularArrayQueueSingleThread:
-			test_Queue_funcs();
-			break;
-		case ServerApplication_H:
-			test_ServerApplication_funcs();
-			break;
-		case JackieStream_H:
-			test_JackieStream__funcs();
+		case DomainNameToIP_func:
+			test_DomainNameToIP_func();
 			break;
 		default:
+			test_superfastfunction_func();
+			test_isDomainIPAddr_func();
+			test_itoa_func();
+			test_DomainNameToIP_func();
 			break;
+		}
+		break;
+	case JACKIE_INET_Address_h:
+		switch (testfunc)
+		{
+		case size_func:
+			test_size_func();
+			break;
+		case ToHashCode_func:
+			test_ToHashCode_func();
+			break;
+		case Ctor_ToString_FromString_funcs:
+			test_Ctor_ToString_FromString_funcs();
+			break;
+		case SetToLoopBack_func:
+			test_SetToLoopBack_func();
+			break;
+		case IsLoopback_func:
+			test_IsLoopback_func();
+			break;
+		case IsLANAddress_func:
+			test_IsLANAddress_func();
+			break;
+		default:
+			test_size_func();
+			test_ToHashCode_func();
+			test_Ctor_ToString_FromString_funcs();
+			test_SetToLoopBack_func();
+			test_IsLoopback_func();
+			test_IsLANAddress_func();
+			break;
+		}
+		break;
+	case JACKIE_INet_GUID_h:
+		test_JACKIE_INet_GUID_ToString_func();
+		break;
+	case CLASS_JACKIE_INET_Address_GUID_Wrapper:
+		test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
+		break;
+	case NetTime_h:
+		test_NetTime_h_All_funcs();
+		break;
+	case MemoryPool_h:
+		test_MemoryPool_funcs();
+		break;
+	case CircularArrayQueueSingleThread:
+		test_Queue_funcs();
+		break;
+	case ServerApplication_H:
+		test_ServerApplication_funcs();
+		break;
+	case JackieStream_H:
+		test_JackieStream__funcs();
+		break;
+	default:
+		break;
 	}
 	return 0;
 }
