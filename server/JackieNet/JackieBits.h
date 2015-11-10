@@ -31,7 +31,7 @@ namespace JACKIE_INET
 	/// This class allows you to write and read native types as a string of bits.  
 	class JACKIE_EXPORT JackieBits
 	{
-		private:
+	private:
 		BitSize mBitsAllocSize;
 		BitSize mWritePosBits;
 		BitSize mReadPosBits;
@@ -44,7 +44,7 @@ namespace JACKIE_INET
 		bool mReadOnly;
 		UInt8 mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
 
-		public:
+	public:
 		STATIC_FACTORY_DECLARATIONS(JackieBits);
 
 		/// Getters and Setters
@@ -158,7 +158,7 @@ namespace JACKIE_INET
 		///========================================
 		inline void WriteBytesFrom(const Int8* src, const ByteSize bytes2Write)
 		{
-			WriteBitsFrom((UInt8*) src, BYTES_TO_BITS(bytes2Write), true);
+			WriteBitsFrom((UInt8*)src, BYTES_TO_BITS(bytes2Write), true);
 		}
 
 		/// @brief Write one JackieBits to another.
@@ -186,8 +186,8 @@ namespace JACKIE_INET
 			DCHECK_EQ(mReadOnly, false);
 
 			AppendBitsCouldRealloc(1);
-			BitSize shit = 8 - ( mWritePosBits & 7 );
-			data[mWritePosBits >> 3] = ( ( data[mWritePosBits >> 3] >> shit ) << shit );
+			BitSize shit = 8 - (mWritePosBits & 7);
+			data[mWritePosBits >> 3] = ((data[mWritePosBits >> 3] >> shit) << shit);
 			mWritePosBits++;
 
 			//AppendBitsCouldRealloc(1);
@@ -233,7 +233,7 @@ namespace JACKIE_INET
 		///========================================
 		inline void AlignWritePosBits2ByteBoundary(void)
 		{
-			mWritePosBits += 8 - ( ( ( mWritePosBits - 1 ) & 7 ) + 1 );
+			mWritePosBits += 8 - (((mWritePosBits - 1) & 7) + 1);
 		}
 
 		///========================================
@@ -284,13 +284,14 @@ namespace JACKIE_INET
 		template <class IntergralType>
 		void WriteFrom(const IntergralType &src)
 		{
-			if( sizeof(IntergralType) == 1 )
+			if (sizeof(IntergralType) == 1)
 			{
-				WriteBitsFrom((UInt8*) &src, BYTES_TO_BITS(sizeof(IntergralType)), true);
-			} else
+				WriteBitsFrom((UInt8*)&src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+			}
+			else
 			{
 #ifndef DO_NOT_SWAP_ENDIAN
-				if( DoEndianSwap() )
+				if (DoEndianSwap())
 				{
 					/// Reverse Bytes
 					//UInt8 result[sizeof(IntergralType)];
@@ -299,11 +300,12 @@ namespace JACKIE_INET
 					//	result[i] = ( (UInt8*) src )[sizeof(IntergralType) - i - 1];
 					//}
 					UInt8 output[sizeof(IntergralType)];
-					ReverseBytes((UInt8*) &src, output, sizeof(IntergralType));
+					ReverseBytes((UInt8*)&src, output, sizeof(IntergralType));
 					WriteBitsFrom(output, BYTES_TO_BITS(sizeof(IntergralType)), true);
-				} else
+				}
+				else
 #endif
-					WriteBitsFrom((UInt8*) &src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+					WriteBitsFrom((UInt8*)&src, BYTES_TO_BITS(sizeof(IntergralType)), true);
 			}
 		}
 
@@ -318,7 +320,7 @@ namespace JACKIE_INET
 		template <>
 		inline void WriteFrom(const bool &src)
 		{
-			if( src == true )
+			if (src == true)
 				WriteBitOne();
 			else
 				WriteBitZero();
@@ -339,17 +341,18 @@ namespace JACKIE_INET
 			UInt8 version = src.GetIPVersion();
 			WriteFrom(version);
 
-			if( version == 4 )
+			if (version == 4)
 			{
 				/// Hide the address so routers don't modify it
 				JackieAddress addr = src;
 				UInt32 binaryAddress = ~src.address.addr4.sin_addr.s_addr;
 				UInt16 p = addr.GetPortNetworkOrder();
 				// Don't endian swap the address or port
-				WriteBitsFrom((UInt8*) &binaryAddress,
+				WriteBitsFrom((UInt8*)&binaryAddress,
 					BYTES_TO_BITS(sizeof(binaryAddress)), true);
-				WriteBitsFrom((UInt8*) &p, BYTES_TO_BITS(sizeof(p)), true);
-			} else
+				WriteBitsFrom((UInt8*)&p, BYTES_TO_BITS(sizeof(p)), true);
+			}
+			else
 			{
 #if NET_SUPPORT_IPV6 == 1
 				// Don't endian swap
@@ -376,16 +379,17 @@ namespace JACKIE_INET
 			AlignWritePosBits2ByteBoundary();
 			AppendBitsCouldRealloc(BYTES_TO_BITS(3));
 
-			if( !IsBigEndian() )
+			if (!IsBigEndian())
 			{
-				data[( mWritePosBits >> 3 ) + 0] = ( (UInt8 *) &inTemplateVar.val )[0];
-				data[( mWritePosBits >> 3 ) + 1] = ( (UInt8 *) &inTemplateVar.val )[1];
-				data[( mWritePosBits >> 3 ) + 2] = ( (UInt8 *) &inTemplateVar.val )[2];
-			} else
+				data[(mWritePosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[0];
+				data[(mWritePosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[1];
+				data[(mWritePosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[2];
+			}
+			else
 			{
-				data[( mWritePosBits >> 3 ) + 0] = ( (UInt8 *) &inTemplateVar.val )[3];
-				data[( mWritePosBits >> 3 ) + 1] = ( (UInt8 *) &inTemplateVar.val )[2];
-				data[( mWritePosBits >> 3 ) + 2] = ( (UInt8 *) &inTemplateVar.val )[1];
+				data[(mWritePosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[3];
+				data[(mWritePosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[2];
+				data[(mWritePosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
 			}
 
 			mWritePosBits += BYTES_TO_BITS(3);
@@ -420,10 +424,11 @@ namespace JACKIE_INET
 		inline void WriteChangedFrom(const templateType &latestVal,
 			const templateType &lastVal)
 		{
-			if( latestVal == lastVal )
+			if (latestVal == lastVal)
 			{
 				WriteFrom(false);
-			} else
+			}
+			else
 			{
 				WriteFrom(true);
 				WriteFrom(latestVal);
@@ -443,7 +448,7 @@ namespace JACKIE_INET
 		template <> inline void WriteChangedFrom(const bool &currentValue,
 			const bool &lastValue)
 		{
-			(void) lastValue;
+			(void)lastValue;
 			WriteFrom(currentValue);
 		}
 
@@ -489,10 +494,11 @@ namespace JACKIE_INET
 		template <class templateType> inline void WriteMiniChangedFrom(const templateType
 			&currVal, const templateType &lastValue)
 		{
-			if( currVal == lastValue )
+			if (currVal == lastValue)
 			{
 				WriteFrom(false);
-			} else
+			}
+			else
 			{
 				WriteFrom(true);
 				WriteMiniFrom(currVal);
@@ -506,7 +512,7 @@ namespace JACKIE_INET
 		inline void WriteMiniChangedFrom(const bool &currentValue, const bool
 			&lastValue)
 		{
-			(void) lastValue;
+			(void)lastValue;
 			WriteFrom(currentValue);
 		}
 
@@ -551,20 +557,21 @@ namespace JACKIE_INET
 		template <class IntergralType>
 		inline void WriteMiniFrom(const IntergralType &src)
 		{
-			if( sizeof(src) == 1 )
-				WriteMiniFrom((UInt8*) & src, sizeof(templateType) << 3, true);
+			if (sizeof(src) == 1)
+				WriteMiniFrom((UInt8*)& src, sizeof(templateType) << 3, true);
 			else
 			{
 #ifndef DO_NOT_SWAP_ENDIAN
-				if( DoEndianSwap() )
+				if (DoEndianSwap())
 				{
 					JINFO << "swap";
 					UInt8 output[sizeof(templateType)];
-					ReverseBytes((UInt8*) &src, output, sizeof(templateType));
+					ReverseBytes((UInt8*)&src, output, sizeof(templateType));
 					WriteMiniFrom(output, sizeof(templateType) << 3, true);
-				} else
+				}
+				else
 #endif
-					WriteMiniFrom((UInt8*) &src, sizeof(templateType) << 3, true);
+					WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
 			}
 		}
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
@@ -588,24 +595,24 @@ namespace JACKIE_INET
 		{
 			DCHECK(src > -1.01f && src < 1.01f);
 			float varCopy = src;
-			if( varCopy < -1.0f ) varCopy = -1.0f;
-			if( varCopy > 1.0f ) varCopy = 1.0f;
-			WriteFrom((UInt16) ( ( varCopy + 1.0f )*32767.5f ));
+			if (varCopy < -1.0f) varCopy = -1.0f;
+			if (varCopy > 1.0f) varCopy = 1.0f;
+			WriteFrom((UInt16)((varCopy + 1.0f)*32767.5f));
 		}
 		///@notice For values between -1 and 1
 		template <> inline void WriteMiniFrom(const double &src)
 		{
 			DCHECK(src > -1.01f && src < 1.01f);
 			double varCopy = src;
-			if( varCopy < -1.0f ) varCopy = -1.0f;
-			if( varCopy > 1.0f ) varCopy = 1.0f;
-			WriteFrom((UInt32) ( ( varCopy + 1.0 )*2147483648.0 ));
+			if (varCopy < -1.0f) varCopy = -1.0f;
+			if (varCopy > 1.0f) varCopy = 1.0f;
+			WriteFrom((UInt32)((varCopy + 1.0)*2147483648.0));
 		}
 
 		template <class destType, class srcType >
 		void WriteCasted(const srcType &value)
 		{
-			destType val = (destType) value;
+			destType val = (destType)value;
 			WriteFrom(val);
 		}
 
@@ -620,12 +627,12 @@ namespace JACKIE_INET
 		inline static bool IsNetworkOrder(void)
 		{
 			static int a = 0x01;
-			return *( (char*) & a ) != 1;
+			return *((char*)& a) != 1;
 		}
 		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
 		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
 		{
-			for( UInt32 i = 0; i < length; i++ )
+			for (UInt32 i = 0; i < length; i++)
 			{
 				dest[i] = src[length - i - 1];
 			}

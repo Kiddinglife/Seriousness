@@ -56,7 +56,7 @@ namespace JACKIE_INET
 
 	class JACKIE_EXPORT IPlugin
 	{
-		public:
+	public:
 		//////////////////////////////////////////////////////////////////////////
 		// Filled automatically in when attached
 		IServerApplication* serverApplication;
@@ -81,7 +81,7 @@ namespace JACKIE_INET
 		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
 		JackieGUID GetMyGUIDUnified(void) const
 		{
-			if( serverApplication != 0 ) return serverApplication->GetMyGUID();
+			if (serverApplication != 0) return serverApplication->GetMyGUID();
 			return JACKIE_NULL_GUID;
 		}
 
@@ -117,7 +117,9 @@ namespace JACKIE_INET
 		/// \return True to allow the game and other plugins to get this message, 
 		/// false to absorb it
 		virtual PluginActionType OnRecvPacket(Packet *packet)
-		{ return PROCESSED_BY_OTHERS; }
+		{
+			return PROCESSED_BY_OTHERS;
+		}
 
 		/// Called when a connection is dropped because the user called RakPeer::CloseConnection() for a particular system
 		/// \param[in] systemAddress The system whose connection was closed
