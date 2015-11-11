@@ -136,12 +136,11 @@ namespace JACKIE_INET
 		}
 	}
 
-	bool JackieBits::ReadBitsTo(UInt8 *dest, BitSize bits2Read, bool alignRight /*= true*/)
+	void JackieBits::ReadBitsTo(UInt8 *dest, BitSize bits2Read, bool alignRight /*= true*/)
 	{
-		DCHECK_GT(bits2Read, 0);
-		DCHECK_GT(bits2Read, GetPayLoadBits());
-		if (bits2Read == 0) return false;
-		if (bits2Read > GetPayLoadBits()) return false;
+		DCHECK(bits2Read > 0);
+		DCHECK(bits2Read <= GetPayLoadBits());
+		//if (bits2Read <= 0 || bits2Read > GetPayLoadBits()) return false;
 
 		/// get offset that overlaps one byte boudary, &7 is same to %8, but faster
 		const BitSize startReadPosBits = mReadPosBits & 7;
@@ -155,8 +154,12 @@ namespace JACKIE_INET
 		{
 			memcpy(dest, &data[readPosByte], bits2Read >> 3);
 			mReadPosBits += bits2Read;
-			return true;
+			return;
+			// return true;
 		}
+
+		/// memcpy all bytes to dest and then process 
+		/// first byte and last byte for unaligned bits
 
 		BitSize bitsSizeInLastByte;
 		BitSize writePosByte = 0;
@@ -191,7 +194,7 @@ namespace JACKIE_INET
 				bits2Read = 0;
 			}
 		}
-		return true;
+		//return true;
 	}
 
 	void JackieBits::WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)

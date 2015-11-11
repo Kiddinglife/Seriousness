@@ -97,6 +97,10 @@ namespace JACKIE_INET
 		///========================================
 		void Reuse(void) { mWritePosBits = mReadPosBits = 0; }
 
+		///========================================
+		/// @access public 
+		/// @author mengdi[Jackie]
+		///========================================
 		BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
 
 		///========================================
@@ -119,7 +123,7 @@ namespace JACKIE_INET
 		/// @param [out] [unsigned UInt8 * dest]  The destination array
 		/// @param [in] [BitSize bitsRead] The number of bits to read
 		/// @param [in] [const bool alignRight]  If true bits will be right aligned
-		/// @returns bool True if [bitsRead] number of bits are read
+		/// @returns void
 		/// @remarks
 		/// 1.jackie stream internal data are aligned to the left side of byte boundary.
 		/// 2.user data are aligned to the right side of byte boundary.
@@ -128,7 +132,7 @@ namespace JACKIE_INET
 		/// 2.use False to read this stream to another stream 
 		/// @author mengdi[Jackie]
 		///========================================
-		bool ReadBitsTo(UInt8 *dest, BitSize bitsRead, bool alignRight = true);
+		void ReadBitsTo(UInt8 *dest, BitSize bitsRead, bool alignRight = true);
 
 		///========================================
 		/// @func  WriteBitsFrom 
@@ -505,19 +509,23 @@ namespace JACKIE_INET
 			}
 		}
 
-		/// \brief Write a bool delta.  Same thing as just calling Write
-		/// \param[in] currentValue The current value to write
-		/// \param[in] lastValue The last value to compare against
+		///======================================
+		/// @brief Write a bool delta.  Same thing as just calling Write
+		/// @param[in] currentValue The current value to write
+		/// @param[in] lastValue The last value to compare against
+		///======================================
 		template <>
-		inline void WriteMiniChangedFrom(const bool &currentValue, const bool
-			&lastValue)
+		inline void WriteMiniChangedFrom(const bool &currentValue, const bool&
+			lastValue)
 		{
 			(void)lastValue;
 			WriteFrom(currentValue);
 		}
 
-		/// \brief Same as WriteChangedFrom() 
+		///=============================
+		/// @brief Same as WriteMiniChangedFrom() 
 		/// when we have an unknown second parameter
+		///==============================
 		template <class templateType>
 		inline void WriteMiniChangedFrom(const templateType &currentValue)
 		{
