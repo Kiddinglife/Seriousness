@@ -326,12 +326,22 @@ namespace JACKIE_INET
 		///========================================
 		void AppendBitsCouldRealloc(const BitSize bits2Append);
 
-		/// \brief Read any integral type from a bitstream.  
-		/// \details Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
-		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a double.  The range must be between -1 and +1.
-		/// For non-floating point, this is lossless, but only has benefit if you use less than half the bits of the type
-		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is true for types larger than 1 byte
-		/// \param[in] outTemplateVar The value to read
+		///========================================
+		/// @method ReadMiniTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] IntegralType & dest
+		/// @brief Read any integral type from a bitstream.  
+		/// @notice
+		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// For floating point, this is lossy, using 2 bytes for a float and 4 for
+		/// a double.  The range must be between -1 and +1.
+		/// For non-floating point, this is lossless, but only has benefit if you 
+		/// use less than half the bits of the type
+		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is true 
+		/// for types larger than 1 byte
+		/// @see
+		///========================================
 		template <class IntegralType>
 		inline void ReadMiniTo(IntegralType &dest)
 		{
@@ -354,6 +364,86 @@ namespace JACKIE_INET
 				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 #endif
 			}
+		}
+
+		///========================================
+		template <> inline void ReadMiniTo(JackieAddress &dest)
+		{
+			ReadTo(dest);
+		}
+		template <> inline void ReadMiniTo(UInt24 &dest)
+		{
+			ReadTo(dest);
+		}
+		template <> inline void ReadMiniTo(JackieGUID &dest)
+		{
+			ReadTo(dest);
+		}
+		template <> inline void ReadMiniTo(bool &dest)
+		{
+			ReadTo(dest);
+		}
+		template <> /// For values between -1 and 1
+		inline void ReadMiniTo(float &dest)
+		{
+			unsigned short compressedFloat;
+			ReadTo(compressedFloat);
+			dest = ((float)compressedFloat / 32767.5f - 1.0f);
+		}
+		template <> /// For values between -1 and 1
+		inline void ReadMiniTo(double &dest)
+		{
+			UInt32 compressedFloat;
+			ReadTo(compressedFloat);
+			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
+		}
+		///========================================
+
+		///========================================
+		/// @access public 
+		/// @brief
+		///========================================
+		template <class srcType, class destType >
+		void ReadCasted(destType &value)
+		{
+			srcType val;
+			ReadTo(val);
+			value = (destType)val;
+		}
+
+		///========================================
+		/// @method ReadMiniChangedTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType & dest
+		/// @brief Read any integral type from a bitstream.  
+		/// If the written value differed from the value compared against in 
+		/// the write function, var will be updated.  Otherwise it will retain the
+		/// current value. the current value will be updated.
+		/// @notice
+		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a 
+		/// double.  The range must be between -1 and +1. For non-floating point, 
+		/// this is lossless, but only has benefit if you use less than half the bits of the
+		/// type.  If you are not using DO_NOT_SWAP_ENDIAN the opposite is true for
+		/// types larger than 1 byte
+		/// @see
+		///========================================
+		template <class IntegralType>
+		inline void ReadMiniChangedTo(IntegralType &dest)
+		{
+			bool dataWritten;
+			ReadTo(dataWritten);
+			if (dataWritten) ReadMiniTo(dest);
+		}
+
+		///========================================
+		/// \brief Read a bool from a bitstream.
+		/// \param[in] outTemplateVar The value to read
+		///========================================
+		template <>
+		inline void ReadMiniChangedTo(bool &dest)
+		{
+			ReadTo(dest);
 		}
 
 		///========================================
@@ -583,7 +673,7 @@ namespace JACKIE_INET
 			{
 #if NET_SUPPORT_IPV6 == 1
 				// Don't endian swap
-				WriteBitsFrom((UInt8*) &src.address.addr6, 
+				WriteBitsFrom((UInt8*)&src.address.addr6,
 					BYTES_TO_BITS(sizeof(src.address.addr6)), true);
 #endif
 			}
@@ -817,6 +907,7 @@ namespace JACKIE_INET
 			WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
 #endif
 		}
+
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
 		{
 			WriteFrom(src);
@@ -833,8 +924,8 @@ namespace JACKIE_INET
 		{
 			WriteFrom(src);
 		}
-		///@notice only For values between -1 and 1
-		template <> inline void WriteMiniFrom(const float &src)
+		template <> ///@notice only For values between -1 and 1
+		inline void WriteMiniFrom(const float &src)
 		{
 			DCHECK(src > -1.01f && src < 1.01f);
 			float varCopy = src;
@@ -842,8 +933,8 @@ namespace JACKIE_INET
 			if (varCopy > 1.0f) varCopy = 1.0f;
 			WriteFrom((UInt16)((varCopy + 1.0f)*32767.5f));
 		}
-		///@notice For values between -1 and 1
-		template <> inline void WriteMiniFrom(const double &src)
+		template <> ///@notice For values between -1 and 1
+		inline void WriteMiniFrom(const double &src)
 		{
 			DCHECK(src > -1.01f && src < 1.01f);
 			double varCopy = src;
@@ -852,8 +943,12 @@ namespace JACKIE_INET
 			WriteFrom((UInt32)((varCopy + 1.0)*2147483648.0));
 		}
 
+		///========================================
+		/// @access public 
+		/// @returns void
+		///========================================
 		template <class destType, class srcType >
-		void WriteCasted(const srcType &value)
+		void WriteCastedFrom(const srcType &value)
 		{
 			destType val = (destType)value;
 			WriteFrom(val);
@@ -1182,6 +1277,19 @@ namespace JACKIE_INET
 		static void PrintBit(char* outstr, BitSize bitsPrint, UInt8* src);
 		void PrintHex(void);
 		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
+
+		template <class templateType>
+		JackieBits& operator<<(JackieBits& dest, const templateType& c)
+		{
+			dest.WriteFrom(c);
+			return dest;
+		}
+		template <class templateType>
+		JackieBits& operator>>(JackieBits& src, templateType& c)
+		{
+			src.ReadTo(c);
+			return src;
+		}
 	};
 }
 #endif  //__BITSTREAM_H__
