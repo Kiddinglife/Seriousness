@@ -1279,15 +1279,15 @@ namespace JACKIE_INET
 		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
 
 		template <class templateType>
-		JackieBits& operator<<(JackieBits& dest, const templateType& c)
+		 JackieBits& operator<<(const templateType& c)
 		{
-			dest.WriteFrom(c);
+			WriteFrom(c);
 			return dest;
 		}
 		template <class templateType>
-		JackieBits& operator>>(JackieBits& src, templateType& c)
+		 JackieBits& operator>>(templateType& c)
 		{
-			src.ReadTo(c);
+			ReadTo(c);
 			return src;
 		}
 	};
