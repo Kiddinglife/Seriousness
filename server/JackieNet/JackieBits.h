@@ -311,7 +311,7 @@ namespace JACKIE_INET
 		/// @Brief Assume the input source points to a compressed native type. 
 		/// Decompress and read it.
 		///========================================
-		bool ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
+		void ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
 
 		///========================================
 		/// @func AppendBitsCouldRealloc 

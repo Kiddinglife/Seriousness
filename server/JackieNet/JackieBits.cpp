@@ -85,7 +85,7 @@ namespace JACKIE_INET
 		/// because it will not call ctor and dtor
 	}
 
-	bool JackieBits::ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
+	void JackieBits::ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
 	{
 		UInt32 currByte;
 		UInt8 byteMatch;
