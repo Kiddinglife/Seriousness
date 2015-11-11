@@ -103,18 +103,28 @@ namespace JACKIE_INET
 		///========================================
 		BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
 
+		/// \brief Align the next read to a byte boundary.  
+		/// \details This can be used to 'waste' bits to byte align for efficiency reasons It
+		/// can also be used to force coalesced bitstreams to start on byte
+		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
+		/// calculate the same offset when aligning.
 		///========================================
-		/// @func AppendBitsCouldRealloc 
-		/// @brief 
-		/// reallocates (if necessary) in preparation of writing @bits2Append
-		/// all internal status will not be changed like @mWritePosBits and so on
-		/// @access  public  
-		/// @notice  
-		/// It is caller's reponsibility to ensure 
-		/// @param bits2Append > 0 and @param mReadOnly is false
-		/// @author mengdi[Jackie]
+		/// @method AlignReadPosBitsToByteBoundary
+		/// @access public 
+		/// @returns void
+		/// @param [in] void
+		/// @brief align the next read to a byte boundary.  
+		/// @notice
+		/// this can be used to 'waste' bits to byte align for efficiency reasons It
+		/// can also be used to force coalesced bitstreams to start on byte
+		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
+		/// calculate the same offset when aligning.
+		/// @see
 		///========================================
-		void AppendBitsCouldRealloc(const BitSize bits2Append);
+		inline void AlignReadPosBitsToByteBoundary(void)
+		{
+			mReadPosBits += 8 - (((mReadPosBits - 1) & 7) + 1);
+		}
 
 		///========================================
 		/// @func   ReadBitsTo
@@ -133,6 +143,218 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		///========================================
 		void ReadBitsTo(UInt8 *dest, BitSize bitsRead, bool alignRight = true);
+
+		///========================================
+		/// @method ReadTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] IntegralType & outTemplateVar
+		/// @brief Read any integral type from a bitstream.  
+		/// Define DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// @notice
+		/// @see
+		///========================================
+		template <class IntegralType>
+		inline void ReadTo(IntegralType &dest)
+		{
+			if (sizeof(IntegralType) == 1)
+				ReadBitsTo((UInt8*)&dest, sizeof(IntegralType) * 8, true);
+			else
+			{
+#ifndef DO_NOT_SWAP_ENDIAN
+				if (DoEndianSwap())
+				{
+					UInt8 output[sizeof(IntegralType)];
+					ReadBitsTo(output, BYTES_TO_BITS(sizeof(IntegralType)), true);
+					ReverseBytes(output, (UInt8*)&dest, sizeof(IntegralType));
+				}
+				else
+				{
+					ReadBitsTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+				}
+#else
+				ReadBitsTo((UInt8*)&dest,BYTES_TO_BITS(sizeof(IntegralType)), true);
+#endif
+			}
+		}
+
+		///========================================
+		/// @method ReadTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool & dest The value to read
+		/// @brief  Read a bool from a bitstream.
+		/// @notice
+		/// @see
+		///========================================
+		template <>
+		inline void ReadTo(bool &dest)
+		{
+			DCHECK(GetPayLoadBits() >= 1);
+			if (GetPayLoadBits() < 1) return;
+
+			// Is it faster to just write it out here?
+			data[mReadPosBits >> 3] & (0x80 >> (mReadPosBits & 7)) ?
+				dest = true : dest = false;
+
+			// Has to be on a different line for Mac
+			mReadPosBits++;
+		}
+
+		///========================================
+		/// @method ReadTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] JackieAddress & dest The value to read
+		/// @brief Read a JackieAddress from a bitstream.
+		/// @notice
+		/// @see
+		///========================================
+		template <>
+		inline void ReadTo(JackieAddress &dest)
+		{
+			UInt8 ipVersion;
+			ReadTo(ipVersion);
+			if (ipVersion == 4)
+			{
+				dest.address.addr4.sin_family = AF_INET;
+				// Read(var.binaryAddress);
+				// Don't endian swap the address or port
+				UInt32 binaryAddress;
+				ReadBitsTo((UInt8*)& binaryAddress,
+					BYTES_TO_BITS(sizeof(binaryAddress)), true);
+				// Unhide the IP address, done to prevent routers from changing it
+				dest.address.addr4.sin_addr.s_addr = ~binaryAddress;
+				ReadBitsTo((UInt8*)& dest.address.addr4.sin_port, BYTES_TO_BITS(sizeof(dest.address.addr4.sin_port)), true);
+				dest.debugPort = ntohs(dest.address.addr4.sin_port);
+			}
+			else
+			{
+#if NET_SUPPORT_IPV6==1
+				ReadBitsTo((UInt8*)&dest.address.addr6, BYTES_TO_BITS(sizeof(dest.address.addr6)), true);
+				dest.debugPort = ntohs(dest.address.addr6.sin6_port);
+				//return b;
+#else
+				//return false;
+#endif
+			}
+		}
+
+		///========================================
+		/// @func ReadTo 
+		/// @brief read three bytes into stream
+		/// @access  public  
+		/// @param [in] [const UInt24 & inTemplateVar]  
+		/// @return [void] 
+		/// @remark
+		/// @notice will align @mReadPosBIts to byte-boundary internally
+		/// @see  AlignReadPosBitsToByteBoundary()
+		/// @author mengdi[Jackie]
+		///========================================
+		template <>
+		inline void ReadTo(UInt24 &dest)
+		{
+			AlignReadPosBitsToByteBoundary();
+			if (GetPayLoadBits() < 24) return;
+
+			if (!IsBigEndian())
+			{
+				((UInt8 *)&dest.val)[0] = data[(mReadPosBits >> 3) + 0];
+				((UInt8 *)&dest.val)[1] = data[(mReadPosBits >> 3) + 1];
+				((UInt8 *)&dest.val)[2] = data[(mReadPosBits >> 3) + 2];
+				((UInt8 *)&dest.val)[3] = 0;
+			}
+			else
+			{
+				((UInt8 *)&dest.val)[3] = data[(mReadPosBits >> 3) + 0];
+				((UInt8 *)&dest.val)[2] = data[(mReadPosBits >> 3) + 1];
+				((UInt8 *)&dest.val)[1] = data[(mReadPosBits >> 3) + 2];
+				((UInt8 *)&dest.val)[0] = 0;
+			}
+
+			mReadPosBits += 24;
+		}
+
+		template <>
+		inline void ReadTo(JackieGUID &dest)
+		{
+			return ReadTo(dest.g);
+		}
+
+		///========================================
+		/// @brief Read any integral type from a bitstream.  
+		/// @details If the written value differed from the value 
+		/// compared against in the write function,
+		/// var will be updated.  Otherwise it will retain the current value.
+		/// ReadDelta is only valid from a previous call to WriteDelta
+		/// @param[in] outTemplateVar The value to read
+		///========================================
+		template <class IntegralType>
+		inline void ReadChangedTo(IntegralType &dest)
+		{
+			bool dataWritten;
+			ReadTo(dataWritten);
+			if (dataWritten) ReadTo(dest);
+		}
+
+		///========================================
+		/// \brief Read a bool from a bitstream.
+		/// \param[in] outTemplateVar The value to read
+		///========================================
+		template <>
+		inline void ReadChangedTo(bool &dest)
+		{
+			return ReadTo(dest);
+		}
+
+		///========================================
+		/// @Brief Assume the input source points to a compressed native type. 
+		/// Decompress and read it.
+		///========================================
+		bool ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
+
+		///========================================
+		/// @func AppendBitsCouldRealloc 
+		/// @brief 
+		/// reallocates (if necessary) in preparation of writing @bits2Append
+		/// all internal status will not be changed like @mWritePosBits and so on
+		/// @access  public  
+		/// @notice  
+		/// It is caller's reponsibility to ensure 
+		/// @param bits2Append > 0 and @param mReadOnly is false
+		/// @author mengdi[Jackie]
+		///========================================
+		void AppendBitsCouldRealloc(const BitSize bits2Append);
+
+		/// \brief Read any integral type from a bitstream.  
+		/// \details Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a double.  The range must be between -1 and +1.
+		/// For non-floating point, this is lossless, but only has benefit if you use less than half the bits of the type
+		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is true for types larger than 1 byte
+		/// \param[in] outTemplateVar The value to read
+		template <class IntegralType>
+		inline void ReadMiniTo(IntegralType &dest)
+		{
+			if (sizeof(dest) == 1)
+				ReadMiniTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			else
+			{
+#ifndef DO_NOT_SWAP_ENDIAN
+				if (DoEndianSwap())
+				{
+					UInt8 output[sizeof(IntegralType)];
+					ReadMiniTo((UInt8*)output, BYTES_TO_BITS(sizeof(IntegralType)), true);
+					ReverseBytes(output, (UInt8*)&dest, sizeof(IntegralType));
+				}
+				else
+				{
+					ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+				}
+#else
+				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+#endif
+			}
+		}
 
 		///========================================
 		/// @func  WriteBitsFrom 
@@ -340,7 +562,8 @@ namespace JACKIE_INET
 		/// @notice  will not endian swap the address or port
 		/// @author mengdi[Jackie]
 		///========================================
-		template <> inline void WriteFrom(const JackieAddress &src)
+		template <>
+		inline void WriteFrom(const JackieAddress &src)
 		{
 			UInt8 version = src.GetIPVersion();
 			WriteFrom(version);
@@ -378,7 +601,8 @@ namespace JACKIE_INET
 		/// @see  AlignWritePosBits2ByteBoundary()
 		/// @author mengdi[Jackie]
 		///========================================
-		template <> inline void WriteFrom(const UInt24 &inTemplateVar)
+		template <>
+		inline void WriteFrom(const UInt24 &inTemplateVar)
 		{
 			AlignWritePosBits2ByteBoundary();
 			AppendBitsCouldRealloc(BYTES_TO_BITS(3));
@@ -407,7 +631,8 @@ namespace JACKIE_INET
 		/// @return void
 		/// @author mengdi[Jackie]
 		///========================================
-		template <>inline void WriteFrom(const JackieGUID &inTemplateVar)
+		template <>
+		inline void WriteFrom(const JackieGUID &inTemplateVar)
 		{
 			WriteFrom(inTemplateVar.g);
 		}
@@ -449,7 +674,8 @@ namespace JACKIE_INET
 		/// @return void 
 		/// @author mengdi[Jackie]
 		///========================================
-		template <> inline void WriteChangedFrom(const bool &currentValue,
+		template <>
+		inline void WriteChangedFrom(const bool &currentValue,
 			const bool &lastValue)
 		{
 			(void)lastValue;
@@ -495,8 +721,9 @@ namespace JACKIE_INET
 		/// true for types larger than 1 byte
 		/// @author mengdi[Jackie]
 		///========================================
-		template <class templateType> inline void WriteMiniChangedFrom(const templateType
-			&currVal, const templateType &lastValue)
+		template <class templateType>
+		inline void WriteMiniChangedFrom(const templateType&currVal,
+			const templateType &lastValue)
 		{
 			if (currVal == lastValue)
 			{
@@ -534,13 +761,18 @@ namespace JACKIE_INET
 		}
 
 		///========================================
-		/// @func WriteCompressed 
+		/// @func WriteMiniFrom 
 		/// @access  public  
 		/// @param [in] const UInt8 * src  
 		/// @param [in] const BitSize bits2Write  write size in bits
 		/// @param [in] const bool isUnsigned  
 		/// @return void 
-		/// @notice when @src points to a native type, compress and write it.
+		/// @notice 
+		/// this function assumes that @src points to a native type,
+		/// compress and write it.
+		/// 在字节内部，一个字节的二进制排序，不存在大小端问题。
+		/// 就和平常书写的一样，先写高位，即低地址存储高位。
+		/// 如char a=0x12.存储从低位到高位就为0001 0010
 		/// @author mengdi[Jackie]
 		///========================================
 		void WriteMiniFrom(const UInt8* src, const BitSize bits2Write,
@@ -568,24 +800,22 @@ namespace JACKIE_INET
 			if (sizeof(src) == 1)
 			{
 				WriteMiniFrom((UInt8*)& src, sizeof(templateType) << 3, true);
+				return;
+			}
+#ifndef DO_NOT_SWAP_ENDIAN
+			if (DoEndianSwap())
+			{
+				UInt8 output[sizeof(templateType)];
+				ReverseBytes((UInt8*)&src, output, sizeof(templateType));
+				WriteMiniFrom(output, sizeof(templateType) << 3, true);
 			}
 			else
 			{
-#ifndef DO_NOT_SWAP_ENDIAN
-				if (DoEndianSwap())
-				{
-					UInt8 output[sizeof(templateType)];
-					ReverseBytes((UInt8*)&src, output, sizeof(templateType));
-					WriteMiniFrom(output, sizeof(templateType) << 3, true);
-				}
-				else
-				{
-					WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
-				}
-#else
 				WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
-#endif
 			}
+#else
+			WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
+#endif
 		}
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
 		{

@@ -85,6 +85,85 @@ namespace JACKIE_INET
 		/// because it will not call ctor and dtor
 	}
 
+	bool JackieBits::ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
+	{
+		UInt32 currByte;
+		UInt8 byteMatch;
+		UInt8 halfByteMatch;
+
+		if (isUnsigned)
+		{
+			byteMatch = 0;
+			halfByteMatch = 0;
+		}
+		else
+		{
+			byteMatch = 0xFF;
+			halfByteMatch = 0xF0;
+		}
+
+		if (IsBigEndian())
+		{
+			currByte = (bits2Read >> 3) - 1;
+			while (currByte > 0)
+			{
+				// If we read a 1 then the data is byteMatch.
+				bool b;
+				ReadTo(b);
+				if (b)   // Check that bit
+				{
+					dest[currByte] = byteMatch;
+					currByte--;
+				}
+				else /// the first byte is not matched 
+				{
+					// Read the rest of the bytes
+					ReadBitsTo(dest, (currByte + 1) << 3);
+					return;
+				}
+			}
+		}
+		else
+		{
+			currByte = 0;
+			while (currByte < ((bits2Read >> 3) - 1))
+			{
+				// If we read a 1 then the data is byteMatch.
+				bool b;
+				ReadTo(b);
+				if (b)   // Check that bit
+				{
+					dest[currByte] = byteMatch;
+					currByte++;
+				}
+				else /// the first byte is not matched 
+				{
+					// Read the rest of the bytes
+					ReadBitsTo(dest, bits2Read);
+					return;
+				}
+			}
+		}
+
+		// If this assert is hit the stream wasn't long enough to read from
+		DCHECK(GetPayLoadBits() >= 1);
+
+		/// the upper(left aligned) half of the last byte(now currByte == 0) is a 0000
+		/// (positive) or 1111 (nagative) write a bit 1 and the remaining 4 bits. 
+		bool b;
+		ReadTo(b);
+		if (b)
+		{
+			ReadBitsTo(dest + currByte, 4);
+			// read the remaining 4 bits
+			dest[currByte] |= halfByteMatch;
+		}
+		else
+		{
+			ReadBitsTo(dest + currByte, 8);
+		}
+	}
+
 	void JackieBits::AppendBitsCouldRealloc(const BitSize bits2Append)
 	{
 		DCHECK_EQ(mReadOnly, false);
@@ -140,7 +219,7 @@ namespace JACKIE_INET
 	{
 		DCHECK(bits2Read > 0);
 		DCHECK(bits2Read <= GetPayLoadBits());
-		//if (bits2Read <= 0 || bits2Read > GetPayLoadBits()) return false;
+		//if (bits2Read <= 0 || bits2Read > GetPayLoadBits()) return;
 
 		/// get offset that overlaps one byte boudary, &7 is same to %8, but faster
 		const BitSize startReadPosBits = mReadPosBits & 7;
@@ -148,18 +227,22 @@ namespace JACKIE_INET
 		/// byte position where start to read
 		ByteSize readPosByte = mReadPosBits >> 3;
 
-		/// if @mReadPosBits is aligned and @bitsSize is multiple times of 8, 
-		/// do memcpy for efficiency
-		if (startReadPosBits == 0 && (bits2Read & 7) == 0)
+		/// if @mReadPosBits is aligned  do memcpy for efficiency
+		if (startReadPosBits == 0)
 		{
-			memcpy(dest, &data[readPosByte], bits2Read >> 3);
+			memcpy(dest, &data[readPosByte], BITS_TO_BYTES(bits2Read));
 			mReadPosBits += bits2Read;
+
+			/// if @bitsSize is not multiple times of 8, 
+			/// process the last read byte to shit the bits
+			BitSize offset = bits2Read & 7;
+			if (offset > 0 && alignRight)
+			{
+				dest[BITS_TO_BYTES(bits2Read) - 1] >>= (8 - offset);
+			}
 			return;
 			// return true;
 		}
-
-		/// memcpy all bytes to dest and then process 
-		/// first byte and last byte for unaligned bits
 
 		BitSize bitsSizeInLastByte;
 		BitSize writePosByte = 0;
@@ -173,7 +256,7 @@ namespace JACKIE_INET
 			/// firstly read left-fragment bits in this byte 
 			dest[writePosByte] |= (data[readPosByte] << (startReadPosBits));
 
-			/// secondly read right-fragment bits ( if any ) in this byte
+			/// secondly read right-fragment bits  ( if any ) in this byte
 			if (startReadPosBits > 0 && bits2Read > (8 - startReadPosBits))
 			{
 				dest[writePosByte] |= data[readPosByte + 1] >> (8 - startReadPosBits);
@@ -378,42 +461,76 @@ namespace JACKIE_INET
 
 	void JackieBits::WriteMiniFrom(const UInt8* src, const BitSize bits2Write, const bool isUnsigned)
 	{
-		/// get the highest byte with highest index
-		ByteSize currByte = (bits2Write >> 3) - 1;
-		UInt8 byteMatch = isUnsigned ? 0 : 0xFF; /// 0xFF=255=11111111
 		static bool truee = true;
 		static bool falsee = false;
 
-		/// From high byte to low byte, if high byte is a byteMatch then write a 1 bit.
-		/// Otherwise write a 0 bit and then write the remaining bytes
-		while (currByte > 0)
+		ByteSize currByte;
+		UInt8 byteMatch;
+
+		if (IsBigEndian())
 		{
-			///  If high byte is byteMatch (0 or 0xff) then it would have the same value shifted
-			if (src[currByte] == byteMatch)
+
+			/// get the highest byte with highest index  PCs
+			currByte = (bits2Write >> 3) - 1;
+			byteMatch = isUnsigned ? 0 : 0xFF; /// 0xFF=255=11111111
+
+			/// From high byte to low byte, 
+			/// if high byte is a byteMatch then write a 1 bit.
+			/// Otherwise write a 0 bit and then write the remaining bytes
+			while (currByte > 0)
 			{
-				WriteFrom(truee);
+				///  If high byte is byteMatch (0 or 0xff)
+				/// then it would have the same value shifted
+				if (src[currByte] == byteMatch)
+				{
+					WriteFrom(truee);
+					currByte--;
+				}
+				else /// the first byte is not matched
+				{
+					WriteFrom(falsee);
+					// Write the remainder of the data after writing bit false
+					WriteBitsFrom(src, (currByte + 1) << 3, true);
+					return;
+				}
 			}
-			else
+			/// make sure we are now on the lowest byte (index 0)
+			DCHECK(currByte == 0);
+		}
+		else
+		{
+			/// get the highest byte with highest index  PCs
+			currByte = 0;
+			byteMatch = isUnsigned ? 0 : 0xFF; /// 0xFF=255=11111111
+
+			/// From high byte to low byte, 
+			/// if high byte is a byteMatch then write a 1 bit.
+			/// Otherwise write a 0 bit and then write the remaining bytes
+			while (currByte < ((bits2Write >> 3) - 1))
 			{
-				WriteFrom(falsee);
-				// Write the remainder of the data after writing bit false
-				WriteBitsFrom(src, (currByte + 1) << 3, true);
-				return;
+				///  If high byte is byteMatch (0 or 0xff)
+				/// then it would have the same value shifted
+				if (src[currByte] == byteMatch)
+				{
+					WriteFrom(truee);
+					currByte++;
+				}
+				else /// the first byte is not matched
+				{
+					WriteFrom(falsee);
+					// Write the remainder of the data after writing bit false
+					WriteBitsFrom(src, bits2Write, true);
+					return;
+				}
 			}
-			currByte--;
+			/// make sure we are now on the lowest byte (index highest)
+			DCHECK(currByte == ((bits2Write >> 3) - 1));
 		}
 
-		DCHECK_EQ(currByte, 0); /// make sure we are now on the lowest byte (index 0)
-
-		if (isUnsigned && (src[currByte] & 0xF0) == 0x00)
-		{/// the upper(left aligned) half of the last byte(now currByte == 0) is a 0000 (positive)
+		if ((isUnsigned && (src[currByte] & 0xF0) == 0x00) ||
+			(!isUnsigned && (src[currByte] & 0xF0) == 0xF0))
+		{/// the upper(left aligned) half of the last byte(now currByte == 0) is a 0000 (positive) or 1111 (nagative)
 			/// write a bit 1 and the remaining 4 bits. 
-			WriteFrom(truee);
-			WriteBitsFrom(src + currByte, 4, true);
-		}
-		else if (!isUnsigned && (src[currByte] & 0xF0) == 0xF0)
-		{/// the upper(left aligned) half of the last byte(now currByte == 0) is 1111 (negative)
-			/// then write a bit 1 and the remaining 4 bits. 
 			WriteFrom(truee);
 			WriteBitsFrom(src + currByte, 4, true);
 		}
