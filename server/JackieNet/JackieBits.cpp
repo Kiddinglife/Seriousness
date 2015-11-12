@@ -280,6 +280,18 @@ namespace JACKIE_INET
 		//return true;
 	}
 
+	void JackieBits::ReadTo(float &outFloat, float floatMin, float floatMax)
+	{
+		DCHECK(floatMax > floatMin);
+
+		UInt16 percentile;
+		ReadTo(percentile);
+
+		outFloat = floatMin + ((float)percentile / 65535.0f) * (floatMax - floatMin);
+		if (outFloat<floatMin) outFloat = floatMin;
+		else if (outFloat>floatMax) outFloat = floatMax;
+	}
+
 	void JackieBits::WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
 		DCHECK_EQ(mReadOnly, false);
@@ -453,10 +465,10 @@ namespace JACKIE_INET
 		DCHECK_LE(src, floatMax + .001);
 		DCHECK_GE(src, floatMin - .001);
 
-		float percentile = 65535.0f * (src - floatMin) / (floatMax - floatMin);
+		float percentile = 65535.0f * ((src - floatMin) / (floatMax - floatMin));
 		if (percentile < 0.0f) percentile = 0.0;
 		if (percentile > 65535.0f) percentile = 65535.0f;
-		WriteFrom((UInt8)percentile);
+		WriteFrom((UInt16)percentile);
 	}
 
 	void JackieBits::WriteMiniFrom(const UInt8* src, const BitSize bits2Write, const bool isUnsigned)
@@ -467,7 +479,7 @@ namespace JACKIE_INET
 		ByteSize currByte;
 		UInt8 byteMatch;
 
-		if (IsBigEndian())
+		if (!IsBigEndian())
 		{
 
 			/// get the highest byte with highest index  PCs

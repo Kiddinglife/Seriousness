@@ -400,7 +400,7 @@ static void test_JackieStream__funcs()
 	JINFO << str;
 
 	JINFO << "Test s7.ReadBitsTo()";
-	JackieBits s7((UInt8*)&strr, sizeof(strr), false);
+	JackieBits s7((UInt8*)&strr, sizeof(strr), true);
 	UInt8 readto[256] = { 0 };
 	s7.ReadPosBits(3);
 	s7.ReadBitsTo(readto, 13, false);
@@ -415,6 +415,9 @@ static void test_JackieStream__funcs()
 	JackieBits::ReverseBytes((UInt8*)&reverse, (UInt8*)&dest, 4);
 	JackieBits::PrintBit(str, 32, (UInt8*)&dest);
 	JINFO << str;
+
+	int as = 12;
+	s7 << as << reverse;
 }
 enum
 {

@@ -44,17 +44,21 @@ namespace JACKIE_INET
 		bool mReadOnly;
 		UInt8 mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
 
+		JackieBits(const JackieBits &invalid)
+		{
+			(void)invalid;
+			CHECK(0);
+		}
+		JackieBits& operator = (const JackieBits& invalid)
+		{
+			(void)invalid;
+			CHECK(0);
+			static JackieBits i;
+			return i;
+		}
+
 	public:
 		STATIC_FACTORY_DECLARATIONS(JackieBits);
-
-		/// Getters and Setters
-		BitSize WritePosBits() const { return mWritePosBits; }
-		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
-		BitSize ReadPosBits() const { return mReadPosBits; }
-		UInt8 * Data() const { return data; }
-		void WritePosBits(BitSize val) { mWritePosBits = val; }
-		void ReadPosBits(BitSize val) { mReadPosBits = val; }
-		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
 
 		///========================================
 		/// @Param [in] [ BitSize initialBytesToAllocate]:
@@ -82,6 +86,7 @@ namespace JACKIE_INET
 		/// @Author mengdi[Jackie]
 		///========================================
 		JackieBits(UInt8* src, const ByteSize len, bool copy = false);
+
 		JackieBits();
 		~JackieBits();
 
@@ -95,19 +100,59 @@ namespace JACKIE_INET
 		/// operation (may result in leaks).
 		/// @Author mengdi[Jackie]
 		///========================================
-		void Reuse(void) { mWritePosBits = mReadPosBits = 0; }
+		inline void Reuse(void) { mWritePosBits = mReadPosBits = 0; }
+
+		/// Getters and Setters
+		BitSize WritePosBits() const { return mWritePosBits; }
+		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
+		BitSize ReadPosBits() const { return mReadPosBits; }
+		UInt8 * Data() const { return data; }
+		void WritePosBits(BitSize val) { mWritePosBits = val; }
+		void ReadPosBits(BitSize val) { mReadPosBits = val; }
+		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
+
+		///========================================
+		///@brief Sets the read pointer back to the beginning of your data.
+		/// @access public
+		///========================================
+		inline void ResetReadPosBits(void)
+		{
+			mReadPosBits = 0;
+		}
+
+		///========================================
+		/// @brief Sets the write pointer back to the beginning of your data.
+		/// @access public
+		///========================================
+		inline void ResetWritePosBits(void)
+		{
+			mWritePosBits = 0;
+		}
+
+		///========================================
+		/// @brief This is good to call when you are done with the stream to make
+		/// sure you didn't leave any data left over void
+		// Should hit if reads didn't match writes
+		/// @access public
+		///========================================
+		inline void AssertStreamEmpty(void)
+		{
+			CHECK(mReadPosBits == mWritePosBits);
+		}
 
 		///========================================
 		/// @access public 
 		/// @author mengdi[Jackie]
 		///========================================
-		BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
+		inline BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
 
-		/// \brief Align the next read to a byte boundary.  
-		/// \details This can be used to 'waste' bits to byte align for efficiency reasons It
-		/// can also be used to force coalesced bitstreams to start on byte
-		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
-		/// calculate the same offset when aligning.
+		///========================================
+		///@brief the bytes count that can hold all the written bits
+		/// @access public 
+		///========================================
+		inline ByteSize WritePosBytes(void) const { return BITS_TO_BYTES(mWritePosBits); }
+
+
 		///========================================
 		/// @method AlignReadPosBitsToByteBoundary
 		/// @access public 
@@ -166,17 +211,17 @@ namespace JACKIE_INET
 				{
 					UInt8 output[sizeof(IntegralType)];
 					ReadBitsTo(output, BYTES_TO_BITS(sizeof(IntegralType)), true);
-					ReverseBytes(output, (UInt8*)&dest, sizeof(IntegralType));
+					ReverseBytesTo(output, (UInt8*)&dest, sizeof(IntegralType));
 				}
 				else
 				{
 					ReadBitsTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 				}
 #else
-				ReadBitsTo((UInt8*)&dest,BYTES_TO_BITS(sizeof(IntegralType)), true);
+				ReadBitsTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 #endif
+				}
 			}
-		}
 
 		///========================================
 		/// @method ReadTo
@@ -237,7 +282,7 @@ namespace JACKIE_INET
 #else
 				//return false;
 #endif
-			}
+		}
 		}
 
 		///========================================
@@ -354,7 +399,7 @@ namespace JACKIE_INET
 				{
 					UInt8 output[sizeof(IntegralType)];
 					ReadMiniTo((UInt8*)output, BYTES_TO_BITS(sizeof(IntegralType)), true);
-					ReverseBytes(output, (UInt8*)&dest, sizeof(IntegralType));
+					ReverseBytesTo(output, (UInt8*)&dest, sizeof(IntegralType));
 				}
 				else
 				{
@@ -363,8 +408,8 @@ namespace JACKIE_INET
 #else
 				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 #endif
+				}
 			}
-		}
 
 		///========================================
 		template <> inline void ReadMiniTo(JackieAddress &dest)
@@ -386,7 +431,7 @@ namespace JACKIE_INET
 		template <> /// For values between -1 and 1
 		inline void ReadMiniTo(float &dest)
 		{
-			unsigned short compressedFloat;
+			UInt16 compressedFloat;
 			ReadTo(compressedFloat);
 			dest = ((float)compressedFloat / 32767.5f - 1.0f);
 		}
@@ -444,6 +489,250 @@ namespace JACKIE_INET
 		inline void ReadMiniChangedTo(bool &dest)
 		{
 			ReadTo(dest);
+		}
+
+		template <class IntegerType>
+		void ReadBitsFromIntegerRange(
+			IntegerType &value,
+			const IntegerType minimum,
+			const IntegerType maximum,
+			bool allowOutsideRange)
+		{
+			/// get the high byte bits size
+			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(IntegerType(maximum - minimum));
+			ReadBitsFromIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
+		}
+
+
+		///========================================
+		/// @method ReadBitsFromIntegerRange
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType & value
+		/// @param [in] const templateType minimum
+		/// @param [in] const templateType maximum
+		/// @param [in] const int requiredBits the value of bits to read
+		/// @param [in] bool allowOutsideRange 
+		/// if true, we directly read it
+		/// @brief
+		/// @notice
+		/// This is how we write value
+		/// Assume@valueBeyondMini's value is 0x000012
+		///------------------> Memory Address
+		///+++++++++++
+		///| 00 | 00 | 00 | 12 |  Big Endian
+		///+++++++++++
+		///+++++++++++
+		///| 12 | 00 | 00 | 00 |  Little Endian 
+		///+++++++++++
+		/// so for big endian, we need to reverse byte so that
+		/// the high byte of 0x00 that was put in low address can be written correctly
+		/// for little endian, we do nothing.
+		/// After reverse bytes:
+		///+++++++++++
+		///| 12 | 00 | 00 | 00 |  Big Endian 
+		///+++++++++++
+		///+++++++++++
+		///| 12 | 00 | 00 | 00 |  Little Endian 
+		///+++++++++++
+		/// When reading it, we have to reverse it back fro big endian
+		/// we do nothing for little endian.
+		/// @see
+		///========================================
+		template <class templateType>
+		void ReadBitsFromIntegerRange(
+			templateType &value,
+			const templateType minimum,
+			const templateType maximum,
+			const int requiredBits,
+			bool allowOutsideRange)
+		{
+			DCHECK(maximum >= minimum);
+
+			if (allowOutsideRange)
+			{
+				bool isOutsideRange;
+				ReadTo(isOutsideRange);
+				if (isOutsideRange)
+				{
+					ReadTo(value);
+					return;
+				}
+			}
+
+			value = 0;
+			ReadBitsTo((UInt8*)&value, requiredBits, true);
+			if (IsBigEndian())
+			{
+				value >>= (BYTES_TO_BITS(sizeof(value)) - requiredBits);
+			}
+			value += minimum;
+
+			//UInt8 output[sizeof(templateType)] = { 0 };
+			//ReadBitsTo(output, requiredBits, true);
+			//if (IsBigEndian()) ReverseBytesFrom(output, sizeof(output));
+			//memcpy(&value, output, sizeof(output));
+			//value += minimum;
+
+		}
+
+		///========================================
+		/// @method ReadTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] float & outFloat The float to read
+		/// @param [in] float floatMin  Predetermined minimum value of f
+		/// @param [in] float floatMax Predetermined maximum value of f
+		/// @brief
+		/// Read a float into 2 bytes, spanning the range between
+		/// @param floatMin and @param floatMax
+		/// @notice
+		/// @see
+		///========================================
+		void ReadTo(float &outFloat, float floatMin, float floatMax);
+
+		///========================================
+		/// @access public
+		/// @brief Read a normalized 3D vector, using (at most) 4 bytes 
+		/// + 3 bits instead of 12-24 bytes.  
+		/// @details Will further compress y or z axis aligned vectors.
+		/// Accurate to 1/32767.5.
+		/// @param[in] x x
+		/// @param[in] y y
+		/// @param[in] z z
+		/// @return void
+		/// @notice templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void ReadNormVectorTo(templateType &x, templateType &y, templateType &z)
+		{
+			float xIn, yIn, zIn;
+			ReadTo(x, -1.0f, 1.0f);
+			ReadTo(y, -1.0f, 1.0f);
+			ReadTo(z, -1.0f, 1.0f);
+			x = xIn;
+			y = yIn;
+			z = zIn;
+		}
+
+		///========================================
+		/// @brief Read 3 floats or doubles, using 10 bytes, 
+		/// where those float or doubles comprise a vector.
+		/// @details Loses accuracy to about 3/10ths and only saves 2 bytes, 
+		/// so only use if accuracy is not important.
+		/// @param[in] x x
+		/// @param[in] y y
+		/// @param[in] z z
+		/// @return void
+		/// @notice templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void ReadVectorTo(templateType &x, templateType &y, templateType &z)
+		{
+			float magnitude;
+			ReadTo(magnitude);
+
+			if (magnitude > 0.00001f)
+			{
+				float cx = 0.0f, cy = 0.0f, cz = 0.0f;
+				ReadMiniTo(cx);
+				ReadMiniTo(cy);
+				ReadMiniTo(cz);
+				x = cx;
+				y = cy;
+				z = cz;
+				x *= magnitude;
+				y *= magnitude;
+				z *= magnitude;
+			}
+			else
+			{
+				x = 0.0;
+				y = 0.0;
+				z = 0.0;
+			}
+		}
+
+		///========================================
+		/// \brief Read a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.
+		/// \param[in] w w
+		/// \param[in] x x
+		/// \param[in] y y
+		/// \param[in] z z
+		/// \return void
+		/// @notice templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		bool ReadNormQuatTo(templateType &w, templateType &x, templateType &y, templateType &z)
+		{
+			bool cwNeg = false, cxNeg = false, cyNeg = false, czNeg = false;
+			ReadTo(cwNeg);
+			ReadTo(cxNeg);
+			ReadTo(cyNeg);
+			ReadTo(czNeg);
+
+			UInt16 cx, cy, cz;
+			ReadTo(cx);
+			ReadTo(cy);
+			ReadTo(cz);
+
+			// Calculate w from x,y,z
+			x = (templateType)(cx / 65535.0);
+			y = (templateType)(cy / 65535.0);
+			z = (templateType)(cz / 65535.0);
+
+			if (cxNeg) x = -x;
+			if (cyNeg) y = -y;
+			if (czNeg) z = -z;
+
+			float difference = 1.0f - x*x - y*y - z*z;
+			if (difference < 0.0f) difference = 0.0f;
+
+			w = (templateType)(sqrt(difference));
+			if (cwNeg) w = -w;
+		}
+
+		///========================================
+		/// @brief Read an orthogonal matrix from a quaternion, 
+		/// reading 3 components of the quaternion in 2 bytes each and
+		/// extrapolatig the 4th.
+		/// @details Use 6 bytes instead of 36
+		/// Lossy, although the result is renormalized
+		/// @return true on success, false on failure.
+		///@notice templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void ReadOrthMatrix(
+			templateType &m00, templateType &m01, templateType &m02,
+			templateType &m10, templateType &m11, templateType &m12,
+			templateType &m20, templateType &m21, templateType &m22)
+		{
+			float qw, qx, qy, qz;
+			ReadNormQuatTo(qw, qx, qy, qz);
+
+			// Quat to orthogonal rotation matrix
+			// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+			double sqw = (double)qw*(double)qw;
+			double sqx = (double)qx*(double)qx;
+			double sqy = (double)qy*(double)qy;
+			double sqz = (double)qz*(double)qz;
+			m00 = (templateType)(sqx - sqy - sqz + sqw); // since sqw + sqx + sqy + sqz =1
+			m11 = (templateType)(-sqx + sqy - sqz + sqw);
+			m22 = (templateType)(-sqx - sqy + sqz + sqw);
+
+			double tmp1 = (double)qx*(double)qy;
+			double tmp2 = (double)qz*(double)qw;
+			m10 = (templateType)(2.0 * (tmp1 + tmp2));
+			m01 = (templateType)(2.0 * (tmp1 - tmp2));
+
+			tmp1 = (double)qx*(double)qz;
+			tmp2 = (double)qy*(double)qw;
+			m20 = (templateType)(2.0 * (tmp1 - tmp2));
+			m02 = (templateType)(2.0 * (tmp1 + tmp2));
+			tmp1 = (double)qy*(double)qz;
+			tmp2 = (double)qx*(double)qw;
+			m21 = (templateType)(2.0 * (tmp1 + tmp2));
+			m12 = (templateType)(2.0 * (tmp1 - tmp2));
 		}
 
 		///========================================
@@ -570,14 +859,14 @@ namespace JACKIE_INET
 
 		///========================================
 		/// @func WriteFrom 
-		/// @brief write a float into 2 bytes, spanning the range 
+		/// @brief write a float into 2 bytes, spanning the range, 
 		/// between @param[floatMin] and @param[floatMax]
 		/// @access  public  
 		/// @param [in] [float src]  value to write into stream
 		/// @param [in] [float floatMin] Predetermined mini value of f
 		/// @param [in] [float floatMax] Predetermined max value of f
 		/// @return bool
-		/// @notice calculate the proparation of the @src 
+		/// @notice 
 		/// @author mengdi[Jackie]
 		///========================================
 		void WriteFrom(float src, float floatMin, float floatMax);
@@ -616,7 +905,7 @@ namespace JACKIE_INET
 					//	result[i] = ( (UInt8*) src )[sizeof(IntergralType) - i - 1];
 					//}
 					UInt8 output[sizeof(IntergralType)];
-					ReverseBytes((UInt8*)&src, output, sizeof(IntergralType));
+					ReverseBytesTo((UInt8*)&src, output, sizeof(IntergralType));
 					WriteBitsFrom(output, BYTES_TO_BITS(sizeof(IntergralType)), true);
 				}
 				else
@@ -676,7 +965,7 @@ namespace JACKIE_INET
 				WriteBitsFrom((UInt8*)&src.address.addr6,
 					BYTES_TO_BITS(sizeof(src.address.addr6)), true);
 #endif
-			}
+		}
 		}
 
 
@@ -860,6 +1149,19 @@ namespace JACKIE_INET
 		/// @notice 
 		/// this function assumes that @src points to a native type,
 		/// compress and write it.
+		/// @Remarks
+		/// assume we have src with value of FourOnes-FourOnes-FourOnes-11110001
+		///++++++++++++++> High Memory Address (hma)
+		///++++++++++++++++++++++++++++++
+		/// | FourOnes | FourOnes | FourOnes | 11110001 |  Big Endian 
+		///++++++++++++++++++++++++++++++
+		///++++++++++++++++++++++++++++++
+		/// |11110001 | FourOnes | FourOnes | FourOnes |  Little Endian 
+		///++++++++++++++++++++++++++++++
+		/// for little endian, the high bytes are located in hma and so @currByte should 
+		/// increment from value of highest index ((bits2Write >> 3) - 1)
+		/// for big endian, the high bytes are located in lma and so @currByte should 
+		/// increment from value of lowest index (0)
 		/// 在字节内部，一个字节的二进制排序，不存在大小端问题。
 		/// 就和平常书写的一样，先写高位，即低地址存储高位。
 		/// 如char a=0x12.存储从低位到高位就为0001 0010
@@ -896,7 +1198,7 @@ namespace JACKIE_INET
 			if (DoEndianSwap())
 			{
 				UInt8 output[sizeof(templateType)];
-				ReverseBytes((UInt8*)&src, output, sizeof(templateType));
+				ReverseBytesTo((UInt8*)&src, output, sizeof(templateType));
 				WriteMiniFrom(output, sizeof(templateType) << 3, true);
 			}
 			else
@@ -906,7 +1208,7 @@ namespace JACKIE_INET
 #else
 			WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
 #endif
-		}
+			}
 
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
 		{
@@ -990,6 +1292,18 @@ namespace JACKIE_INET
 			WriteFromIntegerRange(value, mini, max, requiredBits, allowOutsideRange);
 		}
 
+		/// @Brief
+		/// Assume@valueBeyondMini's value is 0x000012
+		///------------------> Memory Address
+		///+++++++++++
+		///| 00 | 00 | 00 | 12 |  Big Endian
+		///+++++++++++
+		///+++++++++++
+		///| 12 | 00 | 00 | 00 |  Little Endian 
+		///+++++++++++
+		/// so for big endian, we need to reverse byte so that
+		/// the high byte of 0x00 that was put in low address can be written correctly
+		/// for little endian, we do nothing.
 		template <class IntegerType>
 		void WriteFromIntegerRange(
 			const IntegerType value,
@@ -1015,11 +1329,9 @@ namespace JACKIE_INET
 
 			templateType valueBeyondMini = value - mini;
 			if (IsBigEndian())
-			{/// because bits are written from low byte to high byte
-				/// so we have to reverse the bytes to put the low bits in the low memory
-				/// address to ensure they are written correctly
+			{
 				UInt8 output[sizeof(templateType)];
-				ReverseBytes((UInt8*)&valueBeyondMini, output, sizeof(templateType));
+				ReverseBytesTo((UInt8*)&valueBeyondMini, output, sizeof(templateType));
 				WriteBitsFrom(output, requiredBits);
 			}
 			else
@@ -1074,7 +1386,7 @@ namespace JACKIE_INET
 		/// so only use if accuracy is not important
 		/// @see
 		///========================================
-		template <class templateType> void WriteVector(
+		template <class templateType> void WriteVectorFrom(
 			templateType x,
 			templateType y,
 			templateType z)
@@ -1086,9 +1398,9 @@ namespace JACKIE_INET
 				WriteMiniFrom((float)(x / magnitude));
 				WriteMiniFrom((float)(y / magnitude));
 				WriteMiniFrom((float)(z / magnitude));
-				//	Write((unsigned short)((x/magnitude+1.0f)*32767.5f));
-				//	Write((unsigned short)((y/magnitude+1.0f)*32767.5f));
-				//	Write((unsigned short)((z/magnitude+1.0f)*32767.5f));
+				//	Write((UInt16)((x/magnitude+1.0f)*32767.5f));
+				//	Write((UInt16)((y/magnitude+1.0f)*32767.5f));
+				//	Write((UInt16)((z/magnitude+1.0f)*32767.5f));
 			}
 		}
 
@@ -1107,7 +1419,7 @@ namespace JACKIE_INET
 		/// templateType for this function must be a float or double
 		/// @see
 		///========================================
-		template <class templateType> void WriteNormQuat(
+		template <class templateType> void WriteNormQuatFrom(
 			templateType w,
 			templateType x,
 			templateType y,
@@ -1117,9 +1429,9 @@ namespace JACKIE_INET
 			WriteFrom((bool)(x < 0.0));
 			WriteFrom((bool)(y < 0.0));
 			WriteFrom((bool)(z < 0.0));
-			WriteFrom((unsigned short)(fabs(x)*65535.0));
-			WriteFrom((unsigned short)(fabs(y)*65535.0));
-			WriteFrom((unsigned short)(fabs(z)*65535.0));
+			WriteFrom((UInt16)(fabs(x)*65535.0));
+			WriteFrom((UInt16)(fabs(y)*65535.0));
+			WriteFrom((UInt16)(fabs(z)*65535.0));
 			// Leave out w and calculate it on the target
 		}
 
@@ -1262,15 +1574,26 @@ namespace JACKIE_INET
 			return *((char*)& a) != 1;
 		}
 		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
-		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
+		inline static void ReverseBytesTo(UInt8 *src, UInt8 *dest, const UInt32 length)
 		{
-			JINFO << "ReverseBytes";
 			for (UInt32 i = 0; i < length; i++)
 			{
 				dest[i] = src[length - i - 1];
 			}
 		}
-
+		/// @Brief faster than ReverseBytesTo() if you want to reverse byte
+		/// for a variable teself internnaly like uint64 will loop 12 times 
+		/// compared to 8 times using ReverseBytesTo()
+		inline static void ReverseBytesFrom(UInt8 *src, const UInt32 length)
+		{
+			UInt8 temp;
+			for (UInt32 i = 0; i < (length >> 1); i++)
+			{
+				temp = src[i];
+				src[i] = src[length - i - 1];
+				src[length - i - 1] = temp;
+			}
+		}
 		/// Can only print 4096 size of UInt8 no materr is is bit or byte
 		/// mainly used for dump binary data
 		void PrintBit(void);
@@ -1279,17 +1602,17 @@ namespace JACKIE_INET
 		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
 
 		template <class templateType>
-		 JackieBits& operator<<(const templateType& c)
+		JackieBits& operator<<(const templateType& c)
 		{
 			WriteFrom(c);
-			return dest;
+			return *this;
 		}
 		template <class templateType>
-		 JackieBits& operator>>(templateType& c)
+		JackieBits& operator>>(templateType& c)
 		{
 			ReadTo(c);
-			return src;
+			return *this;
 		}
-	};
-}
+		};
+	}
 #endif  //__BITSTREAM_H__
