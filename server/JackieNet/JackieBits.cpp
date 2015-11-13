@@ -292,6 +292,41 @@ namespace JACKIE_INET
 		else if (outFloat>floatMax) outFloat = floatMax;
 	}
 
+	void JackieBits::ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read)
+	{
+		DCHECK(bytes2Read > 0);
+		DCHECK(GetPayLoadBits() >= BYTES_TO_BITS(bytes2Read));
+		/// if (bytes2Read <= 0) return;
+
+		/// Byte align
+		AlignReadPosBitsToByteBoundary();
+
+		/// Write the data
+		memcpy(dest, data + (mReadPosBits >> 3), bytes2Read);
+		mReadPosBits += bytes2Read << 3;
+	}
+
+	void JackieBits::ReadAlignedBytesTo(Int8 *dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
+	{
+		bytes2Read = ReadBit();
+		///ReadMiniTo(bytes2Read);
+		if (bytes2Read > maxBytes2Read) bytes2Read = maxBytes2Read;
+		if (bytes2Read == 0) return;
+		ReadAlignedBytesTo((UInt8*)dest, bytes2Read);
+	}
+
+	void JackieBits::ReadAlignedBytesAllocTo(Int8 **dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
+	{
+		jackieFree_Ex(*dest, TRACE_FILE_AND_LINE_);
+		*dest = 0;
+		bytes2Read = ReadBit();
+		///ReadMiniTo(bytes2Read);
+		if (bytes2Read > maxBytes2Read) bytes2Read = maxBytes2Read;
+		if (bytes2Read == 0) return;
+		*dest = (Int8*)jackieMalloc_Ex(bytes2Read, TRACE_FILE_AND_LINE_);
+		ReadAlignedBytesTo((UInt8*)*dest, bytes2Read);
+	}
+
 	void JackieBits::WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
 		DCHECK_EQ(mReadOnly, false);
@@ -557,6 +592,19 @@ namespace JACKIE_INET
 	{
 		AlignWritePosBits2ByteBoundary();
 		WriteBytesFrom((Int8*)src, numberOfBytesToWrite);
+	}
+
+	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize bytes2Write, const ByteSize maxBytes2Write)
+	{
+		if (src == 0 || bytes2Write == 0)
+		{
+			///WriteMiniFrom(bytes2Write);
+			WriteBitZero();
+			return;
+		}
+		WriteMiniFrom(bytes2Write);
+		WriteAlignedBytesFrom(src, bytes2Write < maxBytes2Write ?
+		bytes2Write : maxBytes2Write);
 	}
 
 	void JackieBits::PrintBit(char* out, BitSize mWritePosBits, UInt8* mBuffer)

@@ -27,7 +27,6 @@
 
 namespace JACKIE_INET
 {
-
 	/// This class allows you to write and read native types as a string of bits.  
 	class JACKIE_EXPORT JackieBits
 	{
@@ -107,6 +106,7 @@ namespace JACKIE_INET
 		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
 		BitSize ReadPosBits() const { return mReadPosBits; }
 		UInt8 * Data() const { return data; }
+		void Data(UInt8* val){ data = val; mReadOnly = true; }
 		void WritePosBits(BitSize val) { mWritePosBits = val; }
 		void ReadPosBits(BitSize val) { mReadPosBits = val; }
 		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
@@ -220,8 +220,8 @@ namespace JACKIE_INET
 #else
 				ReadBitsTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 #endif
-				}
 			}
+		}
 
 		///========================================
 		/// @method ReadTo
@@ -282,7 +282,7 @@ namespace JACKIE_INET
 #else
 				//return false;
 #endif
-		}
+			}
 		}
 
 		///========================================
@@ -359,19 +359,6 @@ namespace JACKIE_INET
 		void ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
 
 		///========================================
-		/// @func AppendBitsCouldRealloc 
-		/// @brief 
-		/// reallocates (if necessary) in preparation of writing @bits2Append
-		/// all internal status will not be changed like @mWritePosBits and so on
-		/// @access  public  
-		/// @notice  
-		/// It is caller's reponsibility to ensure 
-		/// @param bits2Append > 0 and @param mReadOnly is false
-		/// @author mengdi[Jackie]
-		///========================================
-		void AppendBitsCouldRealloc(const BitSize bits2Append);
-
-		///========================================
 		/// @method ReadMiniTo
 		/// @access public 
 		/// @returns void
@@ -408,10 +395,8 @@ namespace JACKIE_INET
 #else
 				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
 #endif
-				}
 			}
-
-		///========================================
+		}
 		template <> inline void ReadMiniTo(JackieAddress &dest)
 		{
 			ReadTo(dest);
@@ -442,7 +427,6 @@ namespace JACKIE_INET
 			ReadTo(compressedFloat);
 			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
 		}
-		///========================================
 
 		///========================================
 		/// @access public 
@@ -592,6 +576,51 @@ namespace JACKIE_INET
 		void ReadTo(float &outFloat, float floatMin, float floatMax);
 
 		///========================================
+		/// @brief Read bits, starting at the next aligned bits. 
+		/// @details Note that the modulus 8 starting offset of the sequence
+		/// must be the same as was used with WriteBits. This will be a problem
+		/// with packet coalescence unless you byte align the coalesced packets.
+		/// @param[in] dest The byte array larger than @em numberOfBytesToRead
+		/// @param[in] bytes2Read The number of byte to read from the internal state
+		/// @return true if there is enough byte.
+		///========================================
+		void ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read);
+
+		///========================================
+		/// @brief Reads what was written by WriteAlignedBytes.
+		/// @param[in] inOutByteArray The data
+		/// @param[in] maxBytesToRead Maximum number of bytes to read
+		/// @return true on success, false on failure.
+		///========================================
+		void ReadAlignedBytesTo(Int8 *dest, ByteSize &bytes2Read,
+			const ByteSize maxBytes2Read);
+
+		///========================================
+		/// @method ReadAlignedBytesAllocTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] Int8 * * dest  will be deleted if it is not a pointer to 0
+		/// @param [in] ByteSize & bytes2Read
+		/// @param [in] const ByteSize maxBytes2Read
+		/// @brief  Same as ReadAlignedBytesSafe() but allocates the memory
+		/// for you using new, rather than assuming it is safe to write to
+		/// @notice
+		/// @see
+		///========================================
+		void ReadAlignedBytesAllocTo(Int8 **dest, ByteSize &bytes2Read,
+			const ByteSize maxBytes2Read);
+
+		///========================================
+		// @brief return 1 if the next data read is a 1, 0 if it is a 0
+		///@access public 
+		///========================================
+		inline UInt32 ReadBit(void)
+		{
+			mReadPosBits++;
+			return  (data[mReadPosBits >> 3] & (0x80 >> (mReadPosBits & 7))) != 0;
+		}
+
+		///========================================
 		/// @access public
 		/// @brief Read a normalized 3D vector, using (at most) 4 bytes 
 		/// + 3 bits instead of 12-24 bytes.  
@@ -692,6 +721,7 @@ namespace JACKIE_INET
 			if (cwNeg) w = -w;
 		}
 
+
 		///========================================
 		/// @brief Read an orthogonal matrix from a quaternion, 
 		/// reading 3 components of the quaternion in 2 bytes each and
@@ -734,6 +764,19 @@ namespace JACKIE_INET
 			m21 = (templateType)(2.0 * (tmp1 + tmp2));
 			m12 = (templateType)(2.0 * (tmp1 - tmp2));
 		}
+
+		///========================================
+		/// @func AppendBitsCouldRealloc 
+		/// @brief 
+		/// reallocates (if necessary) in preparation of writing @bits2Append
+		/// all internal status will not be changed like @mWritePosBits and so on
+		/// @access  public  
+		/// @notice  
+		/// It is caller's reponsibility to ensure 
+		/// @param bits2Append > 0 and @param mReadOnly is false
+		/// @author mengdi[Jackie]
+		///========================================
+		void AppendBitsCouldRealloc(const BitSize bits2Append);
 
 		///========================================
 		/// @func  WriteBitsFrom 
@@ -858,6 +901,17 @@ namespace JACKIE_INET
 		void WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite);
 
 		///========================================
+		/// @brief Aligns the bitstream, writes inputLength, and writes input. 
+		/// @access  public  
+		/// @param[in] inByteArray The data
+		/// @param[in] inputLength the size of input.
+		/// @param[in] maxBytesToWrite max bytes to write
+		/// @notice Won't write beyond maxBytesToWrite
+		///========================================
+		void WriteAlignedBytesFrom(const UInt8 *src, const ByteSize bytes2Write,
+			const ByteSize maxBytes2Write);
+
+		///========================================
 		/// @func WriteFrom 
 		/// @brief write a float into 2 bytes, spanning the range, 
 		/// between @param[floatMin] and @param[floatMax]
@@ -870,10 +924,6 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		///========================================
 		void WriteFrom(float src, float floatMin, float floatMax);
-
-		/// \brief Write any integral type to a bitstream.  
-		/// \details Undefine __BITSTREAM_NATIVE_END if you need endian swapping.
-		/// \param[in] inTemplateVar The value to write
 
 		///========================================
 		/// @func WriteFrom 
@@ -965,7 +1015,7 @@ namespace JACKIE_INET
 				WriteBitsFrom((UInt8*)&src.address.addr6,
 					BYTES_TO_BITS(sizeof(src.address.addr6)), true);
 #endif
-		}
+			}
 		}
 
 
@@ -1208,7 +1258,7 @@ namespace JACKIE_INET
 #else
 			WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
 #endif
-			}
+		}
 
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
 		{
@@ -1493,6 +1543,28 @@ namespace JACKIE_INET
 			WriteNormQuat(qw, qx, qy, qz);
 		}
 
+		/// @brief swao bytes starting from @data with offset given
+		inline void EndianSwapBytes(UInt32 byteOffset, UInt32 length)
+		{
+			if (DoEndianSwap()) ReverseBytesFrom(data + byteOffset, length);
+		}
+
+		void PrintBit(void);
+		void PrintHex(void);
+
+		template <class templateType>
+		JackieBits& operator<<(const templateType& c)
+		{
+			WriteFrom(c);
+			return *this;
+		}
+		template <class templateType>
+		JackieBits& operator>>(templateType& c)
+		{
+			ReadTo(c);
+			return *this;
+		}
+
 		inline static int GetLeadingZeroSize(Int8 x)
 		{
 			return GetLeadingZeroSize((UInt8)x);
@@ -1596,23 +1668,9 @@ namespace JACKIE_INET
 		}
 		/// Can only print 4096 size of UInt8 no materr is is bit or byte
 		/// mainly used for dump binary data
-		void PrintBit(void);
-		static void PrintBit(char* outstr, BitSize bitsPrint, UInt8* src);
-		void PrintHex(void);
-		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
 
-		template <class templateType>
-		JackieBits& operator<<(const templateType& c)
-		{
-			WriteFrom(c);
-			return *this;
-		}
-		template <class templateType>
-		JackieBits& operator>>(templateType& c)
-		{
-			ReadTo(c);
-			return *this;
-		}
-		};
-	}
+		static void PrintBit(char* outstr, BitSize bitsPrint, UInt8* src);
+		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
+	};
+}
 #endif  //__BITSTREAM_H__
