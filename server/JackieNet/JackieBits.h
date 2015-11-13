@@ -502,7 +502,7 @@ namespace JACKIE_INET
 		///========================================
 		template <class templateType>
 		void SerializeOrthMatrix(
-			void writeToBitstream,
+			bool writeToBitstream,
 			templateType &m00, templateType &m01, templateType &m02,
 			templateType &m10, templateType &m11, templateType &m12,
 			templateType &m20, templateType &m21, templateType &m22)
