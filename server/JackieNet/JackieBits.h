@@ -210,7 +210,8 @@ namespace JACKIE_INET
 		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
 		///========================================
 		template <class templateType>
-		inline void Serialize(bool writeToBitstream, templateType &inOutTemplateVar)
+		inline void Serialize(bool writeToBitstream,
+			templateType &inOutTemplateVar)
 		{
 			if (writeToBitstream)
 				WriteFrom(inOutTemplateVar);
@@ -452,7 +453,98 @@ namespace JACKIE_INET
 			if (writeToBitstream)
 				WriteVectorFrom(x, y, z);
 			else
-				 ReadVectorTo(x, y, z);
+				ReadVectorTo(x, y, z);
+		}
+
+		///========================================
+		/// @method SerializeNormQuat
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & x
+		/// @param [in] templateType & y
+		/// @param [in] templateType & z
+		/// @brief 
+		/// bidirectional serialize / deserialize a normalized quaternion
+		/// in 6 bytes + 4 bits instead of 16 bytes.Slightly lossy.
+		/// @notice
+		/// templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void SerializeNormQuat(bool writeToBitstream,
+			templateType &w, templateType &x, templateType &y, templateType &z)
+		{
+			if (writeToBitstream)
+				WriteNormQuatFrom(w, x, y, z);
+			else
+				ReadNormQuatTo(w, x, y, z);
+		}
+
+		///========================================
+		/// @method SerializeOrthMatrix
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & x
+		/// @param [in] templateType & y
+		/// @param [in] templateType & z
+		/// @brief 
+		/// bidirectional serialize / deserialize an orthogonal matrix by creating a 
+		/// quaternion, and writing 3 components of the quaternion in 2 bytes each.
+		/// use 6 bytes instead of 36, 
+		/// @notice
+		/// templateType for this function must be a float or double
+		/// lossy, although the result is renormalized
+		///========================================
+		template <class templateType>
+		void SerializeOrthMatrix(
+			void writeToBitstream,
+			templateType &m00, templateType &m01, templateType &m02,
+			templateType &m10, templateType &m11, templateType &m12,
+			templateType &m20, templateType &m21, templateType &m22)
+		{
+			if (writeToBitstream)
+				WriteOrthMatrix(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+			else
+				ReadOrthMatrix(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+		}
+
+		///========================================
+		/// @method SerializeBits
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.
+		/// false to read from this bitstream and write to your data
+		/// @param [in] UInt8 * inOutByteArray
+		/// @param [in] const BitSize numberOfBitsToSerialize
+		/// @param [in] const bool rightAlignedBits
+		/// @brief
+		/// @notice
+		/// from the right (bit 0) rather than the left (as in the normal
+		/// internal representation) You would set this to true when
+		/// writing user data, and false when copying bitstream data, such
+		/// as writing one bitstream to another
+		/// @remarks
+		/// right aligned data means in the case of a partial byte, 
+		/// the bits are aligned right
+		/// @see
+		///========================================
+		void SerializeBits(bool writeToBitstream,
+			UInt8* inOutByteArray,
+			const BitSize numberOfBitsToSerialize,
+			const bool rightAlignedBits = true)
+		{
+			if (writeToBitstream)
+				WriteBitsFrom(inOutByteArray,
+				numberOfBitsToSerialize, rightAlignedBits);
+			else
+				ReadBitsTo(inOutByteArray,
+				numberOfBitsToSerialize, rightAlignedBits);
 		}
 
 		///========================================
@@ -1141,6 +1233,35 @@ namespace JACKIE_INET
 			WriteFrom(jackieBits, jackieBits->GetPayLoadBits());
 		}
 		inline void WriteFrom(JackieBits &jackieBits) { WriteFrom(&jackieBits); }
+
+		///========================================
+		/// @method WriteFromPtr
+		/// @access public 
+		/// @returns void
+		/// @param [in] templateType * src pointing to the value to write
+		/// @brief  
+		/// write the dereferenced pointer to any integral type to a bitstream.  
+		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		///========================================
+		template <class templateType>
+		void WriteFromPtr(templateType *src)
+		{
+			if (sizeof(templateType) == 1)
+				WriteBitsFrom((UInt8*)src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+			else
+			{
+#ifndef DO_NOT_SWAP_ENDIAN
+				if (DoEndianSwap())
+				{
+					UInt8 output[sizeof(templateType)];
+					ReverseBytesTo((UInt8*)src, output, sizeof(templateType));
+					WriteBitsFrom((UInt8*)output, BYTES_TO_BITS(sizeof(IntergralType)), true);
+				}
+				else
+#endif
+					WriteBitsFrom((UInt8*)src, BYTES_TO_BITS(sizeof(IntergralType)), true);
+			}
+		}
 
 		///========================================
 		/// @func WriteBitZero 
@@ -2128,5 +2249,6 @@ namespace JACKIE_INET
 		static void PrintBit(char* outstr, BitSize bitsPrint, UInt8* src);
 		static void PrintHex(char* outstr, BitSize bitsPrint, UInt8* src);
 	};
+
 }
 #endif  //__BITSTREAM_H__
