@@ -292,6 +292,11 @@ namespace JACKIE_INET
 		else if (outFloat>floatMax) outFloat = floatMax;
 	}
 
+	bool JackieBits::ReadTo(char* output, const unsigned int numberOfBytes)
+	{
+
+	}
+
 	void JackieBits::ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read)
 	{
 		DCHECK(bytes2Read > 0);
@@ -329,8 +334,8 @@ namespace JACKIE_INET
 
 	void JackieBits::WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
-		DCHECK_EQ(mReadOnly, false);
-		DCHECK_GT(bits2Write, 0);
+		DCHECK(mReadOnly == false);
+		DCHECK(bits2Write > 0);
 		//if( mReadOnly ) return false;
 		//if( bits2Write == 0 ) return false;
 
@@ -591,7 +596,7 @@ namespace JACKIE_INET
 	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite)
 	{
 		AlignWritePosBits2ByteBoundary();
-		WriteBytesFrom((Int8*)src, numberOfBytesToWrite);
+		WriteFrom((Int8*)src, numberOfBytesToWrite);
 	}
 
 	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize bytes2Write, const ByteSize maxBytes2Write)

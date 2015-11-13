@@ -153,6 +153,44 @@ namespace JACKIE_INET
 		inline ByteSize WritePosBytes(void) const { return BITS_TO_BYTES(mWritePosBits); }
 
 		///========================================
+		/// @method SerializeFloat16
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// writeToBitstream true to write from your data to this bitstream. 
+		/// False to read from this bitstream and write to your data
+		/// @param [in] float & inOutFloat  The float to write
+		/// @param [in] float floatMin Predetermined minimum value of f
+		/// @param [in] float floatMax Predetermined maximum value of f
+		/// @brief Serialize a float into 2 bytes, spanning the range 
+		/// between @param floatMin and @param floatMax
+		/// @notice
+		/// @see
+		///========================================
+		void SerializeFloat16(bool writeToBitstream, float &inOutFloat,
+			float floatMin, float floatMax)
+		{
+			if (writeToBitstream)
+				WriteFrom(inOutFloat, floatMin, floatMax);
+			else
+				ReadTo(inOutFloat, floatMin, floatMax);
+		}
+
+		/// \brief Bidirectional serialize/deserialize an array or casted stream or raw data.  This does NOT do endian swapping.
+		/// \param[in] writeToBitstream true to write from your data to this bitstream.  False to read from this bitstream and write to your data
+		/// \param[in] inOutByteArray a byte buffer
+		/// \param[in] numberOfBytes the size of \a input in bytes
+		/// \return true if \a writeToBitstream is true.  true if \a writeToBitstream is false and the read was successful.  false if \a writeToBitstream is false and the read was not successful.
+		inline void Serialize(bool writeToBitstream, Int8* inOutByteArray,
+			const UInt32 numberOfBytes)
+		{
+			if (writeToBitstream)
+				WriteFrom(inOutByteArray, numberOfBytes);
+			else
+				ReadTo(inOutByteArray, numberOfBytes);
+		}
+
+		///========================================
 		/// @method AlignReadPosBitsToByteBoundary
 		/// @access public 
 		/// @returns void
@@ -168,6 +206,23 @@ namespace JACKIE_INET
 		inline void AlignReadPosBitsToByteBoundary(void)
 		{
 			mReadPosBits += 8 - (((mReadPosBits - 1) & 7) + 1);
+		}
+
+		///========================================
+		/// @method ReadTo
+		/// @access public 
+		/// @returns void
+		/// @param [in] Int8 * output 
+		/// The result byte array. It should be larger than @em numberOfBytes.
+		/// @param [in] const unsigned int numberOfBytes  The number of byte to read
+		/// @brief Read an array or casted stream of byte.
+		/// @notice The array is raw data. 
+		/// There is no automatic endian conversion with this function
+		/// @see
+		///========================================
+		void ReadTo(Int8* output, const unsigned int numberOfBytes)
+		{
+			ReadBitsTo((UInt8*)output, BYTES_TO_BITS(numberOfBytes));
 		}
 
 		///========================================
@@ -798,11 +853,12 @@ namespace JACKIE_INET
 		///========================================
 		/// @func WriteFrom 
 		/// @access  public  
-		/// @brief write an array or raw data in bytes. NOT do endian swapp.
+		/// @brief write an array or raw data in bytes.
+		/// NOT do endian swapp.
 		/// default is right aligned[true]
 		/// @author mengdi[Jackie]
 		///========================================
-		inline void WriteBytesFrom(const Int8* src, const ByteSize bytes2Write)
+		inline void WriteFrom(const Int8* src, const ByteSize bytes2Write)
 		{
 			WriteBitsFrom((UInt8*)src, BYTES_TO_BITS(bytes2Write), true);
 		}
@@ -1239,22 +1295,22 @@ namespace JACKIE_INET
 		{
 			if (sizeof(src) == 1)
 			{
-				WriteMiniFrom((UInt8*)& src, sizeof(templateType) << 3, true);
+				WriteMiniFrom((UInt8*)& src, sizeof(IntergralType) << 3, true);
 				return;
 			}
 #ifndef DO_NOT_SWAP_ENDIAN
 			if (DoEndianSwap())
 			{
-				UInt8 output[sizeof(templateType)];
-				ReverseBytesTo((UInt8*)&src, output, sizeof(templateType));
-				WriteMiniFrom(output, sizeof(templateType) << 3, true);
+				UInt8 output[sizeof(IntergralType)];
+				ReverseBytesTo((UInt8*)&src, output, sizeof(IntergralType));
+				WriteMiniFrom(output, sizeof(IntergralType) << 3, true);
 			}
 			else
 			{
-				WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
+				WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
 			}
 #else
-			WriteMiniFrom((UInt8*)&src, sizeof(templateType) << 3, true);
+			WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
 #endif
 		}
 
@@ -1682,18 +1738,6 @@ namespace JACKIE_INET
 			}
 
 			mReadPosBits += 32;
-		}
-
-		void SerializeFloat16(
-			bool writeToBitstream,
-			float &inOutFloat,
-			float floatMin,
-			float floatMax)
-		{
-			if (writeToBitstream)
-				WriteFrom(inOutFloat, floatMin, floatMax);
-			else
-				ReadTo(inOutFloat, floatMin, floatMax);
 		}
 
 		void PrintBit(void);
