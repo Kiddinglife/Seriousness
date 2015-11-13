@@ -167,7 +167,7 @@ namespace JACKIE_INET
 		/// @notice
 		/// @see
 		///========================================
-		void SerializeFloat16(bool writeToBitstream, float &inOutFloat,
+		inline void SerializeFloat16(bool writeToBitstream, float &inOutFloat,
 			float floatMin, float floatMax)
 		{
 			if (writeToBitstream)
@@ -176,11 +176,19 @@ namespace JACKIE_INET
 				ReadTo(inOutFloat, floatMin, floatMax);
 		}
 
-		/// \brief Bidirectional serialize/deserialize an array or casted stream or raw data.  This does NOT do endian swapping.
-		/// \param[in] writeToBitstream true to write from your data to this bitstream.  False to read from this bitstream and write to your data
-		/// \param[in] inOutByteArray a byte buffer
-		/// \param[in] numberOfBytes the size of \a input in bytes
-		/// \return true if \a writeToBitstream is true.  true if \a writeToBitstream is false and the read was successful.  false if \a writeToBitstream is false and the read was not successful.
+		///========================================
+		/// @method Serialize
+		/// @access public 
+		/// @brief  
+		/// bidirectional serialize/deserialize an array or casted stream or raw data.  
+		/// This does NOT do endian swapping.
+		/// @param[in] writeToBitstream 
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param[in] inOutByteArray a byte buffer
+		/// @param[in] numberOfBytes the size of @a input in bytes
+		/// @return void
+		///========================================
 		inline void Serialize(bool writeToBitstream, Int8* inOutByteArray,
 			const UInt32 numberOfBytes)
 		{
@@ -188,6 +196,133 @@ namespace JACKIE_INET
 				WriteFrom(inOutByteArray, numberOfBytes);
 			else
 				ReadTo(inOutByteArray, numberOfBytes);
+		}
+
+		///========================================
+		/// @method Serialize
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & inOutTemplateVar The value to write
+		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream. 
+		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		///========================================
+		template <class templateType>
+		inline void Serialize(bool writeToBitstream, templateType &inOutTemplateVar)
+		{
+			if (writeToBitstream)
+				WriteFrom(inOutTemplateVar);
+			else
+				ReadTo(inOutTemplateVar);
+		}
+
+		///========================================
+		/// @method SerializeChangedValue
+		/// @access public 
+		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream. 
+		/// @param[in] writeToBitstream 
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param[in] inOutCurrentValue The current value to write
+		/// @param[in] lastValue The last value to compare against.  
+		/// only used if @a writeToBitstream is true.
+		/// @return void
+		/// @notice 
+		/// If the current value is different from the last value
+		/// the current value will be written. Otherwise, a single bit will be written
+		///========================================
+		template <class templateType>
+		inline void SerializeChangedValue(bool writeToBitstream, templateType &inOutCurrentValue, const templateType &lastValue)
+		{
+			if (writeToBitstream)
+				WriteChangedValueFrom(inOutCurrentValue, lastValue);
+			else
+				ReadChangedValueTo(inOutCurrentValue);
+		}
+
+		///========================================
+		/// @method SerializeChangedValue
+		/// @access public 
+		/// @brief  bidirectional version of SerializeDelta 
+		/// when you don't know what the last value is, or there is no last value.
+		/// @param[in] writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param[in] inOutCurrentValue The current value to write
+		/// @return void
+		///========================================
+		template <class templateType>
+		inline void SerializeChangedValue(bool writeToBitstream,
+			templateType &inOutCurrentValue)
+		{
+			if (writeToBitstream)
+				WriteChangedValueFrom(inOutCurrentValue);
+			else
+				ReadChangedValueTo(inOutCurrentValue);
+		}
+
+		///========================================
+		/// @method SerializeMini
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// @param [in] templateType & inOutTemplateVar
+		/// @brief  
+		/// Bidirectional serialize/deserialize any integral type to/from a bitstream.
+		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// @notice
+		/// for floating point, this is lossy, using 2 bytes for a float and 4 for a double.
+		/// the range must be between -1 and +1. For non-floating point, this is lossless,
+		/// but only has benefit if you use less than half the bits of the type. If you are not 
+		/// using DO_NOT_SWAP_ENDIAN the opposite is true for types larger than 1 byte
+		///========================================
+		template <class templateType>
+		inline void SerializeMini(bool writeToBitstream,
+			templateType &inOutTemplateVar)
+		{
+			if (writeToBitstream)
+				WriteMiniFrom(inOutTemplateVar);
+			else
+				ReadMiniTo(inOutTemplateVar);
+		}
+
+		///========================================
+		/// @method SerializeMini
+		/// @access public 
+		/// @returns void
+		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream.  
+		/// @details If the current value is different from the last value
+		/// the current value will be written.  Otherwise, a single bit will be written
+		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a double.  
+		/// The range must be between -1 and +1.
+		/// For non-floating point, this is lossless, but only has benefit if you use less than
+		/// half the bits of the type.  If you are not using DO_NOT_SWAP_ENDIAN the 
+		/// opposite is true for types larger than 1 byte
+		/// @param[in] writeToBitstream true to write from your data to this bitstream.  False to read from this bitstream and write to your data
+		/// @param[in] inOutCurrentValue The current value to write
+		/// @param[in] lastValue The last value to compare against.  
+		/// Only used if @param writeToBitstream is true.
+		/// @return void
+		///========================================
+		template <class templateType>
+		inline void SerializeMiniChangedValue(bool writeToBitstream, templateType &inOutCurrentValue, const templateType &lastValue)
+		{
+			if (writeToBitstream)
+				WriteMiniChangedFrom(inOutCurrentValue, lastValue);
+			else
+				ReadMiniChangedTo(inOutCurrentValue);
+		}
+
+		template <class templateType>
+		inline void SerializeMiniChangedValue(bool writeToBitstream,
+			templateType &inOutCurrentValue)
+		{
+			if (writeToBitstream)
+				WriteMiniChangedFrom(inOutCurrentValue);
+			else
+				ReadMiniChangedTo(inOutCurrentValue);
 		}
 
 		///========================================
@@ -389,7 +524,7 @@ namespace JACKIE_INET
 		/// @param[in] outTemplateVar The value to read
 		///========================================
 		template <class IntegralType>
-		inline void ReadChangedTo(IntegralType &dest)
+		inline void ReadChangedValueTo(IntegralType &dest)
 		{
 			bool dataWritten;
 			ReadTo(dataWritten);
@@ -397,11 +532,11 @@ namespace JACKIE_INET
 		}
 
 		///========================================
-		/// \brief Read a bool from a bitstream.
-		/// \param[in] outTemplateVar The value to read
+		/// @brief Read a bool from a bitstream.
+		/// @param[in] outTemplateVar The value to read
 		///========================================
 		template <>
-		inline void ReadChangedTo(bool &dest)
+		inline void ReadChangedValueTo(bool &dest)
 		{
 			return ReadTo(dest);
 		}
@@ -520,8 +655,8 @@ namespace JACKIE_INET
 		}
 
 		///========================================
-		/// \brief Read a bool from a bitstream.
-		/// \param[in] outTemplateVar The value to read
+		/// @brief Read a bool from a bitstream.
+		/// @param[in] outTemplateVar The value to read
 		///========================================
 		template <>
 		inline void ReadMiniChangedTo(bool &dest)
@@ -736,12 +871,12 @@ namespace JACKIE_INET
 		}
 
 		///========================================
-		/// \brief Read a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.
-		/// \param[in] w w
-		/// \param[in] x x
-		/// \param[in] y y
-		/// \param[in] z z
-		/// \return void
+		/// @brief Read a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.
+		/// @param[in] w w
+		/// @param[in] x x
+		/// @param[in] y y
+		/// @param[in] z z
+		/// @return void
 		/// @notice templateType for this function must be a float or double
 		///========================================
 		template <class templateType>
@@ -1133,7 +1268,7 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		///========================================
 		template <class templateType>
-		inline void WriteChangedFrom(const templateType &latestVal,
+		inline void WriteChangedValueFrom(const templateType &latestVal,
 			const templateType &lastVal)
 		{
 			if (latestVal == lastVal)
@@ -1158,15 +1293,15 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		///========================================
 		template <>
-		inline void WriteChangedFrom(const bool &currentValue,
+		inline void WriteChangedValueFrom(const bool &currentValue,
 			const bool &lastValue)
 		{
 			(void)lastValue;
 			WriteFrom(currentValue);
 		}
 
-		/// \brief WriteDelta when you don't know what the last value is, or there is no last value.
-		/// \param[in] currentValue The current value to write
+		/// @brief WriteDelta when you don't know what the last value is, or there is no last value.
+		/// @param[in] currentValue The current value to write
 
 		///========================================
 		/// @func WriteChangedFrom 
@@ -1178,7 +1313,7 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		///========================================
 		template <class templateType>
-		inline void WriteChangedFrom(const templateType &currentValue)
+		inline void WriteChangedValueFrom(const templateType &currentValue)
 		{
 			WriteFrom(true);
 			WriteFrom(currentValue);
@@ -1371,7 +1506,7 @@ namespace JACKIE_INET
 		/// @param [in] const templateType max
 		/// @param [in] bool allowOutsideRange
 		/// If true, all sends will take an extra bit,
-		/// however value can deviate from outside \a minimum and \a maximum.
+		/// however value can deviate from outside @a minimum and @a maximum.
 		/// If false, will assert if the value deviates. 
 		/// This should match the corresponding value passed to Read().
 		/// @brief 

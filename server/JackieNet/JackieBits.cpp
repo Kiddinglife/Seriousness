@@ -292,11 +292,6 @@ namespace JACKIE_INET
 		else if (outFloat>floatMax) outFloat = floatMax;
 	}
 
-	bool JackieBits::ReadTo(char* output, const unsigned int numberOfBytes)
-	{
-
-	}
-
 	void JackieBits::ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read)
 	{
 		DCHECK(bytes2Read > 0);
