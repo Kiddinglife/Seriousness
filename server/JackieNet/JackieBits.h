@@ -1862,18 +1862,15 @@ namespace JACKIE_INET
 			WriteFrom((float)z, -1.0f, 1.0f);
 		}
 
-		// templateType for this function must be a float or double
 		///========================================
 		/// @method WriteVector
 		/// @access public 
 		/// @returns void
-		/// @param [in] templateType x
-		/// @param [in] templateType y
-		/// @param [in] templateType z
 		/// @brief Write a vector, using 10 bytes instead of 12.
 		/// @notice
 		/// Loses accuracy to about 3/10ths and only saves 2 bytes, 
 		/// so only use if accuracy is not important
+		/// templateType for this function must be a float or double
 		/// @see
 		///========================================
 		template <class templateType> void WriteVectorFrom(
@@ -1898,10 +1895,6 @@ namespace JACKIE_INET
 		/// @method WriteNormQuat
 		/// @access public 
 		/// @returns void
-		/// @param [in] templateType w
-		/// @param [in] templateType x
-		/// @param [in] templateType y
-		/// @param [in] templateType z
 		/// @brief 
 		/// Write a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.  
 		/// Slightly lossy.
@@ -1929,15 +1922,6 @@ namespace JACKIE_INET
 		/// @method WriteOrthMatrix
 		/// @access public 
 		/// @returns void
-		/// @param [in] templateType m00
-		/// @param [in] templateType m01
-		/// @param [in] templateType m02
-		/// @param [in] templateType m10
-		/// @param [in] templateType m11
-		/// @param [in] templateType m12
-		/// @param [in] templateType m20
-		/// @param [in] templateType m21
-		/// @param [in] templateType m22
 		/// @brief
 		/// Write an orthogonal matrix by creating a quaternion, 
 		/// and writing 3 components of the quaternion in 2 bytes each.
@@ -2012,13 +1996,13 @@ namespace JACKIE_INET
 		}
 
 		///@brief Ignore data we don't intend to read
-		void SkipBits(const BitSize numberOfBits)
+		void ReadSkipBits(const BitSize numberOfBits)
 		{
 			mReadPosBits += numberOfBits;
 		}
-		void SkipBytes(const ByteSize numberOfBytes)
+		void ReadSkipBytes(const ByteSize numberOfBytes)
 		{
-			SkipBits(BYTES_TO_BITS(numberOfBytes));
+			ReadSkipBits(BYTES_TO_BITS(numberOfBytes));
 		}
 
 		void WriteOneAlignedBytesFrom(const char *inByteArray)

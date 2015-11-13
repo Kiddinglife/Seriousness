@@ -395,7 +395,7 @@ static void test_JackieStream__funcs()
 	JackieBits::PrintBit(str, 32, (UInt8*)&a);
 	JINFO << str;
 	UInt8 b[4];
-	JackieBits::ReverseBytes((UInt8*)&a, b, 4);
+	JackieBits::ReverseBytesTo((UInt8*)&a, b, 4);
 	JackieBits::PrintBit(str, 32, b);
 	JINFO << str;
 
@@ -412,12 +412,20 @@ static void test_JackieStream__funcs()
 	JackieBits::PrintBit(str, 32, (UInt8*)&reverse);
 	JINFO << str;
 	int dest;
-	JackieBits::ReverseBytes((UInt8*)&reverse, (UInt8*)&dest, 4);
+	JackieBits::ReverseBytesTo((UInt8*)&reverse, (UInt8*)&dest, 4);
 	JackieBits::PrintBit(str, 32, (UInt8*)&dest);
 	JINFO << str;
 
 	int as = 12;
 	s7 << as << reverse;
+
+	JINFO << "Test s8 alll write and read";
+	JackieBits s8;
+	UInt32 v1 = 12;
+	s8.Serialize(true, v1);
+	UInt32 v2 = 0;
+	s8.Serialize(false, v2);
+	JINFO << "v2 " << v2;
 }
 enum
 {
