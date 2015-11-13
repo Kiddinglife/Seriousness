@@ -89,6 +89,16 @@ namespace JACKIE_INET
 		JackieBits();
 		~JackieBits();
 
+		/// Getters and Setters
+		BitSize WritePosBits() const { return mWritePosBits; }
+		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
+		BitSize ReadPosBits() const { return mReadPosBits; }
+		UInt8 * Data() const { return data; }
+		void Data(UInt8* val){ data = val; mReadOnly = true; }
+		void WritePosBits(BitSize val) { mWritePosBits = val; }
+		void ReadPosBits(BitSize val) { mReadPosBits = val; }
+		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
+
 		///========================================
 		/// @Function  Reuse 
 		/// @Brief  Resets for reuse.
@@ -99,17 +109,7 @@ namespace JACKIE_INET
 		/// operation (may result in leaks).
 		/// @Author mengdi[Jackie]
 		///========================================
-		inline void Reuse(void) { mWritePosBits = mReadPosBits = 0; }
-
-		/// Getters and Setters
-		BitSize WritePosBits() const { return mWritePosBits; }
-		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
-		BitSize ReadPosBits() const { return mReadPosBits; }
-		UInt8 * Data() const { return data; }
-		void Data(UInt8* val){ data = val; mReadOnly = true; }
-		void WritePosBits(BitSize val) { mWritePosBits = val; }
-		void ReadPosBits(BitSize val) { mReadPosBits = val; }
-		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
+		inline void Reset(void) { mWritePosBits = mReadPosBits = 0; }
 
 		///========================================
 		///@brief Sets the read pointer back to the beginning of your data.
@@ -151,7 +151,6 @@ namespace JACKIE_INET
 		/// @access public 
 		///========================================
 		inline ByteSize WritePosBytes(void) const { return BITS_TO_BYTES(mWritePosBits); }
-
 
 		///========================================
 		/// @method AlignReadPosBitsToByteBoundary
@@ -486,7 +485,6 @@ namespace JACKIE_INET
 			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(IntegerType(maximum - minimum));
 			ReadBitsFromIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
 		}
-
 
 		///========================================
 		/// @method ReadBitsFromIntegerRange
@@ -1543,10 +1541,159 @@ namespace JACKIE_INET
 			WriteNormQuat(qw, qx, qy, qz);
 		}
 
+		/// @brief  Write zeros until the bitstream is filled up to @param bytes
+		/// @notice will internally align write pos and then reallocate if necessary
+		///  the @mWritePosBits will be byte aligned
+		void PadZeroAfterAlignedWRPos(UInt32 bytes);
+
 		/// @brief swao bytes starting from @data with offset given
 		inline void EndianSwapBytes(UInt32 byteOffset, UInt32 length)
 		{
 			if (DoEndianSwap()) ReverseBytesFrom(data + byteOffset, length);
+		}
+
+		///========================================
+		/// @brief Makes a copy of the internal data for you @param _data 
+		/// will point to the stream. Partial bytes are left aligned
+		/// @param[out] _data The allocated copy of GetData()
+		/// @return The length in bits of the stream.
+		/// @notice
+		/// all bytes are copied besides the bytes in GetPayLoadBits()
+		///========================================
+		BitSize Copy(UInt8** _data) const
+		{
+			DCHECK(mWritePosBits > 0);
+			*_data = (UInt8*)jackieMalloc_Ex(BITS_TO_BYTES(mWritePosBits),
+				TRACE_FILE_AND_LINE_);
+			memcpy(*_data, data, sizeof(UInt8) * BITS_TO_BYTES(mWritePosBits));
+			return mWritePosBits;
+		}
+
+		///@brief Ignore data we don't intend to read
+		void SkipBits(const BitSize numberOfBits)
+		{
+			mReadPosBits += numberOfBits;
+		}
+		void SkipBytes(const ByteSize numberOfBytes)
+		{
+			SkipBits(BYTES_TO_BITS(numberOfBytes));
+		}
+
+		void WriteOneAlignedBytesFrom(const char *inByteArray)
+		{
+			DCHECK((mWritePosBits & 7) == 0);
+			AppendBitsCouldRealloc(8);
+			data[mWritePosBits >> 3] = inByteArray[0];
+			mWritePosBits += 8;
+		}
+		void ReadOneAlignedBytesTo(char *inOutByteArray)
+		{
+			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK(GetPayLoadBits() >= 8);
+			// if (mReadPosBits + 1 * 8 > mWritePosBits) return;
+
+			inOutByteArray[0] = data[(mReadPosBits >> 3)];
+			mReadPosBits += 8;
+		}
+
+		void WriteTwoAlignedBytesFrom(const char *inByteArray)
+		{
+			DCHECK((mWritePosBits & 7) == 0);
+			AppendBitsCouldRealloc(16);
+#ifndef DO_NOT_SWAP_ENDIAN
+			if (DoEndianSwap())
+			{
+				data[(mWritePosBits >> 3) + 0] = inByteArray[1];
+				data[(mWritePosBits >> 3) + 1] = inByteArray[0];
+			}
+			else
+#endif
+			{
+				data[(mWritePosBits >> 3) + 0] = inByteArray[0];
+				data[(mWritePosBits >> 3) + 1] = inByteArray[1];
+			}
+
+			mWritePosBits += 16;
+		}
+		void ReadTwoAlignedBytesTo(char *inOutByteArray)
+		{
+			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK(GetPayLoadBits() >= 16);
+			//if (mReadPosBits + 16 > mWritePosBits) return ;
+#ifndef DO_NOT_SWAP_ENDIAN
+			if (DoEndianSwap())
+			{
+				inOutByteArray[0] = data[(mReadPosBits >> 3) + 1];
+				inOutByteArray[1] = data[(mReadPosBits >> 3) + 0];
+			}
+			else
+#endif
+			{
+				inOutByteArray[0] = data[(mReadPosBits >> 3) + 0];
+				inOutByteArray[1] = data[(mReadPosBits >> 3) + 1];
+			}
+
+			mReadPosBits += 16;
+		}
+
+		void WriteFourAlignedBytesFrom(const char *inByteArray)
+		{
+			DCHECK((mWritePosBits & 7) == 0);
+			AppendBitsCouldRealloc(32);
+#ifndef DO_NOT_SWAP_ENDIAN
+			if (DoEndianSwap())
+			{
+				data[(mWritePosBits >> 3) + 0] = inByteArray[3];
+				data[(mWritePosBits >> 3) + 1] = inByteArray[2];
+				data[(mWritePosBits >> 3) + 2] = inByteArray[1];
+				data[(mWritePosBits >> 3) + 3] = inByteArray[0];
+			}
+			else
+#endif
+			{
+				data[(mWritePosBits >> 3) + 0] = inByteArray[0];
+				data[(mWritePosBits >> 3) + 1] = inByteArray[1];
+				data[(mWritePosBits >> 3) + 2] = inByteArray[2];
+				data[(mWritePosBits >> 3) + 3] = inByteArray[3];
+			}
+
+			mWritePosBits += 32;
+		}
+		void ReadFourAlignedBytesTo(char *inOutByteArray)
+		{
+			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK(GetPayLoadBits() >= 32);
+			//if (mReadPosBits + 4 * 8 > mWritePosBits) return;
+#ifndef DO_NOT_SWAP_ENDIAN
+			if (DoEndianSwap())
+			{
+				inOutByteArray[0] = data[(mReadPosBits >> 3) + 3];
+				inOutByteArray[1] = data[(mReadPosBits >> 3) + 2];
+				inOutByteArray[2] = data[(mReadPosBits >> 3) + 1];
+				inOutByteArray[3] = data[(mReadPosBits >> 3) + 0];
+			}
+			else
+#endif
+			{
+				inOutByteArray[0] = data[(mReadPosBits >> 3) + 0];
+				inOutByteArray[1] = data[(mReadPosBits >> 3) + 1];
+				inOutByteArray[2] = data[(mReadPosBits >> 3) + 2];
+				inOutByteArray[3] = data[(mReadPosBits >> 3) + 3];
+			}
+
+			mReadPosBits += 32;
+		}
+
+		void SerializeFloat16(
+			bool writeToBitstream,
+			float &inOutFloat,
+			float floatMin,
+			float floatMax)
+		{
+			if (writeToBitstream)
+				WriteFrom(inOutFloat, floatMin, floatMax);
+			else
+				ReadTo(inOutFloat, floatMin, floatMax);
 		}
 
 		void PrintBit(void);

@@ -607,6 +607,18 @@ namespace JACKIE_INET
 		bytes2Write : maxBytes2Write);
 	}
 
+	void JackieBits::PadZeroAfterAlignedWRPos(UInt32 bytes)
+	{
+		Int32 numToWrite = bytes - WritePosBytes();
+		if (numToWrite > 0)
+		{
+			AlignWritePosBits2ByteBoundary();
+			AppendBitsCouldRealloc(BYTES_TO_BITS(numToWrite));
+			memset(data + (mWritePosBits >> 3), 0, numToWrite);
+			mWritePosBits += BYTES_TO_BITS(numToWrite);
+		}
+	}
+
 	void JackieBits::PrintBit(char* out, BitSize mWritePosBits, UInt8* mBuffer)
 	{
 		printf_s("%s[%dbits %dbytes]:\n", "BitsDumpResult",
