@@ -292,7 +292,8 @@ namespace JACKIE_INET
 		/// @method SerializeMini
 		/// @access public 
 		/// @returns void
-		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream.  
+		/// @brief 
+		/// Bidirectional serialize/deserialize any integral type to/from a bitstream.  
 		/// @details If the current value is different from the last value
 		/// the current value will be written.  Otherwise, a single bit will be written
 		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a double.  
@@ -300,7 +301,8 @@ namespace JACKIE_INET
 		/// For non-floating point, this is lossless, but only has benefit if you use less than
 		/// half the bits of the type.  If you are not using DO_NOT_SWAP_ENDIAN the 
 		/// opposite is true for types larger than 1 byte
-		/// @param[in] writeToBitstream true to write from your data to this bitstream.  False to read from this bitstream and write to your data
+		/// @param[in] writeToBitstream true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
 		/// @param[in] inOutCurrentValue The current value to write
 		/// @param[in] lastValue The last value to compare against.  
 		/// Only used if @param writeToBitstream is true.
@@ -323,6 +325,134 @@ namespace JACKIE_INET
 				WriteMiniChangedFrom(inOutCurrentValue);
 			else
 				ReadMiniChangedTo(inOutCurrentValue);
+		}
+
+		///========================================
+		/// @method SerializeCasted
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param [in] sourceType & value
+		/// @brief Serialize one type casted to another (smaller) type, to save bandwidth
+		/// serializationType should be uint8, uint16, uint24, or uint32
+		/// Example: int num=53; SerializeCasted<uint8_t>(true, num); 
+		/// would use 1 byte to write what would otherwise be an integer (4 or 8 bytes)
+		///========================================
+		template <class serializationType, class sourceType >
+		void SerializeCasted(bool writeToBitstream, sourceType &value)
+		{
+			if (writeToBitstream)
+				WriteCastedFrom<serializationType>(value);
+			else
+				ReadCasted<serializationType>(value);
+		}
+
+		///========================================
+		/// @method SerializeBitsFromIntegerRange
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream 
+		/// true to write from your data to this bitstream.
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & value  Integer value to write, 
+		/// which should be between \a minimum and \a maximum
+		/// @param [in] const templateType minimum
+		/// @param [in] const templateType maximum
+		/// @param [in] bool allowOutsideRange
+		/// If true, all sends will take an extra bit, however value can deviate
+		/// from outside @param minimum and @param maximum.
+		/// If false, will assert if the value deviates
+		/// @brief Given the minimum and maximum values for an integer type,
+		/// figure out the minimum number of bits to represent the range
+		/// Then serialize only those bits
+		/// @notice
+		/// A static is used so that the required number of bits for
+		/// (maximum - minimum) is only calculated once.This does require that
+		/// @param minimum and @param maximum are fixed values for a 
+		/// given line of code  for the life of the program
+		///========================================
+		template <class templateType>
+		void SerializeIntegerRange(bool writeToBitstream, templateType &value, const templateType minimum, const templateType maximum, bool allowOutsideRange = false)
+		{
+			//int requiredBits = BYTES_TO_BITS(sizeof(templateType)) -
+			//	GetLeadingZeroSize(templateType(maximum - minimum));
+			//SerializeBitsFromIntegerRange(writeToBitstream,
+			//	value,
+			//	minimum,
+			//	maximum,
+			//	requiredBits,
+			//	allowOutsideRange);
+			if (writeToBitstream)
+				WriteFromIntegerRange(value, minimum, maximum, allowOutsideRange);
+			else
+				ReadToIntegerRange(value, minimum, maximum, allowOutsideRange);
+		}
+		/// \param[in] requiredBits Primarily for internal use, called from above function() after calculating number of bits needed to represent maximum-minimum
+		//template <class templateType>
+		//bool SerializeIntegerRange(bool writeToBitstream, templateType &value, const templateType minimum, const templateType maximum, const int requiredBits, bool allowOutsideRange = false)
+		//{
+		//	if (writeToBitstream)
+		//		WriteFromIntegerRange(value, minimum, maximum,
+		//		requiredBits, allowOutsideRange);
+		//	else
+		//		ReadToIntegerRange(value, minimum, maximum, 
+		//		requiredBits, allowOutsideRange);
+		//}
+
+		///========================================
+		/// @method SerializeNormVector
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & x
+		/// @param [in] templateType & y
+		/// @param [in] templateType & z
+		/// @brief bidirectional serialize/deserialize a normalized 3D vector,
+		/// using (at most) 4 bytes + 3 bits instead of 12-24 bytes. 
+		/// will further compress y or z axis aligned vectors.
+		/// Accurate to 1/32767.5.
+		/// @notice
+		/// templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void SerializeNormVector(bool writeToBitstream,
+			templateType &x, templateType &y, templateType &z)
+		{
+			if (writeToBitstream)
+				WriteNormVectorFrom(x, y, z);
+			else
+				ReadNormVectorTo(x, y, z);
+		}
+
+		///========================================
+		/// @method SerializeVector
+		/// @access public 
+		/// @returns void
+		/// @param [in] bool writeToBitstream
+		/// true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param [in] templateType & x
+		/// @param [in] templateType & y
+		/// @param [in] templateType & z
+		/// @brief 
+		/// bidirectional serialize/deserialize a vector, using 10 bytes instead of 12.
+		/// loses accuracy to about 3 / 10ths and only saves 2 bytes, 
+		/// so only use if accuracy is not important.
+		/// @notice
+		/// templateType for this function must be a float or double
+		///========================================
+		template <class templateType>
+		void SerializeVector(bool writeToBitstream,
+			templateType &x, templateType &y, templateType &z)
+		{
+			if (writeToBitstream)
+				WriteVectorFrom(x, y, z);
+			else
+				 ReadVectorTo(x, y, z);
 		}
 
 		///========================================
@@ -665,7 +795,7 @@ namespace JACKIE_INET
 		}
 
 		template <class IntegerType>
-		void ReadBitsFromIntegerRange(
+		void ReadToIntegerRange(
 			IntegerType &value,
 			const IntegerType minimum,
 			const IntegerType maximum,
@@ -673,7 +803,7 @@ namespace JACKIE_INET
 		{
 			/// get the high byte bits size
 			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(IntegerType(maximum - minimum));
-			ReadBitsFromIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
+			ReadToIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
 		}
 
 		///========================================
@@ -712,7 +842,7 @@ namespace JACKIE_INET
 		/// @see
 		///========================================
 		template <class templateType>
-		void ReadBitsFromIntegerRange(
+		void ReadToIntegerRange(
 			templateType &value,
 			const templateType minimum,
 			const templateType maximum,
@@ -1594,7 +1724,7 @@ namespace JACKIE_INET
 		/// templateType for this function must be a float or double
 		/// @see
 		///========================================
-		template <class templateType> void WriteNormVector(
+		template <class templateType> void WriteNormVectorFrom(
 			templateType x,
 			templateType y,
 			templateType z)
