@@ -30,16 +30,50 @@ namespace JACKIE_INET
 	/// This class allows you to write and read native types as a string of bits.  
 	class JACKIE_EXPORT JackieBits
 	{
+		/// the value of @mWritePosBits always reprsents 
+		/// the position where a bit is going to be written(not been written yet)
+		/// the value of @mReadPosBits always reprsents 
+		/// the position where a bit is going to be read(not been read yet)
+		/// both of them will start to cout at index of 0, 
+		/// so mWritePosBits = 2 means the first 2 bits has been written, the third bit is
+		/// being written (not been written yet)
+		/// so mReadPosBits = 2 means the first 2 bits has been read, the third bit is
+		/// being read (not been read yet)
+		/// |<-------data[0]------->|     |<---------data[0]------->|           
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  1 | 2 | 3 |  4 | 5 |  6 | 7 | 8 |  9 |10 |11 |12 |13 |14 | 15 |   bit index
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  0 | 0 | 1 |  0 | 0 |  0 | 0 | 1 |  0 |  0 |  0 |  0  |  0 |  0 |   0 |  bit in memory
+		///+++++++++++++++++++++++++++++++++++
+		///              ^                                                       ^
+		/// for example, @mWritePosBits = 12, @mReadPosBits = 2,
+		/// base on draw above, all the unwritten bits are 0000 (index 12,13,14,15), 
+		/// all the unread bits are 10 bits (0100001000, index 2,3,4,5,6,7,8,9,10,11),
+		/// we can calculate:
+		/// @the index of the byte that @mReadPosBits points to is 
+		/// 0 = @mReadPosBits >> 3 = 2/8 = index 0, data[0]
+		/// @the index of the byte that @mWritePosBits points to is 
+		/// 1 = @mWritePosBits >> 3 = 12/8 = index 1, data[1]
+		/// @the offset for mReadPosBits to the byte boundary = mReadPosBits mod 8
+		/// =  mReadPosBits & 7 = 2 &7 = 2 bits (00, index 0,1) 
+		/// @the offset for mWritePosBits to the byte boundary  = mWritePosBits mod 8 
+		/// =  mWritePosBits & 7 = 12 &7 = 4 bits (1000, index 8,9,10,11) 
+		/// @BITS_TO_BYTES(mWritePosBits[bit at index 12 is exclusive ]) 
+		/// = (12+7) >> 3 = 19/8 = 2( also is the number of written bytes)
+		/// BITS_TO_BYTES(8[bit at index 8 is exclusive ])  = 
+		/// (8+7)>>3 = 15/8 = 1 ( also is the number of written bytes)
+		/// 
+
 	private:
 		BitSize mBitsAllocSize;
-		BitSize mWritePosBits;
-		BitSize mReadPosBits;
+		BitSize mWritingPosBits;
+		BitSize mReadingPosBits;
 		UInt8 *data;
-		// true if @data is pointint to heap-memory pointer, 
-		// false if it is stack-memory  pointer
+		/// true if @data is pointint to heap-memory pointer, 
+		/// false if it is stack-memory  pointer
 		bool mNeedFree;
-		// true if writting not allowed in which case all write functions will not work
-		// false if writting is allowed 
+		/// true if writting not allowed in which case all write functions will not work
+		/// false if writting is allowed 
 		bool mReadOnly;
 		UInt8 mStacBuffer[JACKIESTREAM_STACK_ALLOC_SIZE];
 
@@ -59,7 +93,7 @@ namespace JACKIE_INET
 	public:
 		STATIC_FACTORY_DECLARATIONS(JackieBits);
 
-		///========================================
+
 		/// @Param [in] [ BitSize initialBytesToAllocate]:
 		/// the number of bytes to pre-allocate.
 		/// @Remarks:
@@ -67,92 +101,93 @@ namespace JACKIE_INET
 		/// allocate. There is no benefit to calling this, unless you know exactly
 		/// how many bytes you need and it is greater than 256.
 		/// @Author mengdi[Jackie]
-		///========================================
+
 		JackieBits(const BitSize initialBytesToAllocate);
 
-		///========================================
-		/// @Brief  Initialize by immediately setting the +data to a predefined pointer.
-		/// @Access  public  
-		/// @Param [in] [UInt8 * src]  
-		/// @Param [in] [const  ByteSize len]  unit of byte
-		/// @Param [in] [bool copy]  
+
+		/// @brief  Initialize by setting the @data to a predefined pointer.
+		/// @access  public  
+		/// @param [in] [UInt8 * src]  
+		/// @param [in] [const  ByteSize len]  unit of byte
+		/// @param [in] [bool copy]  
 		/// true to make an deep copy of the @src . 
 		/// false to just save a pointer to the @src.
-		/// @Remarks
+		/// @remarks
 		/// 99% of the time you will use this function to read Packet:;data, 
 		/// in which case you should write something as follows:
 		/// JACKIE_INET::JackieStream js(packet->data, packet->length, false);
-		/// @Author mengdi[Jackie]
-		///========================================
+		/// @author mengdi[Jackie]
+
 		JackieBits(UInt8* src, const ByteSize len, bool copy = false);
 
 		JackieBits();
 		~JackieBits();
 
 		/// Getters and Setters
-		BitSize WritePosBits() const { return mWritePosBits; }
-		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritePosBits); }
-		BitSize ReadPosBits() const { return mReadPosBits; }
+		BitSize WritePosBits() const { return mWritingPosBits; }
+		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritingPosBits); }
+		BitSize ReadPosBits() const { return mReadingPosBits; }
 		UInt8 * Data() const { return data; }
 		void Data(UInt8* val){ data = val; mReadOnly = true; }
-		void WritePosBits(BitSize val) { mWritePosBits = val; }
-		void ReadPosBits(BitSize val) { mReadPosBits = val; }
+		void WritePosBits(BitSize val) { mWritingPosBits = val; }
+		void ReadPosBits(BitSize val) { mReadingPosBits = val; }
 		void BitsAllocSize(BitSize val) { mBitsAllocSize = val; }
 
-		///========================================
-		/// @Function  Reuse 
 		/// @Brief  Resets for reuse.
 		/// @Access  public  
 		/// @Notice
 		/// Do NOT reallocate memory because JackieStream is used
 		/// to serialize/deserialize a buffer. Reallocation is a dangerous 
 		/// operation (may result in leaks).
-		/// @Author mengdi[Jackie]
-		///========================================
-		inline void Reset(void) { mWritePosBits = mReadPosBits = 0; }
+		/// @author mengdi[Jackie]
+		inline void Reset(void) { mWritingPosBits = mReadingPosBits = 0; }
 
-		///========================================
 		///@brief Sets the read pointer back to the beginning of your data.
 		/// @access public
-		///========================================
+		/// @author mengdi[Jackie]
 		inline void ResetReadPosBits(void)
 		{
-			mReadPosBits = 0;
+			mReadingPosBits = 0;
 		}
 
-		///========================================
 		/// @brief Sets the write pointer back to the beginning of your data.
 		/// @access public
-		///========================================
+		/// @author mengdi[Jackie]
 		inline void ResetWritePosBits(void)
 		{
-			mWritePosBits = 0;
+			mWritingPosBits = 0;
 		}
 
-		///========================================
-		/// @brief This is good to call when you are done with the stream to make
+		/// @brief this is good to call when you are done with the stream to make
 		/// sure you didn't leave any data left over void
-		// Should hit if reads didn't match writes
+		/// should hit if reads didn't match writes
 		/// @access public
-		///========================================
+		/// @author mengdi[Jackie]
 		inline void AssertStreamEmpty(void)
 		{
-			CHECK(mReadPosBits == mWritePosBits);
+			CHECK(mReadingPosBits == mWritingPosBits);
 		}
 
-		///========================================
+		///@brief payload are actually the unread bits
 		/// @access public 
+		inline BitSize GetPayLoadBits(void) const { return mWritingPosBits - mReadingPosBits; }
+
+		///@brief the number of bytes needed to  hold all the written bits 
+		/// @access public 
+		///@notice
+		/// particial byte is also accounted and the bit at index @param 
+		/// mWritePosBits is exclusive). 
+		/// if mWritingPosBits =12, will need 2 bytes to hold 12 written bits (6 bits wasted)
+		/// if mWritingPosBits = 8, will need 1 byte to hold 8 written bits (0 bits wasted)
 		/// @author mengdi[Jackie]
-		///========================================
-		inline BitSize GetPayLoadBits(void) const { return mWritePosBits - mReadPosBits; }
+		inline ByteSize GetWrittenBytesCount(void) const { return BITS_TO_BYTES(mWritingPosBits); }
 
-		///========================================
-		///@brief the bytes count that can hold all the written bits
-		/// @access public 
-		///========================================
-		inline ByteSize WritePosBytes(void) const { return BITS_TO_BYTES(mWritePosBits); }
+		/// @brief get the number of written bits
+		/// will return same value to that of WritePosBits()
+		/// @access public
+		/// @author mengdi[Jackie]
+		inline BitSize GetWrittenBitsCount(void) const { return mWritingPosBits; }
 
-		///========================================
 		/// @method SerializeFloat16
 		/// @access public 
 		/// @returns void
@@ -164,10 +199,7 @@ namespace JACKIE_INET
 		/// @param [in] float floatMax Predetermined maximum value of f
 		/// @brief Serialize a float into 2 bytes, spanning the range 
 		/// between @param floatMin and @param floatMax
-		/// @notice
-		/// @see
-		///========================================
-		inline void SerializeFloat16(bool writeToBitstream, float &inOutFloat,
+		inline void SerializeFloat16Bits(bool writeToBitstream, float &inOutFloat,
 			float floatMin, float floatMax)
 		{
 			if (writeToBitstream)
@@ -175,8 +207,15 @@ namespace JACKIE_INET
 			else
 				ReadTo(inOutFloat, floatMin, floatMax);
 		}
+		//inline void SerializeDouble32Bits(bool writeToBitstream, double &inOutFloat,
+		//	double floatMin, double floatMax)
+		//{
+		//	if (writeToBitstream)
+		//		WriteFrom(inOutFloat, floatMin, floatMax);
+		//	else
+		//		ReadTo(inOutFloat, floatMin, floatMax);
+		//}
 
-		///========================================
 		/// @method Serialize
 		/// @access public 
 		/// @brief  
@@ -188,7 +227,6 @@ namespace JACKIE_INET
 		/// @param[in] inOutByteArray a byte buffer
 		/// @param[in] numberOfBytes the size of @a input in bytes
 		/// @return void
-		///========================================
 		inline void Serialize(bool writeToBitstream, Int8* inOutByteArray,
 			const UInt32 numberOfBytes)
 		{
@@ -198,7 +236,6 @@ namespace JACKIE_INET
 				ReadTo(inOutByteArray, numberOfBytes);
 		}
 
-		///========================================
 		/// @method Serialize
 		/// @access public 
 		/// @returns void
@@ -206,9 +243,9 @@ namespace JACKIE_INET
 		/// true to write from your data to this bitstream.
 		/// false to read from this bitstream and write to your data
 		/// @param [in] templateType & inOutTemplateVar The value to write
-		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream. 
-		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
-		///========================================
+		/// @brief bidirectional serialize/deserialize any integral type to/from a bitstream. 
+		/// undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// for float and double,  use SerializeMini()
 		template <class templateType>
 		inline void Serialize(bool writeToBitstream,
 			templateType &inOutTemplateVar)
@@ -219,10 +256,8 @@ namespace JACKIE_INET
 				ReadTo(inOutTemplateVar);
 		}
 
-		///========================================
 		/// @method SerializeChangedValue
 		/// @access public 
-		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream. 
 		/// @param[in] writeToBitstream 
 		/// true to write from your data to this bitstream.  
 		/// false to read from this bitstream and write to your data
@@ -230,12 +265,12 @@ namespace JACKIE_INET
 		/// @param[in] lastValue The last value to compare against.  
 		/// only used if @a writeToBitstream is true.
 		/// @return void
+		/// @brief Bidirectional serialize/deserialize any integral type to/from a bitstream. 
 		/// @notice 
 		/// If the current value is different from the last value
 		/// the current value will be written. Otherwise, a single bit will be written
-		///========================================
-		template <class templateType>
-		inline void SerializeChangedValue(bool writeToBitstream, templateType &inOutCurrentValue, const templateType &lastValue)
+		template <class IntegralType>
+		inline void SerializeChangedValue(bool writeToBitstream, IntegralType &inOutCurrentValue, const IntegralType &lastValue)
 		{
 			if (writeToBitstream)
 				WriteChangedValueFrom(inOutCurrentValue, lastValue);
@@ -243,45 +278,41 @@ namespace JACKIE_INET
 				ReadChangedValueTo(inOutCurrentValue);
 		}
 
-		///========================================
 		/// @method SerializeChangedValue
 		/// @access public 
-		/// @brief  bidirectional version of SerializeDelta 
-		/// when you don't know what the last value is, or there is no last value.
+		/// @param[in] inOutCurrentValue The current value to write
+		/// @return void
+		/// @brief  when you don't know what the last value is, or there is no last value.
 		/// @param[in] writeToBitstream
 		/// true to write from your data to this bitstream.  
 		/// false to read from this bitstream and write to your data
-		/// @param[in] inOutCurrentValue The current value to write
-		/// @return void
-		///========================================
-		template <class templateType>
-		inline void SerializeChangedValue(bool writeToBitstream,
-			templateType &inOutCurrentValue)
+		template <class IntegralType>
+		inline void SerializeChangedValue(bool writeToBitstream, IntegralType &Value)
 		{
 			if (writeToBitstream)
-				WriteChangedValueFrom(inOutCurrentValue);
+				WriteChangedValueFrom(Value);
 			else
-				ReadChangedValueTo(inOutCurrentValue);
+				ReadChangedValueTo(Value);
 		}
 
-		///========================================
+
 		/// @method SerializeMini
 		/// @access public 
 		/// @returns void
+		/// @template BasicType all integral types plus all floating types
 		/// @param [in] bool writeToBitstream
 		/// @param [in] templateType & inOutTemplateVar
 		/// @brief  
-		/// Bidirectional serialize/deserialize any integral type to/from a bitstream.
-		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
-		/// @notice
-		/// for floating point, this is lossy, using 2 bytes for a float and 4 for a double.
-		/// the range must be between -1 and +1. For non-floating point, this is lossless,
-		/// but only has benefit if you use less than half the bits of the type. If you are not 
-		/// using DO_NOT_SWAP_ENDIAN the opposite is true for types larger than 1 byte
-		///========================================
-		template <class templateType>
-		inline void SerializeMini(bool writeToBitstream,
-			templateType &inOutTemplateVar)
+		/// bidirectional serialize/deserialize any basic type to/from a bitstream.
+		/// undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
+		/// @notice in case of floating type, 
+		/// for floating-point part, this is lossy, using 2 bytes for a float and 4 for a double.
+		/// the range must be between -1 and +1. For non-floating-point part, 
+		/// this is lossless, but only has benefit if you use less than half the bits of the type.
+		/// if you are not using DO_NOT_SWAP_ENDIAN the opposite is true for types 
+		/// larger than 1 byte
+		template <class BasicType>
+		inline void SerializeMini(bool writeToBitstream, BasicType &inOutTemplateVar)
 		{
 			if (writeToBitstream)
 				WriteMiniFrom(inOutTemplateVar);
@@ -289,58 +320,62 @@ namespace JACKIE_INET
 				ReadMiniTo(inOutTemplateVar);
 		}
 
-		///========================================
+
 		/// @method SerializeMini
 		/// @access public 
 		/// @returns void
+		/// @template BasicType all integral types plus all floating types
+		/// @param[in] writeToBitstream true to write from your data to this bitstream.  
+		/// false to read from this bitstream and write to your data
+		/// @param[in] currValue The current value to be written or to be read
+		/// @param[in] lastValue The last value to compare against to be written  
+		/// Only used if @param writeToBitstream is true.
 		/// @brief 
 		/// Bidirectional serialize/deserialize any integral type to/from a bitstream.  
-		/// @details If the current value is different from the last value
+		/// If the current value is different from the last value
 		/// the current value will be written.  Otherwise, a single bit will be written
+		/// @notice
 		/// For floating point, this is lossy, using 2 bytes for a float and 4 for a double.  
 		/// The range must be between -1 and +1.
 		/// For non-floating point, this is lossless, but only has benefit if you use less than
 		/// half the bits of the type.  If you are not using DO_NOT_SWAP_ENDIAN the 
 		/// opposite is true for types larger than 1 byte
-		/// @param[in] writeToBitstream true to write from your data to this bitstream.  
-		/// false to read from this bitstream and write to your data
-		/// @param[in] inOutCurrentValue The current value to write
-		/// @param[in] lastValue The last value to compare against.  
-		/// Only used if @param writeToBitstream is true.
-		/// @return void
-		///========================================
-		template <class templateType>
-		inline void SerializeMiniChangedValue(bool writeToBitstream, templateType &inOutCurrentValue, const templateType &lastValue)
-		{
-			if (writeToBitstream)
-				WriteMiniChangedFrom(inOutCurrentValue, lastValue);
-			else
-				ReadMiniChangedTo(inOutCurrentValue);
-		}
-
-		template <class templateType>
+		template <class BasicType>
 		inline void SerializeMiniChangedValue(bool writeToBitstream,
-			templateType &inOutCurrentValue)
+			BasicType &currValue, const BasicType &lastValue)
 		{
 			if (writeToBitstream)
-				WriteMiniChangedFrom(inOutCurrentValue);
+				WriteMiniChangedFrom(currValue, lastValue);
 			else
-				ReadMiniChangedTo(inOutCurrentValue);
+				ReadMiniChangedTo(currValue);
 		}
 
-		///========================================
+		template <class BasicType>
+		inline void SerializeMiniChangedValue(bool writeToBitstream,
+			BasicType &currValue)
+		{
+			if (writeToBitstream)
+				WriteMiniChangedFrom(currValue);
+			else
+				ReadMiniChangedTo(currValue);
+		}
+
+
 		/// @method SerializeCasted
 		/// @access public 
 		/// @returns void
+		/// @template serializationType all integral types plus all floating types dest type
+		/// @template sourceType all integral types plus all floating types src type
 		/// @param [in] bool writeToBitstream
 		/// true to write from your data to this bitstream.  
 		/// false to read from this bitstream and write to your data
 		/// @param [in] sourceType & value
 		/// @brief Serialize one type casted to another (smaller) type, to save bandwidth
 		/// serializationType should be uint8, uint16, uint24, or uint32
-		/// Example: int num=53; SerializeCasted<uint8_t>(true, num); 
-		/// would use 1 byte to write what would otherwise be an integer (4 or 8 bytes)
-		///========================================
+		/// @use
+		/// would use 1 byte to write what would otherwise be an integer(4 or 8 bytes)
+		/// int num=53; SerializeCasted<uint8>(true, num); 
+		/// uint8 val; SerializeCasted<uint8>(false, val);
 		template <class serializationType, class sourceType >
 		void SerializeCasted(bool writeToBitstream, sourceType &value)
 		{
@@ -350,32 +385,46 @@ namespace JACKIE_INET
 				ReadCasted<serializationType>(value);
 		}
 
-		///========================================
-		/// @method SerializeBitsFromIntegerRange
+
+		/// @method SerializeIntegerRange
 		/// @access public 
 		/// @returns void
 		/// @param [in] bool writeToBitstream 
 		/// true to write from your data to this bitstream.
 		/// false to read from this bitstream and write to your data
 		/// @param [in] templateType & value  Integer value to write, 
-		/// which should be between \a minimum and \a maximum
-		/// @param [in] const templateType minimum
-		/// @param [in] const templateType maximum
+		/// which should be between @paramminimum and @param maximum
+		/// @param [in] const templateType minimum best to use global const
+		/// @param [in] const templateType maximum best to use global const
 		/// @param [in] bool allowOutsideRange
 		/// If true, all sends will take an extra bit, however value can deviate
 		/// from outside @param minimum and @param maximum.
 		/// If false, will assert if the value deviates
 		/// @brief Given the minimum and maximum values for an integer type,
 		/// figure out the minimum number of bits to represent the range
-		/// Then serialize only those bits
+		/// Then serialize only those bits, smaller the difference is, less bits to use,
+		/// no matter how big the max or mini is, best to send and recv huge numbers,
+		/// like 666666666, SerializeMini() will not work well in such case,
 		/// @notice
 		/// A static is used so that the required number of bits for
 		/// (maximum - minimum) is only calculated once.This does require that
 		/// @param minimum and @param maximum are fixed values for a 
 		/// given line of code  for the life of the program
-		///========================================
-		template <class templateType>
-		void SerializeIntegerRange(bool writeToBitstream, templateType &value, const templateType minimum, const templateType maximum, bool allowOutsideRange = false)
+		/// @use 
+		/// const uint64 MAX_VALUE = 1000000000;
+		/// const uint64 Mini_VALUE = 999999900;
+		/// uint64 currVal = 999999966; 
+		/// SerializeIntegerRange(true, currVal, MAX_VALUE, Mini_VALUE);
+		/// uint64 Val;
+		/// SerializeIntegerRange(fals, Val, MAX_VALUE, Mini_VALUE);
+		/// the sample above will use 7 bits (128) instead of 8 bytes
+		/// if you use SerializeMini(), will also use 8 bytes for no all zero byte to compress 
+		template <class IntegerType>
+		void SerializeIntegerRange(bool writeToBitstream,
+			IntegerType &value,
+			const IntegerType minimum,
+			const IntegerType maximum,
+			bool allowOutsideRange = false)
 		{
 			//int requiredBits = BYTES_TO_BITS(sizeof(templateType)) -
 			//	GetLeadingZeroSize(templateType(maximum - minimum));
@@ -402,7 +451,6 @@ namespace JACKIE_INET
 		//		requiredBits, allowOutsideRange);
 		//}
 
-		///========================================
 		/// @method SerializeNormVector
 		/// @access public 
 		/// @returns void
@@ -418,7 +466,6 @@ namespace JACKIE_INET
 		/// Accurate to 1/32767.5.
 		/// @notice
 		/// templateType for this function must be a float or double
-		///========================================
 		template <class templateType>
 		void SerializeNormVector(bool writeToBitstream,
 			templateType &x, templateType &y, templateType &z)
@@ -429,7 +476,7 @@ namespace JACKIE_INET
 				ReadNormVectorTo(x, y, z);
 		}
 
-		///========================================
+
 		/// @method SerializeVector
 		/// @access public 
 		/// @returns void
@@ -445,7 +492,7 @@ namespace JACKIE_INET
 		/// so only use if accuracy is not important.
 		/// @notice
 		/// templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		void SerializeVector(bool writeToBitstream,
 			templateType &x, templateType &y, templateType &z)
@@ -456,7 +503,7 @@ namespace JACKIE_INET
 				ReadVectorTo(x, y, z);
 		}
 
-		///========================================
+
 		/// @method SerializeNormQuat
 		/// @access public 
 		/// @returns void
@@ -471,7 +518,7 @@ namespace JACKIE_INET
 		/// in 6 bytes + 4 bits instead of 16 bytes.Slightly lossy.
 		/// @notice
 		/// templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		void SerializeNormQuat(bool writeToBitstream,
 			templateType &w, templateType &x, templateType &y, templateType &z)
@@ -482,7 +529,7 @@ namespace JACKIE_INET
 				ReadNormQuatTo(w, x, y, z);
 		}
 
-		///========================================
+
 		/// @method SerializeOrthMatrix
 		/// @access public 
 		/// @returns void
@@ -499,7 +546,7 @@ namespace JACKIE_INET
 		/// @notice
 		/// templateType for this function must be a float or double
 		/// lossy, although the result is renormalized
-		///========================================
+
 		template <class templateType>
 		void SerializeOrthMatrix(
 			bool writeToBitstream,
@@ -513,7 +560,7 @@ namespace JACKIE_INET
 				ReadOrthMatrix(m00, m01, m02, m10, m11, m12, m20, m21, m22);
 		}
 
-		///========================================
+
 		/// @method SerializeBits
 		/// @access public 
 		/// @returns void
@@ -533,7 +580,7 @@ namespace JACKIE_INET
 		/// right aligned data means in the case of a partial byte, 
 		/// the bits are aligned right
 		/// @see
-		///========================================
+
 		void SerializeBits(bool writeToBitstream,
 			UInt8* inOutByteArray,
 			const BitSize numberOfBitsToSerialize,
@@ -547,7 +594,7 @@ namespace JACKIE_INET
 				numberOfBitsToSerialize, rightAlignedBits);
 		}
 
-		///========================================
+
 		/// @method AlignReadPosBitsToByteBoundary
 		/// @access public 
 		/// @returns void
@@ -559,13 +606,13 @@ namespace JACKIE_INET
 		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
 		/// calculate the same offset when aligning.
 		/// @see
-		///========================================
+
 		inline void AlignReadPosBitsToByteBoundary(void)
 		{
-			mReadPosBits += 8 - (((mReadPosBits - 1) & 7) + 1);
+			mReadingPosBits += 8 - (((mReadingPosBits - 1) & 7) + 1);
 		}
 
-		///========================================
+
 		/// @method ReadTo
 		/// @access public 
 		/// @returns void
@@ -576,13 +623,13 @@ namespace JACKIE_INET
 		/// @notice The array is raw data. 
 		/// There is no automatic endian conversion with this function
 		/// @see
-		///========================================
+
 		void ReadTo(Int8* output, const unsigned int numberOfBytes)
 		{
 			ReadBitsTo((UInt8*)output, BYTES_TO_BITS(numberOfBytes));
 		}
 
-		///========================================
+
 		/// @func   ReadBitsTo
 		/// @brief   Read numbers of bit into dest array
 		/// @access public
@@ -597,10 +644,10 @@ namespace JACKIE_INET
 		/// 1.use True to read to user data 
 		/// 2.use False to read this stream to another stream 
 		/// @author mengdi[Jackie]
-		///========================================
+
 		void ReadBitsTo(UInt8 *dest, BitSize bitsRead, bool alignRight = true);
 
-		///========================================
+
 		/// @method ReadTo
 		/// @access public 
 		/// @returns void
@@ -609,7 +656,7 @@ namespace JACKIE_INET
 		/// Define DO_NOT_SWAP_ENDIAN if you need endian swapping.
 		/// @notice
 		/// @see
-		///========================================
+
 		template <class IntegralType>
 		inline void ReadTo(IntegralType &dest)
 		{
@@ -634,7 +681,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @method ReadTo
 		/// @access public 
 		/// @returns void
@@ -642,7 +689,7 @@ namespace JACKIE_INET
 		/// @brief  Read a bool from a bitstream.
 		/// @notice
 		/// @see
-		///========================================
+
 		template <>
 		inline void ReadTo(bool &dest)
 		{
@@ -650,14 +697,14 @@ namespace JACKIE_INET
 			if (GetPayLoadBits() < 1) return;
 
 			// Is it faster to just write it out here?
-			data[mReadPosBits >> 3] & (0x80 >> (mReadPosBits & 7)) ?
+			data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7)) ?
 				dest = true : dest = false;
 
 			// Has to be on a different line for Mac
-			mReadPosBits++;
+			mReadingPosBits++;
 		}
 
-		///========================================
+
 		/// @method ReadTo
 		/// @access public 
 		/// @returns void
@@ -665,7 +712,7 @@ namespace JACKIE_INET
 		/// @brief Read a JackieAddress from a bitstream.
 		/// @notice
 		/// @see
-		///========================================
+
 		template <>
 		inline void ReadTo(JackieAddress &dest)
 		{
@@ -696,7 +743,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @func ReadTo 
 		/// @brief read three bytes into stream
 		/// @access  public  
@@ -706,7 +753,7 @@ namespace JACKIE_INET
 		/// @notice will align @mReadPosBIts to byte-boundary internally
 		/// @see  AlignReadPosBitsToByteBoundary()
 		/// @author mengdi[Jackie]
-		///========================================
+
 		template <>
 		inline void ReadTo(UInt24 &dest)
 		{
@@ -715,20 +762,20 @@ namespace JACKIE_INET
 
 			if (!IsBigEndian())
 			{
-				((UInt8 *)&dest.val)[0] = data[(mReadPosBits >> 3) + 0];
-				((UInt8 *)&dest.val)[1] = data[(mReadPosBits >> 3) + 1];
-				((UInt8 *)&dest.val)[2] = data[(mReadPosBits >> 3) + 2];
+				((UInt8 *)&dest.val)[0] = data[(mReadingPosBits >> 3) + 0];
+				((UInt8 *)&dest.val)[1] = data[(mReadingPosBits >> 3) + 1];
+				((UInt8 *)&dest.val)[2] = data[(mReadingPosBits >> 3) + 2];
 				((UInt8 *)&dest.val)[3] = 0;
 			}
 			else
 			{
-				((UInt8 *)&dest.val)[3] = data[(mReadPosBits >> 3) + 0];
-				((UInt8 *)&dest.val)[2] = data[(mReadPosBits >> 3) + 1];
-				((UInt8 *)&dest.val)[1] = data[(mReadPosBits >> 3) + 2];
+				((UInt8 *)&dest.val)[3] = data[(mReadingPosBits >> 3) + 0];
+				((UInt8 *)&dest.val)[2] = data[(mReadingPosBits >> 3) + 1];
+				((UInt8 *)&dest.val)[1] = data[(mReadingPosBits >> 3) + 2];
 				((UInt8 *)&dest.val)[0] = 0;
 			}
 
-			mReadPosBits += 24;
+			mReadingPosBits += 24;
 		}
 
 		template <>
@@ -737,14 +784,14 @@ namespace JACKIE_INET
 			return ReadTo(dest.g);
 		}
 
-		///========================================
+
 		/// @brief Read any integral type from a bitstream.  
 		/// @details If the written value differed from the value 
 		/// compared against in the write function,
 		/// var will be updated.  Otherwise it will retain the current value.
 		/// ReadDelta is only valid from a previous call to WriteDelta
 		/// @param[in] outTemplateVar The value to read
-		///========================================
+
 		template <class IntegralType>
 		inline void ReadChangedValueTo(IntegralType &dest)
 		{
@@ -753,60 +800,58 @@ namespace JACKIE_INET
 			if (dataWritten) ReadTo(dest);
 		}
 
-		///========================================
+
 		/// @brief Read a bool from a bitstream.
 		/// @param[in] outTemplateVar The value to read
-		///========================================
+
 		template <>
 		inline void ReadChangedValueTo(bool &dest)
 		{
 			return ReadTo(dest);
 		}
 
-		///========================================
+
 		/// @Brief Assume the input source points to a compressed native type. 
 		/// Decompress and read it.
-		///========================================
+
 		void ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
 
-		///========================================
+
 		/// @method ReadMiniTo
 		/// @access public 
 		/// @returns void
 		/// @param [in] IntegralType & dest
 		/// @brief Read any integral type from a bitstream.  
 		/// @notice
-		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
 		/// For floating point, this is lossy, using 2 bytes for a float and 4 for
 		/// a double.  The range must be between -1 and +1.
 		/// For non-floating point, this is lossless, but only has benefit if you 
 		/// use less than half the bits of the type
-		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is true 
-		/// for types larger than 1 byte
 		/// @see
-		///========================================
 		template <class IntegralType>
 		inline void ReadMiniTo(IntegralType &dest)
 		{
-			if (sizeof(dest) == 1)
-				ReadMiniTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			else
-			{
-#ifndef DO_NOT_SWAP_ENDIAN
-				if (DoEndianSwap())
-				{
-					UInt8 output[sizeof(IntegralType)];
-					ReadMiniTo((UInt8*)output, BYTES_TO_BITS(sizeof(IntegralType)), true);
-					ReverseBytesTo(output, (UInt8*)&dest, sizeof(IntegralType));
-				}
-				else
-				{
-					ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-				}
-#else
-				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-#endif
-			}
+			ReadMiniTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//			if (sizeof(dest) == 1)
+			//				ReadMiniTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//			else
+			//			{
+			//#ifndef DO_NOT_SWAP_ENDIAN
+			//				if (DoEndianSwap())
+			//				{
+			//					//UInt8 output[sizeof(IntegralType)];
+			//					//ReadMiniTo((UInt8*)output, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//					//ReverseBytesTo(output, (UInt8*)&dest, sizeof(IntegralType));
+			//					ReadMiniTo((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//				}
+			//				else
+			//				{
+			//					ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//				}
+			//#else
+			//				ReadMiniTo((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			//#endif
+			//			}
 		}
 		template <> inline void ReadMiniTo(JackieAddress &dest)
 		{
@@ -814,7 +859,8 @@ namespace JACKIE_INET
 		}
 		template <> inline void ReadMiniTo(UInt24 &dest)
 		{
-			ReadTo(dest);
+
+			ReadMiniTo(dest.val);
 		}
 		template <> inline void ReadMiniTo(JackieGUID &dest)
 		{
@@ -839,10 +885,9 @@ namespace JACKIE_INET
 			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
 		}
 
-		///========================================
+
 		/// @access public 
 		/// @brief
-		///========================================
 		template <class srcType, class destType >
 		void ReadCasted(destType &value)
 		{
@@ -851,7 +896,7 @@ namespace JACKIE_INET
 			value = (destType)val;
 		}
 
-		///========================================
+
 		/// @method ReadMiniChangedTo
 		/// @access public 
 		/// @returns void
@@ -867,7 +912,7 @@ namespace JACKIE_INET
 		/// type.  If you are not using DO_NOT_SWAP_ENDIAN the opposite is true for
 		/// types larger than 1 byte
 		/// @see
-		///========================================
+
 		template <class IntegralType>
 		inline void ReadMiniChangedTo(IntegralType &dest)
 		{
@@ -876,10 +921,10 @@ namespace JACKIE_INET
 			if (dataWritten) ReadMiniTo(dest);
 		}
 
-		///========================================
+
 		/// @brief Read a bool from a bitstream.
 		/// @param[in] outTemplateVar The value to read
-		///========================================
+
 		template <>
 		inline void ReadMiniChangedTo(bool &dest)
 		{
@@ -898,7 +943,7 @@ namespace JACKIE_INET
 			ReadToIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
 		}
 
-		///========================================
+
 		/// @method ReadBitsFromIntegerRange
 		/// @access public 
 		/// @returns void
@@ -932,7 +977,7 @@ namespace JACKIE_INET
 		/// When reading it, we have to reverse it back fro big endian
 		/// we do nothing for little endian.
 		/// @see
-		///========================================
+
 		template <class templateType>
 		void ReadToIntegerRange(
 			templateType &value,
@@ -970,7 +1015,7 @@ namespace JACKIE_INET
 
 		}
 
-		///========================================
+
 		/// @method ReadTo
 		/// @access public 
 		/// @returns void
@@ -982,10 +1027,10 @@ namespace JACKIE_INET
 		/// @param floatMin and @param floatMax
 		/// @notice
 		/// @see
-		///========================================
+
 		void ReadTo(float &outFloat, float floatMin, float floatMax);
 
-		///========================================
+
 		/// @brief Read bits, starting at the next aligned bits. 
 		/// @details Note that the modulus 8 starting offset of the sequence
 		/// must be the same as was used with WriteBits. This will be a problem
@@ -993,19 +1038,19 @@ namespace JACKIE_INET
 		/// @param[in] dest The byte array larger than @em numberOfBytesToRead
 		/// @param[in] bytes2Read The number of byte to read from the internal state
 		/// @return true if there is enough byte.
-		///========================================
+
 		void ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read);
 
-		///========================================
+
 		/// @brief Reads what was written by WriteAlignedBytes.
 		/// @param[in] inOutByteArray The data
 		/// @param[in] maxBytesToRead Maximum number of bytes to read
 		/// @return true on success, false on failure.
-		///========================================
+
 		void ReadAlignedBytesTo(Int8 *dest, ByteSize &bytes2Read,
 			const ByteSize maxBytes2Read);
 
-		///========================================
+
 		/// @method ReadAlignedBytesAllocTo
 		/// @access public 
 		/// @returns void
@@ -1016,21 +1061,21 @@ namespace JACKIE_INET
 		/// for you using new, rather than assuming it is safe to write to
 		/// @notice
 		/// @see
-		///========================================
+
 		void ReadAlignedBytesAllocTo(Int8 **dest, ByteSize &bytes2Read,
 			const ByteSize maxBytes2Read);
 
-		///========================================
+
 		// @brief return 1 if the next data read is a 1, 0 if it is a 0
 		///@access public 
-		///========================================
+
 		inline UInt32 ReadBit(void)
 		{
-			mReadPosBits++;
-			return  (data[mReadPosBits >> 3] & (0x80 >> (mReadPosBits & 7))) != 0;
+			mReadingPosBits++;
+			return  (data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7))) != 0;
 		}
 
-		///========================================
+
 		/// @access public
 		/// @brief Read a normalized 3D vector, using (at most) 4 bytes 
 		/// + 3 bits instead of 12-24 bytes.  
@@ -1041,7 +1086,7 @@ namespace JACKIE_INET
 		/// @param[in] z z
 		/// @return void
 		/// @notice templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		void ReadNormVectorTo(templateType &x, templateType &y, templateType &z)
 		{
@@ -1054,7 +1099,7 @@ namespace JACKIE_INET
 			z = zIn;
 		}
 
-		///========================================
+
 		/// @brief Read 3 floats or doubles, using 10 bytes, 
 		/// where those float or doubles comprise a vector.
 		/// @details Loses accuracy to about 3/10ths and only saves 2 bytes, 
@@ -1064,7 +1109,7 @@ namespace JACKIE_INET
 		/// @param[in] z z
 		/// @return void
 		/// @notice templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		void ReadVectorTo(templateType &x, templateType &y, templateType &z)
 		{
@@ -1092,7 +1137,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @brief Read a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.
 		/// @param[in] w w
 		/// @param[in] x x
@@ -1100,7 +1145,7 @@ namespace JACKIE_INET
 		/// @param[in] z z
 		/// @return void
 		/// @notice templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		bool ReadNormQuatTo(templateType &w, templateType &x, templateType &y, templateType &z)
 		{
@@ -1132,7 +1177,7 @@ namespace JACKIE_INET
 		}
 
 
-		///========================================
+
 		/// @brief Read an orthogonal matrix from a quaternion, 
 		/// reading 3 components of the quaternion in 2 bytes each and
 		/// extrapolatig the 4th.
@@ -1140,7 +1185,7 @@ namespace JACKIE_INET
 		/// Lossy, although the result is renormalized
 		/// @return true on success, false on failure.
 		///@notice templateType for this function must be a float or double
-		///========================================
+
 		template <class templateType>
 		void ReadOrthMatrix(
 			templateType &m00, templateType &m01, templateType &m02,
@@ -1175,7 +1220,7 @@ namespace JACKIE_INET
 			m12 = (templateType)(2.0 * (tmp1 - tmp2));
 		}
 
-		///========================================
+
 		/// @func AppendBitsCouldRealloc 
 		/// @brief 
 		/// reallocates (if necessary) in preparation of writing @bits2Append
@@ -1185,10 +1230,10 @@ namespace JACKIE_INET
 		/// It is caller's reponsibility to ensure 
 		/// @param bits2Append > 0 and @param mReadOnly is false
 		/// @author mengdi[Jackie]
-		///========================================
+
 		void AppendBitsCouldRealloc(const BitSize bits2Append);
 
-		///========================================
+
 		/// @func  WriteBitsFrom 
 		/// @brief  write @bitsCount number of bits into @input
 		/// @access      public  
@@ -1203,18 +1248,17 @@ namespace JACKIE_INET
 		/// 1.Use true to write user data to jackie stream 
 		/// 2.Use False to write this jackie stream internal data to another stream
 		/// @Author mengdi[Jackie]
-		///========================================
+
 		void WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned = true);
 
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @access  public  
 		/// @brief write an array or raw data in bytes.
 		/// NOT do endian swapp.
 		/// default is right aligned[true]
 		/// @author mengdi[Jackie]
-		///========================================
 		inline void WriteFrom(const Int8* src, const ByteSize bytes2Write)
 		{
 			WriteBitsFrom((UInt8*)src, BYTES_TO_BITS(bytes2Write), true);
@@ -1234,7 +1278,7 @@ namespace JACKIE_INET
 		}
 		inline void WriteFrom(JackieBits &jackieBits) { WriteFrom(&jackieBits); }
 
-		///========================================
+
 		/// @method WriteFromPtr
 		/// @access public 
 		/// @returns void
@@ -1242,7 +1286,6 @@ namespace JACKIE_INET
 		/// @brief  
 		/// write the dereferenced pointer to any integral type to a bitstream.  
 		/// Undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
-		///========================================
 		template <class templateType>
 		void WriteFromPtr(templateType *src)
 		{
@@ -1263,20 +1306,19 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @func WriteBitZero 
 		/// @access  public  
 		/// @notice @mReadOnly must be false
 		/// @author mengdi[Jackie]
-		///========================================
 		inline void WriteBitZero(void)
 		{
 			DCHECK_EQ(mReadOnly, false);
 
 			AppendBitsCouldRealloc(1);
-			BitSize shit = 8 - (mWritePosBits & 7);
-			data[mWritePosBits >> 3] = ((data[mWritePosBits >> 3] >> shit) << shit);
-			mWritePosBits++;
+			BitSize shit = 8 - (mWritingPosBits & 7);
+			data[mWritingPosBits >> 3] = ((data[mWritingPosBits >> 3] >> shit) << shit);
+			mWritingPosBits++;
 
 			//AppendBitsCouldRealloc(1);
 			// New bytes need to be zeroed
@@ -1284,20 +1326,19 @@ namespace JACKIE_INET
 			//mWritePosBits++;
 		}
 
-		///========================================
+
 		/// @func WriteBitOne 
 		/// @access  public  
 		/// @notice @mReadOnly must be false
 		/// @author mengdi[Jackie]
-		///========================================
 		inline void WriteBitOne(void)
 		{
 			DCHECK_EQ(mReadOnly, false);
 
 			AppendBitsCouldRealloc(1);
-			BitSize shit = mWritePosBits & 7;
-			data[mWritePosBits >> 3] |= 0x80 >> shit; // Write bit 1
-			mWritePosBits++;
+			BitSize shit = mWritingPosBits & 7;
+			data[mWritingPosBits >> 3] |= 0x80 >> shit; // Write bit 1
+			mWritingPosBits++;
 
 			//AddBitsAndReallocate(1);
 			//BitSize_t numberOfBitsMod8 = mWritePosBits & 7;
@@ -1308,7 +1349,7 @@ namespace JACKIE_INET
 			//mWritePosBits++;
 		}
 
-		///========================================
+
 		/// @func AlignWritePosBits2ByteBoundary 
 		/// @brief align @mWritePosBits to a byte boundary. 
 		/// @access  public  
@@ -1318,13 +1359,12 @@ namespace JACKIE_INET
 		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
 		/// calculate the same offset when aligning.
 		/// @author mengdi[Jackie]
-		///========================================
 		inline void AlignWritePosBits2ByteBoundary(void)
 		{
-			mWritePosBits += 8 - (((mWritePosBits - 1) & 7) + 1);
+			mWritingPosBits += 8 - (((mWritingPosBits - 1) & 7) + 1);
 		}
 
-		///========================================
+
 		/// @func WriteAlignedBytesFrom 
 		/// @brief  align the bitstream to the byte boundary and 
 		/// then write the specified number of bytes.  
@@ -1337,21 +1377,20 @@ namespace JACKIE_INET
 		/// requires you to call ReadAlignedBits() at the corresponding 
 		/// read position.
 		/// @author mengdi[Jackie]
-		///========================================
 		void WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite);
 
-		///========================================
+
 		/// @brief Aligns the bitstream, writes inputLength, and writes input. 
 		/// @access  public  
 		/// @param[in] inByteArray The data
 		/// @param[in] inputLength the size of input.
 		/// @param[in] maxBytesToWrite max bytes to write
 		/// @notice Won't write beyond maxBytesToWrite
-		///========================================
+
 		void WriteAlignedBytesFrom(const UInt8 *src, const ByteSize bytes2Write,
 			const ByteSize maxBytes2Write);
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @brief write a float into 2 bytes, spanning the range, 
 		/// between @param[floatMin] and @param[floatMax]
@@ -1362,10 +1401,10 @@ namespace JACKIE_INET
 		/// @return bool
 		/// @notice 
 		/// @author mengdi[Jackie]
-		///========================================
+
 		void WriteFrom(float src, float floatMin, float floatMax);
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @brief write any integral type to a bitstream.  
 		/// @access  public  
@@ -1375,7 +1414,7 @@ namespace JACKIE_INET
 		/// @notice will swap endian internally 
 		/// if DO_NOT_SWAP_ENDIAN not defined
 		/// @author mengdi[Jackie]
-		///========================================
+
 		template <class IntergralType>
 		void WriteFrom(const IntergralType &src)
 		{
@@ -1404,14 +1443,13 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @access  public  
 		/// @brief Write a bool to a bitstream.
 		/// @param [in] [const bool & src] The value to write
 		/// @return [bool] true succeed, false failed
 		/// @author mengdi[Jackie]
-		///========================================
 		template <>
 		inline void WriteFrom(const bool &src)
 		{
@@ -1421,7 +1459,7 @@ namespace JACKIE_INET
 				WriteBitZero();
 		}
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @brief write a JackieAddress to stream
 		/// @access  public  
@@ -1430,7 +1468,6 @@ namespace JACKIE_INET
 		/// @remark
 		/// @notice  will not endian swap the address or port
 		/// @author mengdi[Jackie]
-		///========================================
 		template <>
 		inline void WriteFrom(const JackieAddress &src)
 		{
@@ -1459,7 +1496,7 @@ namespace JACKIE_INET
 		}
 
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @brief write three bytes into stream
 		/// @access  public  
@@ -1469,7 +1506,6 @@ namespace JACKIE_INET
 		/// @notice will align write-position to byte-boundary internally
 		/// @see  AlignWritePosBits2ByteBoundary()
 		/// @author mengdi[Jackie]
-		///========================================
 		template <>
 		inline void WriteFrom(const UInt24 &inTemplateVar)
 		{
@@ -1478,35 +1514,35 @@ namespace JACKIE_INET
 
 			if (!IsBigEndian())
 			{
-				data[(mWritePosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[0];
-				data[(mWritePosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[1];
-				data[(mWritePosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[2];
+				data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[0];
+				data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[1];
+				data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[2];
 			}
 			else
 			{
-				data[(mWritePosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[3];
-				data[(mWritePosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[2];
-				data[(mWritePosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
+				data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[3];
+				data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[2];
+				data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
 			}
 
-			mWritePosBits += BYTES_TO_BITS(3);
+			mWritingPosBits += BYTES_TO_BITS(3);
 		}
 
 
-		///========================================
+
 		/// @func WriteFrom 
 		/// @access  public  
 		/// @param [in] [const JackieGUID & inTemplateVar]  
 		/// @return void
 		/// @author mengdi[Jackie]
-		///========================================
+
 		template <>
 		inline void WriteFrom(const JackieGUID &inTemplateVar)
 		{
 			WriteFrom(inTemplateVar.g);
 		}
 
-		///========================================
+
 		/// @func WriteChangedFrom 
 		/// @brief write any changed integral type to a bitstream.
 		/// @access  public  
@@ -1517,7 +1553,7 @@ namespace JACKIE_INET
 		/// If the current value is different from the last value
 		/// the current value will be written.  Otherwise, a single bit will be written
 		/// @author mengdi[Jackie]
-		///========================================
+
 		template <class templateType>
 		inline void WriteChangedValueFrom(const templateType &latestVal,
 			const templateType &lastVal)
@@ -1534,7 +1570,7 @@ namespace JACKIE_INET
 		}
 
 
-		///========================================
+
 		/// @func WriteChangedFrom 
 		/// @brief write a bool delta. Same thing as just calling Write
 		/// @access  public  
@@ -1542,7 +1578,7 @@ namespace JACKIE_INET
 		/// @param [in] const bool & lastValue  
 		/// @return void 
 		/// @author mengdi[Jackie]
-		///========================================
+
 		template <>
 		inline void WriteChangedValueFrom(const bool &currentValue,
 			const bool &lastValue)
@@ -1554,7 +1590,7 @@ namespace JACKIE_INET
 		/// @brief WriteDelta when you don't know what the last value is, or there is no last value.
 		/// @param[in] currentValue The current value to write
 
-		///========================================
+
 		/// @func WriteChangedFrom 
 		/// @brief 
 		/// writeDelta when you don't know what the last value is, or there is no last value.
@@ -1562,7 +1598,6 @@ namespace JACKIE_INET
 		/// @param [in] const templateType & currentValue  
 		/// @return void  
 		/// @author mengdi[Jackie]
-		///========================================
 		template <class templateType>
 		inline void WriteChangedValueFrom(const templateType &currentValue)
 		{
@@ -1570,7 +1605,7 @@ namespace JACKIE_INET
 			WriteFrom(currentValue);
 		}
 
-		///========================================
+
 		/// @func WriteMiniChangedFrom 
 		/// @brief write any integral type to a bitstream.  
 		/// @access  public  
@@ -1589,7 +1624,6 @@ namespace JACKIE_INET
 		/// If you are not using DO_NOT_SWAP_ENDIAN the opposite is
 		/// true for types larger than 1 byte
 		/// @author mengdi[Jackie]
-		///========================================
 		template <class templateType>
 		inline void WriteMiniChangedFrom(const templateType&currVal,
 			const templateType &lastValue)
@@ -1629,7 +1663,7 @@ namespace JACKIE_INET
 			WriteMiniFrom(currentValue);
 		}
 
-		///========================================
+
 		/// @func WriteMiniFrom 
 		/// @access  public  
 		/// @param [in] const UInt8 * src  
@@ -1656,11 +1690,10 @@ namespace JACKIE_INET
 		/// 就和平常书写的一样，先写高位，即低地址存储高位。
 		/// 如char a=0x12.存储从低位到高位就为0001 0010
 		/// @author mengdi[Jackie]
-		///========================================
 		void WriteMiniFrom(const UInt8* src, const BitSize bits2Write,
 			const bool isUnsigned);
 
-		///========================================
+
 		/// @func WriteMiniFrom 
 		/// @brief Write any integral type to a bitstream.  
 		/// @access  public  
@@ -1675,29 +1708,30 @@ namespace JACKIE_INET
 		/// 4.If you are not using DO_NOT_SWAP_ENDIAN the opposite is true 
 		/// for types larger than 1 byte
 		/// @author mengdi[Jackie]
-		///========================================
 		template <class IntergralType>
 		inline void WriteMiniFrom(const IntergralType &src)
 		{
-			if (sizeof(src) == 1)
-			{
-				WriteMiniFrom((UInt8*)& src, sizeof(IntergralType) << 3, true);
-				return;
-			}
-#ifndef DO_NOT_SWAP_ENDIAN
-			if (DoEndianSwap())
-			{
-				UInt8 output[sizeof(IntergralType)];
-				ReverseBytesTo((UInt8*)&src, output, sizeof(IntergralType));
-				WriteMiniFrom(output, sizeof(IntergralType) << 3, true);
-			}
-			else
-			{
-				WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
-			}
-#else
 			WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
-#endif
+			//if (sizeof(src) == 1)
+			//{
+			//	WriteMiniFrom((UInt8*)& src, sizeof(IntergralType) << 3, true);
+			//	return;
+			//}
+			//#ifndef DO_NOT_SWAP_ENDIAN
+			//			if (DoEndianSwap())
+			//			{
+			//				JINFO << "DoEndianSwap";
+			//				UInt8 output[sizeof(IntergralType)];
+			//				ReverseBytesTo((UInt8*)&src, output, sizeof(IntergralType));
+			//				WriteMiniFrom(output, sizeof(IntergralType) << 3, true);
+			//			}
+			//			else
+			//			{
+			//				WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
+			//			}
+			//#else
+			//			WriteMiniFrom((UInt8*)&src, sizeof(IntergralType) << 3, true);
+			//#endif
 		}
 
 		template <> inline void WriteMiniFrom(const JackieAddress &src)
@@ -1710,7 +1744,8 @@ namespace JACKIE_INET
 		}
 		template <> inline void WriteMiniFrom(const UInt24 &var)
 		{
-			WriteFrom(var);
+			WriteMiniFrom(var.val);
+			//WriteFrom(var);
 		}
 		template <> inline void WriteMiniFrom(const bool &src)
 		{
@@ -1735,10 +1770,9 @@ namespace JACKIE_INET
 			WriteFrom((UInt32)((varCopy + 1.0)*2147483648.0));
 		}
 
-		///========================================
+
 		/// @access public 
 		/// @returns void
-		///========================================
 		template <class destType, class srcType >
 		void WriteCastedFrom(const srcType &value)
 		{
@@ -1830,7 +1864,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @method WriteNormVector
 		/// @access public 
 		/// @returns void
@@ -1844,7 +1878,7 @@ namespace JACKIE_INET
 		/// Will further compress y or z axis aligned vectors.
 		/// templateType for this function must be a float or double
 		/// @see
-		///========================================
+
 		template <class templateType> void WriteNormVectorFrom(
 			templateType x,
 			templateType y,
@@ -1862,7 +1896,7 @@ namespace JACKIE_INET
 			WriteFrom((float)z, -1.0f, 1.0f);
 		}
 
-		///========================================
+
 		/// @method WriteVector
 		/// @access public 
 		/// @returns void
@@ -1872,7 +1906,7 @@ namespace JACKIE_INET
 		/// so only use if accuracy is not important
 		/// templateType for this function must be a float or double
 		/// @see
-		///========================================
+
 		template <class templateType> void WriteVectorFrom(
 			templateType x,
 			templateType y,
@@ -1891,7 +1925,7 @@ namespace JACKIE_INET
 			}
 		}
 
-		///========================================
+
 		/// @method WriteNormQuat
 		/// @access public 
 		/// @returns void
@@ -1901,7 +1935,7 @@ namespace JACKIE_INET
 		/// @notice
 		/// templateType for this function must be a float or double
 		/// @see
-		///========================================
+
 		template <class templateType> void WriteNormQuatFrom(
 			templateType w,
 			templateType x,
@@ -1918,7 +1952,7 @@ namespace JACKIE_INET
 			// Leave out w and calculate it on the target
 		}
 
-		///========================================
+
 		/// @method WriteOrthMatrix
 		/// @access public 
 		/// @returns void
@@ -1930,7 +1964,7 @@ namespace JACKIE_INET
 		/// Use 6 bytes instead of 36
 		/// templateType for this function must be a float or double
 		/// @see
-		///========================================
+
 		template <class templateType> void WriteOrthMatrix(
 			templateType m00, templateType m01, templateType m02,
 			templateType m10, templateType m11, templateType m12,
@@ -1978,27 +2012,27 @@ namespace JACKIE_INET
 			if (DoEndianSwap()) ReverseBytesFrom(data + byteOffset, length);
 		}
 
-		///========================================
+
 		/// @brief Makes a copy of the internal data for you @param _data 
 		/// will point to the stream. Partial bytes are left aligned
 		/// @param[out] _data The allocated copy of GetData()
 		/// @return The length in bits of the stream.
 		/// @notice
 		/// all bytes are copied besides the bytes in GetPayLoadBits()
-		///========================================
+
 		BitSize Copy(UInt8** _data) const
 		{
-			DCHECK(mWritePosBits > 0);
-			*_data = (UInt8*)jackieMalloc_Ex(BITS_TO_BYTES(mWritePosBits),
+			DCHECK(mWritingPosBits > 0);
+			*_data = (UInt8*)jackieMalloc_Ex(BITS_TO_BYTES(mWritingPosBits),
 				TRACE_FILE_AND_LINE_);
-			memcpy(*_data, data, sizeof(UInt8) * BITS_TO_BYTES(mWritePosBits));
-			return mWritePosBits;
+			memcpy(*_data, data, sizeof(UInt8) * BITS_TO_BYTES(mWritingPosBits));
+			return mWritingPosBits;
 		}
 
 		///@brief Ignore data we don't intend to read
 		void ReadSkipBits(const BitSize numberOfBits)
 		{
-			mReadPosBits += numberOfBits;
+			mReadingPosBits += numberOfBits;
 		}
 		void ReadSkipBytes(const ByteSize numberOfBytes)
 		{
@@ -2007,109 +2041,110 @@ namespace JACKIE_INET
 
 		void WriteOneAlignedBytesFrom(const char *inByteArray)
 		{
-			DCHECK((mWritePosBits & 7) == 0);
+			DCHECK((mWritingPosBits & 7) == 0);
 			AppendBitsCouldRealloc(8);
-			data[mWritePosBits >> 3] = inByteArray[0];
-			mWritePosBits += 8;
+			data[mWritingPosBits >> 3] = inByteArray[0];
+			mWritingPosBits += 8;
 		}
 		void ReadOneAlignedBytesTo(char *inOutByteArray)
 		{
-			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK((mReadingPosBits & 7) == 0);
 			DCHECK(GetPayLoadBits() >= 8);
 			// if (mReadPosBits + 1 * 8 > mWritePosBits) return;
 
-			inOutByteArray[0] = data[(mReadPosBits >> 3)];
-			mReadPosBits += 8;
+			inOutByteArray[0] = data[(mReadingPosBits >> 3)];
+			mReadingPosBits += 8;
 		}
 
 		void WriteTwoAlignedBytesFrom(const char *inByteArray)
 		{
-			DCHECK((mWritePosBits & 7) == 0);
+			DCHECK((mWritingPosBits & 7) == 0);
 			AppendBitsCouldRealloc(16);
 #ifndef DO_NOT_SWAP_ENDIAN
 			if (DoEndianSwap())
 			{
-				data[(mWritePosBits >> 3) + 0] = inByteArray[1];
-				data[(mWritePosBits >> 3) + 1] = inByteArray[0];
+				data[(mWritingPosBits >> 3) + 0] = inByteArray[1];
+				data[(mWritingPosBits >> 3) + 1] = inByteArray[0];
 			}
 			else
 #endif
 			{
-				data[(mWritePosBits >> 3) + 0] = inByteArray[0];
-				data[(mWritePosBits >> 3) + 1] = inByteArray[1];
+				data[(mWritingPosBits >> 3) + 0] = inByteArray[0];
+				data[(mWritingPosBits >> 3) + 1] = inByteArray[1];
 			}
 
-			mWritePosBits += 16;
+			mWritingPosBits += 16;
 		}
 		void ReadTwoAlignedBytesTo(char *inOutByteArray)
 		{
-			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK((mReadingPosBits & 7) == 0);
 			DCHECK(GetPayLoadBits() >= 16);
 			//if (mReadPosBits + 16 > mWritePosBits) return ;
 #ifndef DO_NOT_SWAP_ENDIAN
 			if (DoEndianSwap())
 			{
-				inOutByteArray[0] = data[(mReadPosBits >> 3) + 1];
-				inOutByteArray[1] = data[(mReadPosBits >> 3) + 0];
+				inOutByteArray[0] = data[(mReadingPosBits >> 3) + 1];
+				inOutByteArray[1] = data[(mReadingPosBits >> 3) + 0];
 			}
 			else
 #endif
 			{
-				inOutByteArray[0] = data[(mReadPosBits >> 3) + 0];
-				inOutByteArray[1] = data[(mReadPosBits >> 3) + 1];
+				inOutByteArray[0] = data[(mReadingPosBits >> 3) + 0];
+				inOutByteArray[1] = data[(mReadingPosBits >> 3) + 1];
 			}
 
-			mReadPosBits += 16;
+			mReadingPosBits += 16;
 		}
 
 		void WriteFourAlignedBytesFrom(const char *inByteArray)
 		{
-			DCHECK((mWritePosBits & 7) == 0);
+			DCHECK((mWritingPosBits & 7) == 0);
 			AppendBitsCouldRealloc(32);
 #ifndef DO_NOT_SWAP_ENDIAN
 			if (DoEndianSwap())
 			{
-				data[(mWritePosBits >> 3) + 0] = inByteArray[3];
-				data[(mWritePosBits >> 3) + 1] = inByteArray[2];
-				data[(mWritePosBits >> 3) + 2] = inByteArray[1];
-				data[(mWritePosBits >> 3) + 3] = inByteArray[0];
+				data[(mWritingPosBits >> 3) + 0] = inByteArray[3];
+				data[(mWritingPosBits >> 3) + 1] = inByteArray[2];
+				data[(mWritingPosBits >> 3) + 2] = inByteArray[1];
+				data[(mWritingPosBits >> 3) + 3] = inByteArray[0];
 			}
 			else
 #endif
 			{
-				data[(mWritePosBits >> 3) + 0] = inByteArray[0];
-				data[(mWritePosBits >> 3) + 1] = inByteArray[1];
-				data[(mWritePosBits >> 3) + 2] = inByteArray[2];
-				data[(mWritePosBits >> 3) + 3] = inByteArray[3];
+				data[(mWritingPosBits >> 3) + 0] = inByteArray[0];
+				data[(mWritingPosBits >> 3) + 1] = inByteArray[1];
+				data[(mWritingPosBits >> 3) + 2] = inByteArray[2];
+				data[(mWritingPosBits >> 3) + 3] = inByteArray[3];
 			}
 
-			mWritePosBits += 32;
+			mWritingPosBits += 32;
 		}
 		void ReadFourAlignedBytesTo(char *inOutByteArray)
 		{
-			DCHECK((mReadPosBits & 7) == 0);
+			DCHECK((mReadingPosBits & 7) == 0);
 			DCHECK(GetPayLoadBits() >= 32);
 			//if (mReadPosBits + 4 * 8 > mWritePosBits) return;
 #ifndef DO_NOT_SWAP_ENDIAN
 			if (DoEndianSwap())
 			{
-				inOutByteArray[0] = data[(mReadPosBits >> 3) + 3];
-				inOutByteArray[1] = data[(mReadPosBits >> 3) + 2];
-				inOutByteArray[2] = data[(mReadPosBits >> 3) + 1];
-				inOutByteArray[3] = data[(mReadPosBits >> 3) + 0];
+				inOutByteArray[0] = data[(mReadingPosBits >> 3) + 3];
+				inOutByteArray[1] = data[(mReadingPosBits >> 3) + 2];
+				inOutByteArray[2] = data[(mReadingPosBits >> 3) + 1];
+				inOutByteArray[3] = data[(mReadingPosBits >> 3) + 0];
 			}
 			else
 #endif
 			{
-				inOutByteArray[0] = data[(mReadPosBits >> 3) + 0];
-				inOutByteArray[1] = data[(mReadPosBits >> 3) + 1];
-				inOutByteArray[2] = data[(mReadPosBits >> 3) + 2];
-				inOutByteArray[3] = data[(mReadPosBits >> 3) + 3];
+				inOutByteArray[0] = data[(mReadingPosBits >> 3) + 0];
+				inOutByteArray[1] = data[(mReadingPosBits >> 3) + 1];
+				inOutByteArray[2] = data[(mReadingPosBits >> 3) + 2];
+				inOutByteArray[3] = data[(mReadingPosBits >> 3) + 3];
 			}
 
-			mReadPosBits += 32;
+			mReadingPosBits += 32;
 		}
 
+		///@brief text-print bits starting from @data to @mWritingPosBits
 		void PrintBit(void);
 		void PrintHex(void);
 
@@ -2204,7 +2239,8 @@ namespace JACKIE_INET
 		inline static bool IsNetworkOrder(void)
 		{
 			static int a = 0x01;
-			return *((char*)& a) != 1;
+			static bool isNetworkOrder = *((char*)& a) != 1;
+			return isNetworkOrder;
 		}
 		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
 		inline static void ReverseBytesTo(UInt8 *src, UInt8 *dest, const UInt32 length)
