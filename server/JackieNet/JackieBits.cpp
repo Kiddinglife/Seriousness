@@ -300,12 +300,13 @@ namespace JACKIE_INET
 		//return true;
 	}
 
-	void JackieBits::Read(float &outFloat, float floatMin, float floatMax)
+	void JackieBits::ReadFloatRange(float &outFloat, float floatMin, float floatMax)
 	{
 		DCHECK(floatMax > floatMin);
 
 		UInt16 percentile;
-		Read(percentile);
+		//Read(percentile);
+		ReadMini(percentile);
 
 		outFloat = floatMin + ((float)percentile / 65535.0f) * (floatMax - floatMin);
 		if (outFloat<floatMin) outFloat = floatMin;
@@ -321,7 +322,7 @@ namespace JACKIE_INET
 		/// Byte align
 		AlignReadPosBitsByteBoundary();
 
-		/// Write the data
+		/// read the data
 		memcpy(dest, data + (mReadingPosBits >> 3), bytes2Read);
 		mReadingPosBits += bytes2Read << 3;
 	}
@@ -439,9 +440,10 @@ namespace JACKIE_INET
 	}
 	void JackieBits::Write(JackieBits *jackieBits, BitSize bits2Write)
 	{
-		DCHECK_EQ(mReadOnly, false);
-		DCHECK_GT(bits2Write, 0);
-		DCHECK_GE(bits2Write, jackieBits->GetPayLoadBits());
+		DCHECK(mReadOnly == false);
+		DCHECK(bits2Write > 0);
+		DCHECK(bits2Write <= jackieBits->GetPayLoadBits());
+
 		//if( mReadOnly ) return;
 		//if( bits2Write == 0 ) return;
 		//if( bits2Write > jackieBits->GetPayLoadBits() ) return;
@@ -450,7 +452,7 @@ namespace JACKIE_INET
 		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
 		if (numberOfBitsMod8 == 0)
 		{
-			return this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
+			this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
 				bits2Write, false);
 		}
 
@@ -475,8 +477,8 @@ namespace JACKIE_INET
 
 		/// after writting partial bits, numberOfBitsMod8 must be zero
 		/// we can now safely call WriteBits() for further process
-		DCHECK_EQ((jackieBits->mReadingPosBits & 7), 0);
-		return this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
+		DCHECK((jackieBits->mReadingPosBits & 7) == 0);
+		this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
 			bits2Write, false);
 
 		//AppendBitsCouldRealloc(bits2Write);
@@ -529,7 +531,7 @@ namespace JACKIE_INET
 		//}
 	}
 
-	void JackieBits::Write(float src, float floatMin, float floatMax)
+	void JackieBits::WriteFloatRange(float src, float floatMin, float floatMax)
 	{
 		DCHECK_GT(floatMax, floatMin);
 		DCHECK_LE(src, floatMax + .001);
@@ -538,7 +540,8 @@ namespace JACKIE_INET
 		float percentile = 65535.0f * ((src - floatMin) / (floatMax - floatMin));
 		if (percentile < 0.0f) percentile = 0.0;
 		if (percentile > 65535.0f) percentile = 65535.0f;
-		Write((UInt16)percentile);
+		//Write((UInt16)percentile);
+		WriteMini((UInt16)percentile);
 	}
 
 	void JackieBits::WriteMini(const UInt8* src, const BitSize bits2Write, const bool isUnsigned)
@@ -634,6 +637,8 @@ namespace JACKIE_INET
 	{
 		if (src == 0 || bytes2Write == 0)
 		{
+			//  [11/15/2015 JACKIE] this is ooficial impl whixch will waste 4 bits
+			// actually we only nned to send one bit
 			///WriteMini(bytes2Write);
 			WriteBitZero();
 			return;

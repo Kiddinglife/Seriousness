@@ -118,6 +118,21 @@ namespace JACKIE_INET
 		JackieBits();
 		~JackieBits();
 
+
+		/// @ brief Use Mini write and read
+		template <class templateType>
+		JackieBits& operator<<(const templateType& c)
+		{
+			WriteMini(c);
+			return *this;
+		}
+		template <class templateType>
+		JackieBits& operator>>(templateType& c)
+		{
+			ReadMini(c);
+			return *this;
+		}
+
 		/// Getters and Setters
 		BitSize WritePosBits() const { return mWritingPosBits; }
 		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritingPosBits); }
@@ -200,13 +215,13 @@ namespace JACKIE_INET
 		/// @param [in] float floatMax Predetermined maximum value of f
 		/// @brief Serialize a float into 2 bytes, spanning the range 
 		/// between @param floatMin and @param floatMax
-		inline void SerializeFloat16Bits(bool writeBitstream, float &inOutFloat,
+		inline void SerializeFloatRange16Bits(bool writeBitstream, float &inOutFloat,
 			float floatMin, float floatMax)
 		{
 			if (writeBitstream)
-				Write(inOutFloat, floatMin, floatMax);
+				WriteFloatRange(inOutFloat, floatMin, floatMax);
 			else
-				Read(inOutFloat, floatMin, floatMax);
+				ReadFloatRange(inOutFloat, floatMin, floatMax);
 		}
 		//inline void SerializeDouble32Bits(bool writeBitstream, double &inOutFloat,
 		//	double floatMin, double floatMax)
@@ -321,7 +336,6 @@ namespace JACKIE_INET
 				ReadMini(inOutTemplateVar);
 		}
 
-
 		/// @method SerializeMini
 		/// @access public 
 		/// @returns void
@@ -361,7 +375,6 @@ namespace JACKIE_INET
 				ReadMiniChanged(currValue);
 		}
 
-
 		/// @method SerializeCasted
 		/// @access public 
 		/// @returns void
@@ -385,7 +398,6 @@ namespace JACKIE_INET
 			else
 				ReadCasted<serializationType>(value);
 		}
-
 
 		/// @method SerializeIntegerRange
 		/// @access public 
@@ -493,7 +505,6 @@ namespace JACKIE_INET
 		/// so only use if accuracy is not important.
 		/// @notice
 		/// templateType for this function must be a float or double
-
 		template <class templateType>
 		void SerializeVector(bool writeBitstream,
 			templateType &x, templateType &y, templateType &z)
@@ -519,7 +530,6 @@ namespace JACKIE_INET
 		/// in 6 bytes + 4 bits instead of 16 bytes.Slightly lossy.
 		/// @notice
 		/// templateType for this function must be a float or double
-
 		template <class templateType>
 		void SerializeNormQuat(bool writeBitstream,
 			templateType &w, templateType &x, templateType &y, templateType &z)
@@ -547,7 +557,6 @@ namespace JACKIE_INET
 		/// @notice
 		/// templateType for this function must be a float or double
 		/// lossy, although the result is renormalized
-
 		template <class templateType>
 		void SerializeOrthMatrix(
 			bool writeBitstream,
@@ -581,7 +590,6 @@ namespace JACKIE_INET
 		/// right aligned data means in the case of a partial byte, 
 		/// the bits are aligned right
 		/// @see
-
 		void SerializeBits(bool writeBitstream,
 			UInt8* inOutByteArray,
 			const BitSize numberOfBitsSerialize,
@@ -607,7 +615,6 @@ namespace JACKIE_INET
 		/// boundaries so so WriteAlignedBits and ReadAlignedBits both
 		/// calculate the same offset when aligning.
 		/// @see
-
 		inline void AlignReadPosBitsByteBoundary(void)
 		{
 			mReadingPosBits += 8 - (((mReadingPosBits - 1) & 7) + 1);
@@ -620,11 +627,9 @@ namespace JACKIE_INET
 		/// @param [in] Int8 * output 
 		/// The result byte array. It should be larger than @em numberOfBytes.
 		/// @param [in] const unsigned int numberOfBytes  The number of byte to read
-		/// @brief Read an array or casted stream of byte.
+		/// @brief Read an array of raw data or casted stream of byte.
 		/// @notice The array is raw data. 
 		/// There is no automatic endian conversion with this function
-		/// @see
-
 		void Read(Int8* output, const unsigned int numberOfBytes)
 		{
 			ReadBits((UInt8*)output, BYTES_TO_BITS(numberOfBytes));
@@ -645,7 +650,6 @@ namespace JACKIE_INET
 		/// 1.use True to read to user data 
 		/// 2.use False to read this stream to another stream 
 		/// @author mengdi[Jackie]
-
 		void ReadBits(UInt8 *dest, BitSize bitsRead, bool alignRight = true);
 
 
@@ -655,9 +659,6 @@ namespace JACKIE_INET
 		/// @param [in] IntegralType & outTemplateVar
 		/// @brief Read any integral type from a bitstream.  
 		/// Define DO_NOT_SWAP_ENDIAN if you need endian swapping.
-		/// @notice
-		/// @see
-
 		template <class IntegralType>
 		inline void Read(IntegralType &dest)
 		{
@@ -688,9 +689,6 @@ namespace JACKIE_INET
 		/// @returns void
 		/// @param [in] bool & dest The value to read
 		/// @brief  Read a bool from a bitstream.
-		/// @notice
-		/// @see
-
 		template <>
 		inline void Read(bool &dest)
 		{
@@ -708,9 +706,6 @@ namespace JACKIE_INET
 		/// @returns void
 		/// @param [in] JackieAddress & dest The value to read
 		/// @brief Read a JackieAddress from a bitstream.
-		/// @notice
-		/// @see
-
 		template <>
 		inline void Read(JackieAddress &dest)
 		{
@@ -751,7 +746,6 @@ namespace JACKIE_INET
 		/// @notice will align @mReadPosBIts to byte-boundary internally
 		/// @see  AlignReadPosBitsByteBoundary()
 		/// @author mengdi[Jackie]
-
 		template <>
 		inline void Read(UInt24 &dest)
 		{
@@ -789,7 +783,6 @@ namespace JACKIE_INET
 		/// var will be updated.  Otherwise it will retain the current value.
 		/// ReadDelta is only valid from a previous call to WriteDelta
 		/// @param[in] outTemplateVar The value to read
-
 		template <class IntegralType>
 		inline void ReadChangedValue(IntegralType &dest)
 		{
@@ -801,7 +794,6 @@ namespace JACKIE_INET
 
 		/// @brief Read a bool from a bitstream.
 		/// @param[in] outTemplateVar The value to read
-
 		template <>
 		inline void ReadChangedValue(bool &dest)
 		{
@@ -824,7 +816,6 @@ namespace JACKIE_INET
 		/// a double.  The range must be between -1 and +1.
 		/// For non-floating point, this is lossless, but only has benefit if you 
 		/// use less than half the bits of the type
-		/// @see
 		template <class IntegralType>
 		inline void ReadMini(IntegralType &dest)
 		{
@@ -852,7 +843,30 @@ namespace JACKIE_INET
 		}
 		template <> inline void ReadMini(JackieAddress &dest)
 		{
-			Read(dest);
+			UInt8 ipVersion;
+			ReadMini(ipVersion);
+			if (ipVersion == 4)
+			{
+				dest.address.addr4.sin_family = AF_INET;
+				// Read(var.binaryAddress);
+				// Don't endian swap the address or port
+				UInt32 binaryAddress;
+				ReadMini(binaryAddress);
+				// Unhide the IP address, done to prevent routers from changing it
+				dest.address.addr4.sin_addr.s_addr = ~binaryAddress;
+				ReadMini(dest.address.addr4.sin_port);
+				dest.debugPort = ntohs(dest.address.addr4.sin_port);
+			}
+			else
+			{
+#if NET_SUPPORT_IPV6==1
+				ReadMini(dest.address.addr6);
+				dest.debugPort = ntohs(dest.address.addr6.sin6_port);
+				//return b;
+#else
+				//return false;
+#endif
+			}
 		}
 		template <> inline void ReadMini(UInt24 &dest)
 		{
@@ -861,7 +875,7 @@ namespace JACKIE_INET
 		}
 		template <> inline void ReadMini(JackieGUID &dest)
 		{
-			Read(dest);
+			ReadMini(dest.g);
 		}
 		template <> inline void ReadMini(bool &dest)
 		{
@@ -919,7 +933,6 @@ namespace JACKIE_INET
 
 		/// @brief Read a bool from a bitstream.
 		/// @param[in] outTemplateVar The value to read
-
 		template <>
 		inline void ReadMiniChanged(bool &dest)
 		{
@@ -972,7 +985,6 @@ namespace JACKIE_INET
 		/// When reading it, we have to reverse it back fro big endian
 		/// we do nothing for little endian.
 		/// @see
-
 		template <class templateType>
 		void ReadIntegerRange(
 			templateType &value,
@@ -1022,18 +1034,16 @@ namespace JACKIE_INET
 		/// @param floatMin and @param floatMax
 		/// @notice
 		/// @see
+		void ReadFloatRange(float &outFloat, float floatMin, float floatMax);
 
-		void Read(float &outFloat, float floatMin, float floatMax);
 
-
-		/// @brief Read bits, starting at the next aligned bits. 
+		/// @brief Read bytes, starting at the next aligned byte. 
 		/// @details Note that the modulus 8 starting offset of the sequence
 		/// must be the same as was used with WriteBits. This will be a problem
 		/// with packet coalescence unless you byte align the coalesced packets.
 		/// @param[in] dest The byte array larger than @em numberOfBytesRead
 		/// @param[in] bytes2Read The number of byte to read from the internal state
 		/// @return true if there is enough byte.
-
 		void ReadAlignedBytes(UInt8 *dest, const ByteSize bytes2Read);
 
 
@@ -1041,7 +1051,6 @@ namespace JACKIE_INET
 		/// @param[in] inOutByteArray The data
 		/// @param[in] maxBytesRead Maximum number of bytes to read
 		/// @return true on success, false on failure.
-
 		void ReadAlignedBytes(Int8 *dest, ByteSize &bytes2Read,
 			const ByteSize maxBytes2Read);
 
@@ -1054,22 +1063,16 @@ namespace JACKIE_INET
 		/// @param [in] const ByteSize maxBytes2Read
 		/// @brief  Same as ReadAlignedBytesSafe() but allocates the memory
 		/// for you using new, rather than assuming it is safe to write to
-		/// @notice
-		/// @see
-
-		void ReadAlignedBytesAlloc(Int8 **dest, ByteSize &bytes2Read,
-			const ByteSize maxBytes2Read);
-
+		void ReadAlignedBytesAlloc(Int8 **dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read);
 
 		// @brief return 1 if the next data read is a 1, 0 if it is a 0
 		///@access public 
-
 		inline UInt32 ReadBit(void)
 		{
+			UInt32 result = ((data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7))) != 0) ? 1 : 0;
 			mReadingPosBits++;
-			return  (data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7))) != 0;
+			return result;
 		}
-
 
 		/// @access public
 		/// @brief Read a normalized 3D vector, using (at most) 4 bytes 
@@ -1081,14 +1084,13 @@ namespace JACKIE_INET
 		/// @param[in] z z
 		/// @return void
 		/// @notice templateType for this function must be a float or double
-
 		template <class templateType>
 		void ReadNormVector(templateType &x, templateType &y, templateType &z)
 		{
 			float xIn, yIn, zIn;
-			Read(x, -1.0f, 1.0f);
-			Read(y, -1.0f, 1.0f);
-			Read(z, -1.0f, 1.0f);
+			ReadFloatRange(x, -1.0f, 1.0f);
+			ReadFloatRange(y, -1.0f, 1.0f);
+			ReadFloatRange(z, -1.0f, 1.0f);
 			x = xIn;
 			y = yIn;
 			z = zIn;
@@ -1104,7 +1106,6 @@ namespace JACKIE_INET
 		/// @param[in] z z
 		/// @return void
 		/// @notice templateType for this function must be a float or double
-
 		template <class templateType>
 		void ReadVector(templateType &x, templateType &y, templateType &z)
 		{
@@ -1113,13 +1114,20 @@ namespace JACKIE_INET
 
 			if (magnitude > 0.00001f)
 			{
-				float cx = 0.0f, cy = 0.0f, cz = 0.0f;
-				ReadMini(cx);
-				ReadMini(cy);
-				ReadMini(cz);
-				x = cx;
-				y = cy;
-				z = cz;
+				//float cx = 0.0f, cy = 0.0f, cz = 0.0f;
+				//ReadMini(cx);
+				//ReadMini(cy);
+				//ReadMini(cz);
+				//x = cx;
+				//y = cy;
+				//z = cz;
+				//x *= magnitude;
+				//y *= magnitude;
+				//z *= magnitude;
+
+				ReadMini(x);
+				ReadMini(y);
+				ReadMini(z);
 				x *= magnitude;
 				y *= magnitude;
 				z *= magnitude;
@@ -1131,7 +1139,6 @@ namespace JACKIE_INET
 				z = 0.0;
 			}
 		}
-
 
 		/// @brief Read a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.
 		/// @param[in] w w
@@ -1150,9 +1157,9 @@ namespace JACKIE_INET
 			Read(czNeg);
 
 			UInt16 cx, cy, cz;
-			Read(cx);
-			Read(cy);
-			Read(cz);
+			ReadMini(cx);
+			ReadMini(cy);
+			ReadMini(cz);
 
 			// Calculate w from x,y,z
 			x = (templateType)(cx / 65535.0);
@@ -1267,7 +1274,6 @@ namespace JACKIE_INET
 		}
 		inline void Write(JackieBits &jackieBits) { Write(&jackieBits); }
 
-
 		/// @method WritePtr
 		/// @access public 
 		/// @returns void
@@ -1301,7 +1307,7 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		inline void WriteBitZero(void)
 		{
-			DCHECK_EQ(mReadOnly, false);
+			DCHECK(mReadOnly == false);
 
 			//AppendBitsCouldRealloc(1);
 			//BitSize shit = 8 - (mWritingPosBits & 7);
@@ -1320,16 +1326,13 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		inline void WriteBitOne(void)
 		{
-			DCHECK_EQ(mReadOnly, false);
+			DCHECK(mReadOnly == false);
 			AppendBitsCouldRealloc(1);
 
 			// Write bit 1
 			BitSize shift = mWritingPosBits & 7;
-			if (shift == 0)
-				data[mWritingPosBits >> 3] = 0x80;
-			else
+			shift == 0 ? data[mWritingPosBits >> 3] = 0x80 :
 				data[mWritingPosBits >> 3] |= 0x80 >> shift;
-
 			mWritingPosBits++;
 		}
 
@@ -1383,7 +1386,7 @@ namespace JACKIE_INET
 		/// @return bool
 		/// @notice 
 		/// @author mengdi[Jackie]
-		void Write(float src, float floatMin, float floatMax);
+		void WriteFloatRange(float src, float floatMin, float floatMax);
 
 
 		/// @func Write 
@@ -1839,9 +1842,9 @@ namespace JACKIE_INET
 			templateType z)
 		{
 			DCHECK(x <= 1.01 &&y <= 1.01 &&z <= 1.01 &&x >= -1.01 &&y >= -1.01 &&z >= -1.01);
-			Write((float)x, -1.0f, 1.0f);
-			Write((float)y, -1.0f, 1.0f);
-			Write((float)z, -1.0f, 1.0f);
+			WriteFloatRange((float)x, -1.0f, 1.0f);
+			WriteFloatRange((float)y, -1.0f, 1.0f);
+			WriteFloatRange((float)z, -1.0f, 1.0f);
 		}
 
 		/// @method WriteVector
@@ -1865,9 +1868,6 @@ namespace JACKIE_INET
 				WriteMini((float)(x / magnitude));
 				WriteMini((float)(y / magnitude));
 				WriteMini((float)(z / magnitude));
-				//	Write((UInt16)((x/magnitude+1.0f)*32767.5f));
-				//	Write((UInt16)((y/magnitude+1.0f)*32767.5f));
-				//	Write((UInt16)((z/magnitude+1.0f)*32767.5f));
 			}
 		}
 
@@ -1875,7 +1875,7 @@ namespace JACKIE_INET
 		/// @access public 
 		/// @returns void
 		/// @brief 
-		/// Write a normalized quaternion in 6 bytes + 4 bits instead of 16 bytes.  
+		/// Write a normalized quaternion in (18 bits[best case] to 6 bytes[worest case]) + 4 bits instead of 16 bytes.  
 		/// Slightly lossy.
 		/// @notice
 		/// templateType for this function must be a float or double
@@ -1890,9 +1890,9 @@ namespace JACKIE_INET
 			Write((bool)(x < 0.0));
 			Write((bool)(y < 0.0));
 			Write((bool)(z < 0.0));
-			Write((UInt16)(fabs(x)*65535.0));
-			Write((UInt16)(fabs(y)*65535.0));
-			Write((UInt16)(fabs(z)*65535.0));
+			WriteMini((UInt16)(fabs(x)*65535.0));
+			WriteMini((UInt16)(fabs(y)*65535.0));
+			WriteMini((UInt16)(fabs(z)*65535.0));
 			// Leave out w and calculate it on the target
 		}
 
@@ -1904,9 +1904,9 @@ namespace JACKIE_INET
 		/// and writing 3 components of the quaternion in 2 bytes each.
 		/// @notice
 		/// Lossy, although the result is renormalized
-		/// Use 6 bytes instead of 36
+		/// Use (18 bits to 6 bytes) +4 bits instead of 36
 		/// templateType for this function must be a float or double
-		/// @see
+		/// @see WriteNormQuat()
 		template <class templateType> void WriteOrthMatrix(
 			templateType m00, templateType m01, templateType m02,
 			templateType m10, templateType m11, templateType m12,
@@ -2088,19 +2088,6 @@ namespace JACKIE_INET
 		void PrintBit(void);
 		void PrintHex(void);
 
-		template <class templateType>
-		JackieBits& operator<<(const templateType& c)
-		{
-			Write(c);
-			return *this;
-		}
-		template <class templateType>
-		JackieBits& operator>>(templateType& c)
-		{
-			Read(c);
-			return *this;
-		}
-
 		inline static int GetLeadingZeroSize(Int8 x)
 		{
 			return GetLeadingZeroSize((UInt8)x);
@@ -2183,13 +2170,6 @@ namespace JACKIE_INET
 			return isNetworkOrder;
 		}
 		inline static bool IsBigEndian(void) { return IsNetworkOrder(); }
-		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
-		{
-			for (UInt32 i = 0; i < length; i++)
-			{
-				dest[i] = src[length - i - 1];
-			}
-		}
 
 		/// @Brief faster than ReverseBytes() if you want to reverse byte
 		/// for a variable teself internnaly like uint64 will loop 12 times 
@@ -2202,6 +2182,13 @@ namespace JACKIE_INET
 				temp = src[i];
 				src[i] = src[length - i - 1];
 				src[length - i - 1] = temp;
+			}
+		}
+		inline static void ReverseBytes(UInt8 *src, UInt8 *dest, const UInt32 length)
+		{
+			for (UInt32 i = 0; i < length; i++)
+			{
+				dest[i] = src[length - i - 1];
 			}
 		}
 
