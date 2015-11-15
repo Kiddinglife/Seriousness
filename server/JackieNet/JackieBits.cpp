@@ -1,4 +1,4 @@
-#include "JackieBits.h"
+﻿#include "JackieBits.h"
 
 namespace JACKIE_INET
 {
@@ -15,12 +15,12 @@ namespace JACKIE_INET
 		//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
 	}
 
-	JackieBits::JackieBits(const BitSize initialBytesToAllocate) :
+	JackieBits::JackieBits(const BitSize initialBytesAllocate) :
 		mWritingPosBits(0),
 		mReadingPosBits(0),
 		mReadOnly(false)
 	{
-		if (initialBytesToAllocate <= JACKIESTREAM_STACK_ALLOC_SIZE)
+		if (initialBytesAllocate <= JACKIESTREAM_STACK_ALLOC_SIZE)
 		{
 			data = mStacBuffer;
 			mBitsAllocSize = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
@@ -30,11 +30,11 @@ namespace JACKIE_INET
 		}
 		else
 		{
-			data = (UInt8*)jackieMalloc_Ex(initialBytesToAllocate, TRACE_FILE_AND_LINE_);
-			mBitsAllocSize = BYTES_TO_BITS(initialBytesToAllocate);
+			data = (UInt8*)jackieMalloc_Ex(initialBytesAllocate, TRACE_FILE_AND_LINE_);
+			mBitsAllocSize = BYTES_TO_BITS(initialBytesAllocate);
 			mNeedFree = true;
 			DCHECK_NOTNULL(data);
-			//memset(data, 0, initialBytesToAllocate);
+			//memset(data, 0, initialBytesAllocate);
 		}
 	}
 	JackieBits::JackieBits(UInt8* src, const ByteSize len, bool copy/*=false*/) :
@@ -85,7 +85,7 @@ namespace JACKIE_INET
 		/// because it will not call ctor and dtor
 	}
 
-	void JackieBits::ReadMiniTo(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
+	void JackieBits::ReadMini(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
 	{
 		UInt32 currByte;
 		UInt8 byteMatch;
@@ -109,7 +109,7 @@ namespace JACKIE_INET
 			{
 				// If we read a 1 then the data is byteMatch.
 				bool b;
-				ReadTo(b);
+				Read(b);
 				if (b)   // Check that bit
 				{
 					dest[currByte] = byteMatch;
@@ -118,10 +118,11 @@ namespace JACKIE_INET
 				else /// the first byte is not matched 
 				{
 					// Read the rest of the bytes
-					ReadBitsTo(dest, (currByte + 1) << 3);
+					ReadBits(dest, (currByte + 1) << 3);
 					return;
 				}
 			}
+			DCHECK(currByte == 0);
 		}
 		else
 		{
@@ -130,7 +131,7 @@ namespace JACKIE_INET
 			{
 				// If we read a 1 then the data is byteMatch.
 				bool b;
-				ReadTo(b);
+				Read(b);
 				if (b)   // Check that bit
 				{
 					dest[currByte] = byteMatch;
@@ -139,7 +140,7 @@ namespace JACKIE_INET
 				else /// the first byte is not matched 
 				{
 					// Read the rest of the bytes
-					ReadBitsTo(dest, bits2Read - (currByte << 3));
+					ReadBits(dest, bits2Read - (currByte << 3));
 					return;
 				}
 			}
@@ -152,16 +153,16 @@ namespace JACKIE_INET
 		/// the upper(left aligned) half of the last byte(now currByte == 0) is a 0000
 		/// (positive) or 1111 (nagative) write a bit 1 and the remaining 4 bits. 
 		bool b;
-		ReadTo(b);
+		Read(b);
 		if (b)
 		{
-			ReadBitsTo(dest + currByte, 4);
+			ReadBits(dest + currByte, 4);
 			// read the remaining 4 bits
 			dest[currByte] |= halfByteMatch;
 		}
 		else
 		{
-			ReadBitsTo(dest + currByte, 8);
+			ReadBits(dest + currByte, 8);
 		}
 	}
 
@@ -215,7 +216,7 @@ namespace JACKIE_INET
 		}
 	}
 
-	void JackieBits::ReadBitsTo(UInt8 *dest, BitSize bits2Read, bool alignRight /*= true*/)
+	void JackieBits::ReadBits(UInt8 *dest, BitSize bits2Read, bool alignRight /*= true*/)
 	{
 		DCHECK(bits2Read > 0);
 		DCHECK(bits2Read <= GetPayLoadBits());
@@ -280,54 +281,54 @@ namespace JACKIE_INET
 		//return true;
 	}
 
-	void JackieBits::ReadTo(float &outFloat, float floatMin, float floatMax)
+	void JackieBits::Read(float &outFloat, float floatMin, float floatMax)
 	{
 		DCHECK(floatMax > floatMin);
 
 		UInt16 percentile;
-		ReadTo(percentile);
+		Read(percentile);
 
 		outFloat = floatMin + ((float)percentile / 65535.0f) * (floatMax - floatMin);
 		if (outFloat<floatMin) outFloat = floatMin;
 		else if (outFloat>floatMax) outFloat = floatMax;
 	}
 
-	void JackieBits::ReadAlignedBytesTo(UInt8 *dest, const ByteSize bytes2Read)
+	void JackieBits::ReadAlignedBytes(UInt8 *dest, const ByteSize bytes2Read)
 	{
 		DCHECK(bytes2Read > 0);
 		DCHECK(GetPayLoadBits() >= BYTES_TO_BITS(bytes2Read));
 		/// if (bytes2Read <= 0) return;
 
 		/// Byte align
-		AlignReadPosBitsToByteBoundary();
+		AlignReadPosBitsByteBoundary();
 
 		/// Write the data
 		memcpy(dest, data + (mReadingPosBits >> 3), bytes2Read);
 		mReadingPosBits += bytes2Read << 3;
 	}
 
-	void JackieBits::ReadAlignedBytesTo(Int8 *dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
+	void JackieBits::ReadAlignedBytes(Int8 *dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
 	{
 		bytes2Read = ReadBit();
-		///ReadMiniTo(bytes2Read);
+		///ReadMini(bytes2Read);
 		if (bytes2Read > maxBytes2Read) bytes2Read = maxBytes2Read;
 		if (bytes2Read == 0) return;
-		ReadAlignedBytesTo((UInt8*)dest, bytes2Read);
+		ReadAlignedBytes((UInt8*)dest, bytes2Read);
 	}
 
-	void JackieBits::ReadAlignedBytesAllocTo(Int8 **dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
+	void JackieBits::ReadAlignedBytesAlloc(Int8 **dest, ByteSize &bytes2Read, const ByteSize maxBytes2Read)
 	{
 		jackieFree_Ex(*dest, TRACE_FILE_AND_LINE_);
 		*dest = 0;
 		bytes2Read = ReadBit();
-		///ReadMiniTo(bytes2Read);
+		///ReadMini(bytes2Read);
 		if (bytes2Read > maxBytes2Read) bytes2Read = maxBytes2Read;
 		if (bytes2Read == 0) return;
 		*dest = (Int8*)jackieMalloc_Ex(bytes2Read, TRACE_FILE_AND_LINE_);
-		ReadAlignedBytesTo((UInt8*)*dest, bytes2Read);
+		ReadAlignedBytes((UInt8*)*dest, bytes2Read);
 	}
 
-	void JackieBits::WriteBitsFrom(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
+	void JackieBits::WriteBits(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
 		DCHECK(mReadOnly == false);
 		DCHECK(bits2Write > 0);
@@ -402,7 +403,7 @@ namespace JACKIE_INET
 			}
 		}
 	}
-	void JackieBits::WriteFrom(JackieBits *jackieBits, BitSize bits2Write)
+	void JackieBits::Write(JackieBits *jackieBits, BitSize bits2Write)
 	{
 		DCHECK_EQ(mReadOnly, false);
 		DCHECK_GT(bits2Write, 0);
@@ -415,7 +416,7 @@ namespace JACKIE_INET
 		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
 		if (numberOfBitsMod8 == 0)
 		{
-			return this->WriteBitsFrom(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
+			return this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
 				bits2Write, false);
 		}
 
@@ -441,7 +442,7 @@ namespace JACKIE_INET
 		/// after writting partial bits, numberOfBitsMod8 must be zero
 		/// we can now safely call WriteBits() for further process
 		DCHECK_EQ((jackieBits->mReadingPosBits & 7), 0);
-		return this->WriteBitsFrom(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
+		return this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
 			bits2Write, false);
 
 		//AppendBitsCouldRealloc(bits2Write);
@@ -494,7 +495,7 @@ namespace JACKIE_INET
 		//}
 	}
 
-	void JackieBits::WriteFrom(float src, float floatMin, float floatMax)
+	void JackieBits::Write(float src, float floatMin, float floatMax)
 	{
 		DCHECK_GT(floatMax, floatMin);
 		DCHECK_LE(src, floatMax + .001);
@@ -503,10 +504,10 @@ namespace JACKIE_INET
 		float percentile = 65535.0f * ((src - floatMin) / (floatMax - floatMin));
 		if (percentile < 0.0f) percentile = 0.0;
 		if (percentile > 65535.0f) percentile = 65535.0f;
-		WriteFrom((UInt16)percentile);
+		Write((UInt16)percentile);
 	}
 
-	void JackieBits::WriteMiniFrom(const UInt8* src, const BitSize bits2Write, const bool isUnsigned)
+	void JackieBits::WriteMini(const UInt8* src, const BitSize bits2Write, const bool isUnsigned)
 	{
 		static bool truee = true;
 		static bool falsee = false;
@@ -520,7 +521,7 @@ namespace JACKIE_INET
 			/// get the highest byte with highest index  PCs
 			currByte = (bits2Write >> 3) - 1;
 
-			/// From high byte to low byte, 
+			///  high byte to low byte, 
 			/// if high byte is a byteMatch then write a 1 bit.
 			/// Otherwise write a 0 bit and then write the remaining bytes
 			while (currByte > 0)
@@ -530,14 +531,14 @@ namespace JACKIE_INET
 				if (src[currByte] == byteMatch)
 				{
 					//JINFO << "match " << byteMatch;
-					WriteFrom(truee);
+					Write(truee);
 					currByte--;
 				}
 				else /// the first byte is not matched
 				{
-					WriteFrom(falsee);
+					Write(falsee);
 					// Write the remainder of the data after writing bit false
-					WriteBitsFrom(src, (currByte + 1) << 3, true);
+					WriteBits(src, (currByte + 1) << 3, true);
 					return;
 				}
 			}
@@ -549,7 +550,7 @@ namespace JACKIE_INET
 			/// get the highest byte with highest index  PCs
 			currByte = 0;
 
-			/// From high byte to low byte, 
+			///  high byte to low byte, 
 			/// if high byte is a byteMatch then write a 1 bit.
 			/// Otherwise write a 0 bit and then write the remaining bytes
 			while (currByte < ((bits2Write >> 3) - 1))
@@ -558,15 +559,14 @@ namespace JACKIE_INET
 				/// then it would have the same value shifted
 				if (src[currByte] == byteMatch)
 				{
-					JINFO << "match " << byteMatch;
-					WriteFrom(truee);
+					Write(truee);
 					currByte++;
 				}
 				else /// the first byte is not matched
 				{
-					WriteFrom(falsee);
+					Write(falsee);
 					// Write the remainder of the data after writing bit false
-					WriteBitsFrom(src + currByte, bits2Write - (currByte << 3), true);
+					WriteBits(src + currByte, bits2Write - (currByte << 3), true);
 					return;
 				}
 			}
@@ -579,45 +579,45 @@ namespace JACKIE_INET
 			(!isUnsigned && (src[currByte] & 0xF0) == 0xF0))
 		{/// the upper(left aligned) half of the last byte(now currByte == 0) is a 0000 (positive) or 1111 (nagative)
 			/// write a bit 1 and the remaining 4 bits. 
-			JINFO << "match four zeros" << byteMatch;
-			WriteFrom(truee);
-			WriteBitsFrom(src + currByte, 4, true);
+			//JINFO << "match four zeros" << byteMatch;
+			Write(truee);
+			WriteBits(src + currByte, 4, true);
 		}
 		else
 		{/// write a 0 and the remaining 8 bites.
-			WriteFrom(falsee);
-			WriteBitsFrom(src + currByte, 8, true);
+			Write(falsee);
+			WriteBits(src + currByte, 8, true);
 		}
 	}
 
-	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize numberOfBytesToWrite)
+	void JackieBits::WriteAlignedBytes(const UInt8 *src, const ByteSize numberOfBytesWrite)
 	{
 		AlignWritePosBits2ByteBoundary();
-		WriteFrom((Int8*)src, numberOfBytesToWrite);
+		Write((Int8*)src, numberOfBytesWrite);
 	}
 
-	void JackieBits::WriteAlignedBytesFrom(const UInt8 *src, const ByteSize bytes2Write, const ByteSize maxBytes2Write)
+	void JackieBits::WriteAlignedBytes(const UInt8 *src, const ByteSize bytes2Write, const ByteSize maxBytes2Write)
 	{
 		if (src == 0 || bytes2Write == 0)
 		{
-			///WriteMiniFrom(bytes2Write);
+			///WriteMini(bytes2Write);
 			WriteBitZero();
 			return;
 		}
-		WriteMiniFrom(bytes2Write);
-		WriteAlignedBytesFrom(src, bytes2Write < maxBytes2Write ?
+		WriteMini(bytes2Write);
+		WriteAlignedBytes(src, bytes2Write < maxBytes2Write ?
 		bytes2Write : maxBytes2Write);
 	}
 
 	void JackieBits::PadZeroAfterAlignedWRPos(UInt32 bytes)
 	{
-		Int32 numToWrite = bytes - GetWrittenBytesCount();
-		if (numToWrite > 0)
+		Int32 numWrite = bytes - GetWrittenBytesCount();
+		if (numWrite > 0)
 		{
 			AlignWritePosBits2ByteBoundary();
-			AppendBitsCouldRealloc(BYTES_TO_BITS(numToWrite));
-			memset(data + (mWritingPosBits >> 3), 0, numToWrite);
-			mWritingPosBits += BYTES_TO_BITS(numToWrite);
+			AppendBitsCouldRealloc(BYTES_TO_BITS(numWrite));
+			memset(data + (mWritingPosBits >> 3), 0, numWrite);
+			mWritingPosBits += BYTES_TO_BITS(numWrite);
 		}
 	}
 

@@ -384,7 +384,7 @@ static void test_JackieStream__funcs()
 	s5.PrintBit();
 
 	JackieBits s6;
-	s6.WriteMiniFrom((UInt8*)&strr, sizeof(strr) * 8, false);
+	s6.WriteMini((UInt8*)&strr, sizeof(strr) * 8, false);
 	s6.PrintBit();
 
 	JINFO << "Test NumberOfLeadingZeroes() " << JackieBits::GetLeadingZeroSize(1);
@@ -395,15 +395,15 @@ static void test_JackieStream__funcs()
 	JackieBits::PrintBit(str, 32, (UInt8*)&a);
 	JINFO << str;
 	UInt8 b[4];
-	JackieBits::ReverseBytesTo((UInt8*)&a, b, 4);
+	JackieBits::ReverseBytes((UInt8*)&a, b, 4);
 	JackieBits::PrintBit(str, 32, b);
 	JINFO << str;
 
-	JINFO << "Test s7.ReadBitsTo()";
+	JINFO << "Test s7.ReadBits()";
 	JackieBits s7((UInt8*)&strr, sizeof(strr), true);
 	UInt8 readto[256] = { 0 };
 	s7.ReadPosBits(3);
-	s7.ReadBitsTo(readto, 13, false);
+	s7.ReadBits(readto, 13, false);
 	s5.PrintBit();
 	JackieBits::PrintBit(str, 16, readto);
 	JINFO << str;
@@ -412,7 +412,7 @@ static void test_JackieStream__funcs()
 	JackieBits::PrintBit(str, 32, (UInt8*)&reverse);
 	JINFO << str;
 	int dest;
-	JackieBits::ReverseBytesTo((UInt8*)&reverse, (UInt8*)&dest, 4);
+	JackieBits::ReverseBytes((UInt8*)&reverse, (UInt8*)&dest, 4);
 	JackieBits::PrintBit(str, 32, (UInt8*)&dest);
 	JINFO << str;
 
@@ -428,11 +428,14 @@ static void test_JackieStream__funcs()
 	JINFO << "v2 " << v2;
 
 
-	UInt24 u1 = 25;
-	s8.WriteMiniFrom(u1);
-	UInt24 u2;
-	s8.ReadMiniTo(u2);
-	JINFO << "u2 " << u2 << "max uint32 "<< UINT_MAX; 
+	Int8 u1 = -25;
+	s8.Write(12);
+	s8.WriteMini(u1);
+	s8.Read(as);
+	s8.PadZeroAfterAlignedWRPos(123);
+	Int8 u2;
+	s8.ReadMini(u2);
+	JINFO << "u2 " << (int)u2 << "a  " << as;
 }
 enum
 {
