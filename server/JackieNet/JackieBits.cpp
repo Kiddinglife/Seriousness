@@ -168,31 +168,28 @@ namespace JACKIE_INET
 
 	void JackieBits::AppendBitsCouldRealloc(const BitSize bits2Append)
 	{
-		BitSize newBitsAllocCount = bits2Append + mWritingPosBits;
-		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1; // official 
+		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits; /// official
+		BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1;
 
 		// If this assert hits then we need to specify mReadOnly as false 
 		// It needs to reallocate to hold all the data and can't do it unless we allocated to begin with
 		// Often hits if you call Write or Serialize on a read-only bitstream
 		DCHECK(mReadOnly == false);
 
-		//if (newBitsAllocCount > 0 &&
-		//	((mBitsAllocSize - 1) >> 3) < ((newBitsAllocCount - 1) >> 3))
+		//if (newBitsAllocCount > 0 && ((mBitsAllocSize - 1) >> 3) < // official
+		//	((newBitsAllocCount - 1) >> 3)) 
 
 		/// see if one or more new bytes need to be allocated
-		//if (mBitsAllocSize < newBitsAllocCount)
-		//{
-		if (newBitsAllocCount > 0 && ((mBitsAllocSize - 1) >> 3) <
-			((newBitsAllocCount - 1) >> 3))
+		if (mBitsAllocSize < newBitsAllocCount)
 		{
 			// Less memory efficient but saves on news and deletes
 			/// Cap to 1 meg buffer to save on huge allocations
 			newBitsAllocCount <<= 1;
 
-			//if (newBitsAllocCount - (bits2Append + mWritingPosBits + 1) > 1048576)
-			//	newBitsAllocCount = bits2Append + mWritingPosBits + 1048576;
-			if (newBitsAllocCount - (bits2Append + mWritingPosBits) > 1048576)
-				newBitsAllocCount = bits2Append + mWritingPosBits + 1048576; // official
+			if (newBitsAllocCount - (bits2Append + mWritingPosBits + 1) > 1048576)
+				newBitsAllocCount = bits2Append + mWritingPosBits + 1048576;
+			//if (newBitsAllocCount - (bits2Append + mWritingPosBits) > 1048576)
+			//	newBitsAllocCount = bits2Append + mWritingPosBits + 1048576; // official
 
 			// Use realloc and free so we are more efficient than delete and new for resizing
 			BitSize bytes2Alloc = BITS_TO_BYTES(newBitsAllocCount);
@@ -295,6 +292,7 @@ namespace JACKIE_INET
 			{
 				// Reading a partial byte for the last byte, shift right so the data is aligned on the right
 				if (alignRight)  dest[writePosByte] >>= (8 - bits2Read);
+				///  [11/15/2015 JACKIE] fix bug of not incrementing mReadingPosBits
 				mReadingPosBits += bits2Read;
 				bits2Read = 0;
 			}

@@ -696,12 +696,9 @@ namespace JACKIE_INET
 		{
 			DCHECK(GetPayLoadBits() >= 1);
 			//if (GetPayLoadBits() < 1) return;
-
-			// Is it faster to just write it out here?
-			data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7)) ?
-				dest = true : dest = false;
-
 			// Has to be on a different line for Mac
+			// Is it faster to just write it out here?
+			dest = (data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7))) != 0;
 			mReadingPosBits++;
 		}
 
@@ -814,7 +811,6 @@ namespace JACKIE_INET
 
 		/// @Brief Assume the input source points to a compressed native type. 
 		/// Decompress and read it.
-
 		void ReadMini(UInt8* dest, const BitSize bits2Read, const bool isUnsigned);
 
 
@@ -1307,15 +1303,15 @@ namespace JACKIE_INET
 		{
 			DCHECK_EQ(mReadOnly, false);
 
-			AppendBitsCouldRealloc(1);
-			BitSize shit = 8 - (mWritingPosBits & 7);
-			data[mWritingPosBits >> 3] = ((data[mWritingPosBits >> 3] >> shit) << shit);
-			mWritingPosBits++;
-
 			//AppendBitsCouldRealloc(1);
-			// New bytes need to be zeroed
-			//if( ( mWritePosBits & 7 ) == 0 ) data[mWritePosBits >> 3] = 0;
-			//mWritePosBits++;
+			//BitSize shit = 8 - (mWritingPosBits & 7);
+			//data[mWritingPosBits >> 3] = ((data[mWritingPosBits >> 3] >> shit) << shit);
+			//mWritingPosBits++;
+
+			AppendBitsCouldRealloc(1);
+			/// New bytes need to be zeroed
+			if ((mWritingPosBits & 7) == 0) data[mWritingPosBits >> 3] = 0;
+			mWritingPosBits++;
 		}
 
 		/// @func WriteBitOne 
@@ -1325,19 +1321,16 @@ namespace JACKIE_INET
 		inline void WriteBitOne(void)
 		{
 			DCHECK_EQ(mReadOnly, false);
-
 			AppendBitsCouldRealloc(1);
-			BitSize shit = mWritingPosBits & 7;
-			data[mWritingPosBits >> 3] |= 0x80 >> shit; // Write bit 1
-			mWritingPosBits++;
 
-			//AddBitsAndReallocate(1);
-			//BitSize_t numberOfBitsMod8 = mWritePosBits & 7;
-			//if( numberOfBitsMod8 == 0 )
-			//	data[mWritePosBits >> 3] = 0x80;
-			//else
-			//	data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 ); // Set the bit to 1
-			//mWritePosBits++;
+			// Write bit 1
+			BitSize shift = mWritingPosBits & 7;
+			if (shift == 0)
+				data[mWritingPosBits >> 3] = 0x80;
+			else
+				data[mWritingPosBits >> 3] |= 0x80 >> shift;
+
+			mWritingPosBits++;
 		}
 
 
