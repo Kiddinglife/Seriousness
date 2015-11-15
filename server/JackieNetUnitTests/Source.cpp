@@ -367,74 +367,14 @@ static void test_ServerApplication_funcs()
 //////////////////////////////////////////////////////////////////////////
 
 #include "JackieNet/JackieBits.h"
+struct vec{ float x, y, z; };
 static void test_JackieStream__funcs()
 {
 	TIMED_FUNC(test);
-	//for( unsigned int Index = 0; Index < 10000; Index++ )
-	//{
-	//	char strr[ ] = "1";
-	//	JackieBits s5((UInt8*) strr, sizeof(strr), false);
-	//	JackieBits s4;
-	//	s4.WriteFrom(s5);
-	//	s4.Reuse();
-	//}
-	JINFO << "Test s6.WriteMiniFrom()";
-	short strr = -5;
-	JackieBits s5((UInt8*)&strr, sizeof(strr), false);
-	s5.PrintBit();
 
-	JackieBits s6;
-	s6.WriteMini((UInt8*)&strr, sizeof(strr) * 8, false);
-	s6.PrintBit();
+	JINFO << "Test alll write and read";
 
-	JINFO << "Test NumberOfLeadingZeroes() " << JackieBits::GetLeadingZeroSize(1);
-
-	JINFO << "Test ReverseBytes() ";
-	Int8 str[256];
-	int a = 1;
-	JackieBits::PrintBit(str, 32, (UInt8*)&a);
-	JINFO << str;
-	UInt8 b[4];
-	JackieBits::ReverseBytes((UInt8*)&a, b, 4);
-	JackieBits::PrintBit(str, 32, b);
-	JINFO << str;
-
-	JINFO << "Test s7.ReadBits()";
-	JackieBits s7((UInt8*)&strr, sizeof(strr), true);
-	UInt8 readto[256] = { 0 };
-	s7.ReadPosBits(3);
-	s7.ReadBits(readto, 13, false);
-	s5.PrintBit();
-	JackieBits::PrintBit(str, 16, readto);
-	JINFO << str;
-
-	int reverse = 123;
-	JackieBits::PrintBit(str, 32, (UInt8*)&reverse);
-	JINFO << str;
-	int dest;
-	JackieBits::ReverseBytes((UInt8*)&reverse, (UInt8*)&dest, 4);
-	JackieBits::PrintBit(str, 32, (UInt8*)&dest);
-	JINFO << str;
-
-	int as = 12;
-	s7 << as << reverse;
-
-	JINFO << "Test s8 alll write and read";
 	JackieBits s8;
-	UInt32 v1 = 128;
-	//s8.Serialize(true, v1);
-	UInt32 v2 = 0;
-	s8 << v1 >> v2;
-	//s8.Serialize(false, v2);
-	JINFO << "v2 " << v2;
-	JackieGUID guid(123);
-	JackieGUID guid1;
-	s8 << guid >> guid1;
-	//s8 >> guid;
-	//UInt32 val;
-	//s8.WriteMini(v1);
-	//s8.ReadMini(val);
-	//JINFO << "val " << val;
 
 	UInt24 uint24 = 24;
 	UInt8 uint8 = 8;
@@ -445,11 +385,20 @@ static void test_JackieStream__funcs()
 	Int16 int16 = -16;
 	Int32 int32 = -32;
 	Int64 int64 = -64;
-	UInt8 particialByte = 0xf0;
 
-	UInt32 looptimes = 100000;
+	UInt8 particialByte = 0xf0;
+	JackieGUID guid(123);
+	JackieAddress addr("localhost", 32000);
+	vec vector_ = { 0.2f, -0.4f, -0.8f };
+	vec vector__ = { 2.234f, -4.78f, -32.2f };
+	UInt32 looptimes = 10000000;
 	for (UInt32 i = 1; i <= looptimes; i++)
 	{
+		s8 << guid;
+		s8 << addr;
+		s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
+		s8.WriteVector(vector__.x, vector__.y, vector__.z);
+
 		s8.Write(uint24);
 		s8.WriteMini(uint24);
 
@@ -480,54 +429,78 @@ static void test_JackieStream__funcs()
 		//s8.WriteMini(i);
 	}
 
+	JackieBits s9;
+	s9 << s8;
+	s8.Reset();
+
 	for (UInt32 i = 1; i <= looptimes; i++)
 	{
-		s8.Read(uint24);
+		JackieGUID guidd;
+		s9 >> guidd;
+		DCHECK(guid == guidd);
+
+		JackieAddress addrr;
+		s9 >> addrr;
+		DCHECK(addr == addrr);
+
+		vec vectorr;
+		s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
+		DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
+		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+
+		vec vectorrr;
+		s9.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
+		DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
+		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+
+		s9.Read(uint24);
 		UInt24 mini_uint24;
-		s8.ReadMini(mini_uint24);
+		s9.ReadMini(mini_uint24);
 		DCHECK(mini_uint24 == uint24);
 
-		s8.Read(uint8);
-		s8.Read(int64);
+		s9.Read(uint8);
+		s9.Read(int64);
 		UInt8 mini_uint8;
-		s8.ReadMini(mini_uint8);
+		s9.ReadMini(mini_uint8);
 		DCHECK(mini_uint8 == uint8);
 		Int64 mini_int64;
-		s8.ReadMini(mini_int64);
+		s9.ReadMini(mini_int64);
 		DCHECK(mini_int64 == int64);
 
-		s8.Read(uint16);
-		s8.Read(int32);
+		s9.Read(uint16);
+		s9.Read(int32);
 		UInt16 mini_uint16;
-		s8.ReadMini(mini_uint16);
+		s9.ReadMini(mini_uint16);
 		DCHECK(mini_uint16 == uint16);
 		Int32 mini_int32;
-		s8.ReadMini(mini_int32);
+		s9.ReadMini(mini_int32);
 		DCHECK(mini_int32 == int32);
 
 
 		UInt8 v = 0;
-		s8.ReadBits(&v, 4, true);
+		s9.ReadBits(&v, 4, true);
 
-		s8.Read(uint32);
-		s8.Read(int16);
+		s9.Read(uint32);
+		s9.Read(int16);
 		UInt32 mini_uint32;
-		s8.ReadMini(mini_uint32);
+		s9.ReadMini(mini_uint32);
 		DCHECK(mini_uint32 == uint32);
 		Int16 mini_int16;
-		s8.ReadMini(mini_int16);
+		s9.ReadMini(mini_int16);
 		DCHECK(mini_int16 == int16);
 
 
-		s8.ReadBits(&v, 7, false);
+		s9.ReadBits(&v, 7, false);
 
-		s8.Read(uint64);
-		s8.Read(int8);
+		s9.Read(uint64);
+		s9.Read(int8);
 		UInt64 mini_uint64;
-		s8.ReadMini(mini_uint64);
+		s9.ReadMini(mini_uint64);
 		DCHECK(mini_uint64 == uint64);
 		Int8 mini_int8;
-		s8.ReadMini(mini_int8);
+		s9.ReadMini(mini_int8);
 		DCHECK(mini_int8 == int8);
 
 		DCHECK(uint8 == 8);
@@ -540,10 +513,6 @@ static void test_JackieStream__funcs()
 		DCHECK(uint64 == 64);
 		DCHECK(int64 == -64);
 		DCHECK(particialByte > 0);
-
-		//s8.ReadMini(val);
-		//JINFO << "val " << val;
-		//DCHECK(val == i);
 	}
 }
 enum

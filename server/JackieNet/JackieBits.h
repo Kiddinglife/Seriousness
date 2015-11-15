@@ -119,9 +119,9 @@ namespace JACKIE_INET
 		~JackieBits();
 
 
-		/// @ brief Use Mini write and read
+		/// @ brief Use Mini write and read internally 
 		template <class templateType>
-		JackieBits& operator<<(const templateType& c)
+		JackieBits& operator<<(templateType& c)
 		{
 			WriteMini(c);
 			return *this;
@@ -130,6 +130,13 @@ namespace JACKIE_INET
 		JackieBits& operator>>(templateType& c)
 		{
 			ReadMini(c);
+			return *this;
+		}
+
+		template <>
+		JackieBits& operator<<(JackieBits& c)
+		{
+			Write(c);
 			return *this;
 		}
 
@@ -885,14 +892,14 @@ namespace JACKIE_INET
 		inline void ReadMini(float &dest)
 		{
 			UInt16 compressedFloat;
-			Read(compressedFloat);
+			ReadMini(compressedFloat);
 			dest = ((float)compressedFloat / 32767.5f - 1.0f);
 		}
 		template <> /// For values between -1 and 1
 		inline void ReadMini(double &dest)
 		{
 			UInt32 compressedFloat;
-			Read(compressedFloat);
+			ReadMini(compressedFloat);
 			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
 		}
 
@@ -1087,13 +1094,9 @@ namespace JACKIE_INET
 		template <class templateType>
 		void ReadNormVector(templateType &x, templateType &y, templateType &z)
 		{
-			float xIn, yIn, zIn;
 			ReadFloatRange(x, -1.0f, 1.0f);
 			ReadFloatRange(y, -1.0f, 1.0f);
 			ReadFloatRange(z, -1.0f, 1.0f);
-			x = xIn;
-			y = yIn;
-			z = zIn;
 		}
 
 
@@ -1739,7 +1742,7 @@ namespace JACKIE_INET
 			float varCopy = src;
 			if (varCopy < -1.0f) varCopy = -1.0f;
 			if (varCopy > 1.0f) varCopy = 1.0f;
-			Write((UInt16)((varCopy + 1.0f)*32767.5f));
+			WriteMini((UInt16)((varCopy + 1.0f)*32767.5f));
 		}
 		template <> ///@notice For values between -1 and 1
 		inline void WriteMini(const double &src)
@@ -1748,7 +1751,7 @@ namespace JACKIE_INET
 			double varCopy = src;
 			if (varCopy < -1.0f) varCopy = -1.0f;
 			if (varCopy > 1.0f) varCopy = 1.0f;
-			Write((UInt32)((varCopy + 1.0)*2147483648.0));
+			WriteMini((UInt32)((varCopy + 1.0)*2147483648.0));
 		}
 
 		/// @access public 
