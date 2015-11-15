@@ -9,7 +9,9 @@
  */
 
 #include "WSAStartupSingleton.h"
+#ifdef _WIN32
 #include <WinSock2.h>
+#endif
 #include <stdio.h>
 
 int WSAStartupSingleton::refCount = 0;
@@ -23,18 +25,18 @@ void WSAStartupSingleton::AddRef(void)
 
 	refCount++;
 
-	if( refCount != 1 )
+	if (refCount != 1)
 		return;
 
 	WSADATA winsockInfo;
-	if( WSAStartup(MAKEWORD(2, 2), &winsockInfo) != 0 )
+	if (WSAStartup(MAKEWORD(2, 2), &winsockInfo) != 0)
 	{
 #if  defined(_DEBUG) && !defined(WINDOWS_PHONE_8)
 		DWORD dwIOError = GetLastError();
 		LPVOID messageBuffer;
 		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, dwIOError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
-			(LPTSTR) & messageBuffer, 0, NULL);
+			(LPTSTR)& messageBuffer, 0, NULL);
 		// something has gone wrong here...
 		printf_s("WSAStartup failed:Error code - %d,%s\n", dwIOError, messageBuffer);
 		//Free the buffer.
@@ -47,10 +49,10 @@ void WSAStartupSingleton::AddRef(void)
 void WSAStartupSingleton::Deref(void)
 {
 #if defined(_WIN32) && !defined(WINDOWS_STORE_RT)
-	if( refCount == 0 )
+	if (refCount == 0)
 		return;
 
-	if( refCount > 1 )
+	if (refCount > 1)
 	{
 		refCount--;
 		return;
