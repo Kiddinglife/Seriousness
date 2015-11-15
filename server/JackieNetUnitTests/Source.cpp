@@ -422,11 +422,15 @@ static void test_JackieStream__funcs()
 	JINFO << "Test s8 alll write and read";
 	JackieBits s8;
 	UInt32 v1 = 128;
-	s8.Serialize(true, v1);
+	//s8.Serialize(true, v1);
 	UInt32 v2 = 0;
-	s8.Serialize(false, v2);
+	s8 << v1 >> v2;
+	//s8.Serialize(false, v2);
 	JINFO << "v2 " << v2;
-
+	JackieGUID guid(123);
+	JackieGUID guid1;
+	s8 << guid >> guid1;
+	//s8 >> guid;
 	//UInt32 val;
 	//s8.WriteMini(v1);
 	//s8.ReadMini(val);

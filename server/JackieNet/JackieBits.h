@@ -1698,11 +1698,30 @@ namespace JACKIE_INET
 
 		template <> inline void WriteMini(const JackieAddress &src)
 		{
-			Write(src);
+			//Write(src);
+			UInt8 version = src.GetIPVersion();
+			WriteMini(version);
+
+			if (version == 4)
+			{
+				/// Hide the address so routers don't modify it
+				JackieAddress addr = src;
+				UInt32 binaryAddress = ~src.address.addr4.sin_addr.s_addr;
+				UInt16 p = addr.GetPortNetworkOrder();
+				WriteMini(binaryAddress);
+				WriteMini(p);
+			}
+			else
+			{
+#if NET_SUPPORT_IPV6 == 1
+				UInt32 binaryAddress = src.address.addr6;
+				WriteMini(binaryAddress);
+#endif
+			}
 		}
 		template <> inline void WriteMini(const JackieGUID &src)
 		{
-			Write(src);
+			WriteMini(src.g);
 		}
 		template <> inline void WriteMini(const UInt24 &var)
 		{
