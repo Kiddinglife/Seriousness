@@ -391,128 +391,132 @@ static void test_JackieStream__funcs()
 	JackieAddress addr("localhost", 32000);
 	vec vector_ = { 0.2f, -0.4f, -0.8f };
 	vec vector__ = { 2.234f, -4.78f, -32.2f };
-	UInt32 looptimes = 10000000;
-	for (UInt32 i = 1; i <= looptimes; i++)
+
+	for (int i = 1000; i >= 0; i--)
 	{
-		s8 << guid;
-		s8 << addr;
-		s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
-		s8.WriteVector(vector__.x, vector__.y, vector__.z);
+		UInt32 looptimes = 10000;
+		for (UInt32 i = 1; i <= looptimes; i++)
+		{
+			s8 << guid;
+			s8 << addr;
+			s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
+			s8.WriteVector(vector__.x, vector__.y, vector__.z);
 
-		s8.Write(uint24);
-		s8.WriteMini(uint24);
+			s8.Write(uint24);
+			s8.WriteMini(uint24);
 
-		s8.Write(uint8);
-		s8.Write(int64);
-		s8.WriteMini(uint8);
-		s8.WriteMini(int64);
+			s8.Write(uint8);
+			s8.Write(int64);
+			s8.WriteMini(uint8);
+			s8.WriteMini(int64);
 
-		s8.Write(uint16);
-		s8.Write(int32);
-		s8.WriteMini(uint16);
-		s8.WriteMini(int32);
+			s8.Write(uint16);
+			s8.Write(int32);
+			s8.WriteMini(uint16);
+			s8.WriteMini(int32);
 
-		s8.WriteBits(&particialByte, 4, true);
+			s8.WriteBits(&particialByte, 4, true);
 
-		s8.Write(uint32);
-		s8.Write(int16);
-		s8.WriteMini(uint32);
-		s8.WriteMini(int16);
+			s8.Write(uint32);
+			s8.Write(int16);
+			s8.WriteMini(uint32);
+			s8.WriteMini(int16);
 
-		s8.WriteBits(&particialByte, 7, false);
+			s8.WriteBits(&particialByte, 7, false);
 
-		s8.Write(uint64);
-		s8.Write(int8);
-		s8.WriteMini(uint64);
-		s8.WriteMini(int8);
+			s8.Write(uint64);
+			s8.Write(int8);
+			s8.WriteMini(uint64);
+			s8.WriteMini(int8);
 
-		//s8.WriteMini(i);
-	}
+			//s8.WriteMini(i);
+		}
 
-	JackieBits s9;
-	s9 << s8;
-	s8.Reset();
+		JackieBits s9;
+		s9 << s8;
+		s8.Reset();
 
-	for (UInt32 i = 1; i <= looptimes; i++)
-	{
-		JackieGUID guidd;
-		s9 >> guidd;
-		DCHECK(guid == guidd);
+		for (UInt32 i = 1; i <= looptimes; i++)
+		{
+			JackieGUID guidd;
+			s9 >> guidd;
+			DCHECK(guid == guidd);
 
-		JackieAddress addrr;
-		s9 >> addrr;
-		DCHECK(addr == addrr);
+			JackieAddress addrr;
+			s9 >> addrr;
+			DCHECK(addr == addrr);
 
-		vec vectorr;
-		s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
-		DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
-		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
-		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+			vec vectorr;
+			s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
+			DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
+			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
 
-		vec vectorrr;
-		s9.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
-		DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
-		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
-		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+			vec vectorrr;
+			s9.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
+			DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
+			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
 
-		s9.Read(uint24);
-		UInt24 mini_uint24;
-		s9.ReadMini(mini_uint24);
-		DCHECK(mini_uint24 == uint24);
+			s9.Read(uint24);
+			UInt24 mini_uint24;
+			s9.ReadMini(mini_uint24);
+			DCHECK(mini_uint24 == uint24);
 
-		s9.Read(uint8);
-		s9.Read(int64);
-		UInt8 mini_uint8;
-		s9.ReadMini(mini_uint8);
-		DCHECK(mini_uint8 == uint8);
-		Int64 mini_int64;
-		s9.ReadMini(mini_int64);
-		DCHECK(mini_int64 == int64);
+			s9.Read(uint8);
+			s9.Read(int64);
+			UInt8 mini_uint8;
+			s9.ReadMini(mini_uint8);
+			DCHECK(mini_uint8 == uint8);
+			Int64 mini_int64;
+			s9.ReadMini(mini_int64);
+			DCHECK(mini_int64 == int64);
 
-		s9.Read(uint16);
-		s9.Read(int32);
-		UInt16 mini_uint16;
-		s9.ReadMini(mini_uint16);
-		DCHECK(mini_uint16 == uint16);
-		Int32 mini_int32;
-		s9.ReadMini(mini_int32);
-		DCHECK(mini_int32 == int32);
-
-
-		UInt8 v = 0;
-		s9.ReadBits(&v, 4, true);
-
-		s9.Read(uint32);
-		s9.Read(int16);
-		UInt32 mini_uint32;
-		s9.ReadMini(mini_uint32);
-		DCHECK(mini_uint32 == uint32);
-		Int16 mini_int16;
-		s9.ReadMini(mini_int16);
-		DCHECK(mini_int16 == int16);
+			s9.Read(uint16);
+			s9.Read(int32);
+			UInt16 mini_uint16;
+			s9.ReadMini(mini_uint16);
+			DCHECK(mini_uint16 == uint16);
+			Int32 mini_int32;
+			s9.ReadMini(mini_int32);
+			DCHECK(mini_int32 == int32);
 
 
-		s9.ReadBits(&v, 7, false);
+			UInt8 v = 0;
+			s9.ReadBits(&v, 4, true);
 
-		s9.Read(uint64);
-		s9.Read(int8);
-		UInt64 mini_uint64;
-		s9.ReadMini(mini_uint64);
-		DCHECK(mini_uint64 == uint64);
-		Int8 mini_int8;
-		s9.ReadMini(mini_int8);
-		DCHECK(mini_int8 == int8);
+			s9.Read(uint32);
+			s9.Read(int16);
+			UInt32 mini_uint32;
+			s9.ReadMini(mini_uint32);
+			DCHECK(mini_uint32 == uint32);
+			Int16 mini_int16;
+			s9.ReadMini(mini_int16);
+			DCHECK(mini_int16 == int16);
 
-		DCHECK(uint8 == 8);
-		DCHECK(int8 == -8);
-		DCHECK(uint16 == 16);
-		DCHECK(int16 == -16);
-		DCHECK(uint24.val == 24);
-		DCHECK(uint32 == 32);
-		DCHECK(int32 == -32);
-		DCHECK(uint64 == 64);
-		DCHECK(int64 == -64);
-		DCHECK(particialByte > 0);
+
+			s9.ReadBits(&v, 7, false);
+
+			s9.Read(uint64);
+			s9.Read(int8);
+			UInt64 mini_uint64;
+			s9.ReadMini(mini_uint64);
+			DCHECK(mini_uint64 == uint64);
+			Int8 mini_int8;
+			s9.ReadMini(mini_int8);
+			DCHECK(mini_int8 == int8);
+
+			DCHECK(uint8 == 8);
+			DCHECK(int8 == -8);
+			DCHECK(uint16 == 16);
+			DCHECK(int16 == -16);
+			DCHECK(uint24.val == 24);
+			DCHECK(uint32 == 32);
+			DCHECK(int32 == -32);
+			DCHECK(uint64 == 64);
+			DCHECK(int64 == -64);
+			DCHECK(particialByte > 0);
+		}
 	}
 }
 enum
