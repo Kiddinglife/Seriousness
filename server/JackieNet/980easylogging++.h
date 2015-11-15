@@ -1,4 +1,4 @@
-//
+﻿//
 //  Easylogging++ v9.80
 //  Single-header only, cross-platform logging library for C++ applications
 //

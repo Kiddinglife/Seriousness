@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 //#define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
@@ -427,15 +427,70 @@ static void test_JackieStream__funcs()
 	s8.Serialize(false, v2);
 	JINFO << "v2 " << v2;
 
+	//UInt32 val;
+	//s8.WriteMini(v1);
+	//s8.ReadMini(val);
+	//JINFO << "val " << val;
 
-	Int8 u1 = -25;
-	s8.Write(12);
-	s8.WriteMini(u1);
-	s8.Read(as);
-	s8.PadZeroAfterAlignedWRPos(123);
-	Int8 u2;
-	s8.ReadMini(u2);
-	JINFO << "u2 " << (int)u2 << "a  " << as;
+	UInt8 uint8 = 8;
+	UInt16 uint16 = 16;
+	UInt32 uint32 = 32;
+	UInt64 uint64 = 64;
+	Int8 int8 = -8;
+	Int16 int16 = -16;
+	Int32 int32 = -32;
+	Int64 int64 = -64;
+	UInt8 particialByte = 0xf0;
+	for (UInt32 i = 1; i <= 100000; i++)
+	{
+		s8.Write(uint8);
+		s8.Write(int64);
+
+		s8.Write(uint16);
+		s8.Write(int32);
+
+		s8.WriteBits(&particialByte, 4, true);
+
+		s8.Write(uint32);
+		s8.Write(int16);
+
+		s8.Write(uint64);
+		s8.Write(int8);
+
+		//s8.WriteMini(i);
+	}
+
+	for (UInt32 i = 1; i <= 100000; i++)
+	{
+		s8.Read(uint8);
+		s8.Read(int64);
+
+		s8.Read(uint16);
+		s8.Read(int32);
+
+		UInt8 v = 0;
+		s8.ReadBits(&v, 4, true);
+
+		s8.Read(uint32);
+		s8.Read(int16);
+
+		s8.Read(uint64);
+		s8.Read(int8);
+
+		DCHECK(uint8 == 8);
+		DCHECK(int8 == -8);
+		DCHECK(uint16 == 16);
+		DCHECK(int16 == -16);
+		DCHECK(uint32 == 32);
+		DCHECK(int32 == -32);
+		DCHECK(uint64 == 64);
+		DCHECK(int64 == -64);
+		DCHECK(particialByte > 0);
+
+		//s8.ReadMini(val);
+		//JINFO << "val " << val;
+		//DCHECK(val == i);
+	}
 }
 enum
 {

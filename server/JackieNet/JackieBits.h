@@ -1,6 +1,6 @@
 ﻿//  [11/2/2015 mengdi]
-#ifndef __BITSTREAM_H__
-#define __BITSTREAM_H__
+#ifndef __JACKIE_BITS_H__
+#define __JACKIE_BITS_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,7 +92,6 @@ namespace JACKIE_INET
 	public:
 		STATIC_FACTORY_DECLARATIONS(JackieBits);
 
-
 		/// @Param [in] [ BitSize initialBytesAllocate]:
 		/// the number of bytes to pre-allocate.
 		/// @Remarks:
@@ -101,7 +100,6 @@ namespace JACKIE_INET
 		/// how many bytes you need and it is greater than 256.
 		/// @Author mengdi[Jackie]
 		JackieBits(const BitSize initialBytesAllocate);
-
 
 		/// @brief  Initialize by setting the @data to a predefined pointer.
 		/// @access  public  
@@ -167,7 +165,10 @@ namespace JACKIE_INET
 
 		///@brief payload are actually the unread bits
 		/// @access public 
-		inline BitSize GetPayLoadBits(void) const { return mWritingPosBits - mReadingPosBits; }
+		inline BitSize GetPayLoadBits(void) const
+		{
+			return mWritingPosBits - mReadingPosBits;
+		}
 
 		///@brief the number of bytes needed to  hold all the written bits 
 		/// @access public 
@@ -177,7 +178,10 @@ namespace JACKIE_INET
 		/// if mWritingPosBits =12, will need 2 bytes to hold 12 written bits (6 bits wasted)
 		/// if mWritingPosBits = 8, will need 1 byte to hold 8 written bits (0 bits wasted)
 		/// @author mengdi[Jackie]
-		inline ByteSize GetWrittenBytesCount(void) const { return BITS_TO_BYTES(mWritingPosBits); }
+		inline ByteSize GetWrittenBytesCount(void) const
+		{
+			return BITS_TO_BYTES(mWritingPosBits);
+		}
 
 		/// @brief get the number of written bits
 		/// will return same value to that of WritePosBits()
@@ -691,7 +695,7 @@ namespace JACKIE_INET
 		inline void Read(bool &dest)
 		{
 			DCHECK(GetPayLoadBits() >= 1);
-			if (GetPayLoadBits() < 1) return;
+			//if (GetPayLoadBits() < 1) return;
 
 			// Is it faster to just write it out here?
 			data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7)) ?
@@ -1410,12 +1414,6 @@ namespace JACKIE_INET
 #ifndef DO_NOT_SWAP_ENDIAN
 				if (DoEndianSwap())
 				{
-					/// Reverse Bytes
-					//UInt8 result[sizeof(IntergralType)];
-					//for( UInt32 i = 0; i < sizeof(IntergralType); i++ )
-					//{
-					//	result[i] = ( (UInt8*) src )[sizeof(IntergralType) - i - 1];
-					//}
 					UInt8 output[sizeof(IntergralType)];
 					ReverseBytes((UInt8*)&src, output, sizeof(IntergralType));
 					WriteBits(output, BYTES_TO_BITS(sizeof(IntergralType)), true);

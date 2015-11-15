@@ -71,7 +71,7 @@ namespace JACKIE_INET
 
 	class JACKIE_EXPORT JISEventHandler
 	{
-		public:
+	public:
 		virtual ~JISEventHandler() { }
 		virtual void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index) = 0;
 		virtual JISRecvParams *AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex) = 0;
@@ -79,20 +79,20 @@ namespace JACKIE_INET
 
 	class JACKIE_EXPORT JISAllocator
 	{
-		public:
+	public:
 		static JackieINetSocket* AllocJIS(void);
 		static void DeallocJIS(JackieINetSocket *s);
 	};
 
 	class JACKIE_EXPORT JackieINetSocket
 	{
-		protected:
+	protected:
 		IServerApplication *eventHandler;
 		JackieAddress boundAddress;
 		unsigned int userConnectionSocketIndex;
 		JISType socketType;
 
-		public:
+	public:
 		JackieINetSocket() : eventHandler(0) { }
 		virtual ~JackieINetSocket() { }
 
@@ -149,7 +149,7 @@ namespace JACKIE_INET
 
 	class JACKIE_EXPORT JACKIE_ISocketTransceiver
 	{
-		public:
+	public:
 
 		JACKIE_ISocketTransceiver() { }
 		virtual ~JACKIE_ISocketTransceiver() { }
@@ -170,7 +170,7 @@ namespace JACKIE_INET
 
 	class JACKIE_EXPORT JISBerkley : public JackieINetSocket
 	{
-		protected:
+	protected:
 
 		JISBerkleyBindParams binding;
 		JACKIE_ISocketTransceiver *jst;
@@ -182,7 +182,7 @@ namespace JACKIE_INET
 		CFSocketRef             _cfSocket;
 #endif
 
-		public:
+	public:
 		JISBerkley();
 		virtual ~JISBerkley();
 
@@ -220,12 +220,12 @@ namespace JACKIE_INET
 
 			// This doubles the max throughput rate
 			returnVal = JACKIE_SO_REVBUF_SIZE;
-			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_RCVBUF, (char *) & returnVal, sizeof(returnVal));
+			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_RCVBUF, (char *)& returnVal, sizeof(returnVal));
 			JACKIE_ASSERT(returnVal == 0);
 
 			// This doesn't make much difference: 10% maybe Not supported on console 2
 			returnVal = JACKIE_SO_SNDBUF_SIZE;
-			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_SNDBUF, (char *) & returnVal, sizeof(returnVal));
+			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_SNDBUF, (char *)& returnVal, sizeof(returnVal));
 			JACKIE_ASSERT(returnVal == 0);
 
 			//////////////////////////////////////////////////////////////////////////
@@ -235,7 +235,7 @@ namespace JACKIE_INET
 			//////////////////////////////////////////////////////////////////////////
 			returnVal = 0;
 			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_LINGER,
-				(char *) & returnVal, sizeof(returnVal));
+				(char *)& returnVal, sizeof(returnVal));
 			//JACKIE_ASSERT(returnVal == 0);
 
 		}
@@ -247,7 +247,7 @@ namespace JACKIE_INET
 #else
 			if( nonblocking > 0 )
 			{
-				int flags = fcntl(socket, F_GETFL, 0);
+				int flags = fcntl(rns2Socket, F_GETFL, 0);
 				res = fcntl(rns2Socket, F_SETFL, flags | O_NONBLOCK); // setup to non-blocking
 			}
 			else
@@ -258,14 +258,14 @@ namespace JACKIE_INET
 		inline void SetBroadcastSocket(int broadcast)
 		{
 			JACKIE_ASSERT(setsockopt__(rns2Socket, SOL_SOCKET, SO_BROADCAST,
-				(char *) & broadcast, sizeof(broadcast)) == 0);
+				(char *)& broadcast, sizeof(broadcast)) == 0);
 		}
 		inline void SetIPHdrIncl(int ipHdrIncl)
 		{
 			//int val = setsockopt__(rns2Socket, IPPROTO_IP, IP_HDRINCL,
 			//(char*) &ipHdrIncl, sizeof(ipHdrIncl));
 			int val = setsockopt__(rns2Socket, IPPROTO_IP, SO_DONTLINGER,
-				(const char*) &ipHdrIncl, sizeof(ipHdrIncl));
+				(const char*)&ipHdrIncl, sizeof(ipHdrIncl));
 			/// this assert always fail maybe need admin permission
 			/// JACKIE_ASSERT(val == 0);
 		}
@@ -277,7 +277,7 @@ namespace JACKIE_INET
 			JACKIE_ASSERT(IP_DONTFRAGMENT == 14);
 #endif
 			opt = setsockopt__(rns2Socket, boundAddress.GetIPProtocol(), IP_DONTFRAGMENT,
-				(char *) & opt, sizeof(opt));
+				(char *)& opt, sizeof(opt));
 			JACKIE_ASSERT(opt == 0);
 #endif
 		}
@@ -318,7 +318,7 @@ namespace JACKIE_INET
 
 		virtual void Print(void);
 
-		protected:
+	protected:
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// 1. Notice that you can only call this function after calling Bind(...) to associate @mem rns2Socket with @mem systemAddressOut
 		/// 2. Individually call this function will get unkonwn error, so they are marked as protected functions only for internal use

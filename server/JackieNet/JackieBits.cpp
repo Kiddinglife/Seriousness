@@ -168,8 +168,8 @@ namespace JACKIE_INET
 
 	void JackieBits::AppendBitsCouldRealloc(const BitSize bits2Append)
 	{
-		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits;
-		BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1;
+		BitSize newBitsAllocCount = bits2Append + mWritingPosBits;
+		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1; // official 
 
 		// If this assert hits then we need to specify mReadOnly as false 
 		// It needs to reallocate to hold all the data and can't do it unless we allocated to begin with
@@ -180,15 +180,19 @@ namespace JACKIE_INET
 		//	((mBitsAllocSize - 1) >> 3) < ((newBitsAllocCount - 1) >> 3))
 
 		/// see if one or more new bytes need to be allocated
-		if (mBitsAllocSize < newBitsAllocCount)
+		//if (mBitsAllocSize < newBitsAllocCount)
+		//{
+		if (newBitsAllocCount > 0 && ((mBitsAllocSize - 1) >> 3) <
+			((newBitsAllocCount - 1) >> 3))
 		{
 			// Less memory efficient but saves on news and deletes
 			/// Cap to 1 meg buffer to save on huge allocations
 			newBitsAllocCount <<= 1;
-			if (newBitsAllocCount - (bits2Append + mWritingPosBits + 1)> 1048576)
-				newBitsAllocCount = bits2Append + mWritingPosBits + 1048576;
-			//if (newBitsAllocCount - (bits2Append + mWritingPosBits)> 1048576)
+
+			//if (newBitsAllocCount - (bits2Append + mWritingPosBits + 1) > 1048576)
 			//	newBitsAllocCount = bits2Append + mWritingPosBits + 1048576;
+			if (newBitsAllocCount - (bits2Append + mWritingPosBits) > 1048576)
+				newBitsAllocCount = bits2Append + mWritingPosBits + 1048576; // official
 
 			// Use realloc and free so we are more efficient than delete and new for resizing
 			BitSize bytes2Alloc = BITS_TO_BYTES(newBitsAllocCount);
@@ -211,15 +215,27 @@ namespace JACKIE_INET
 		}
 
 		if (newBitsAllocCount > mBitsAllocSize)
-		{
 			mBitsAllocSize = newBitsAllocCount;
-		}
 	}
 
 	void JackieBits::ReadBits(UInt8 *dest, BitSize bits2Read, bool alignRight /*= true*/)
 	{
+		/// Assume bits to write are 10101010+00001111, 
+		/// bits2Write = 4, rightAligned = true, and so 
+		/// @mWritingPosBits = 5   @startWritePosBits = 5&7 = 5
+		/// 
+		/// |<-------data[0]------->|     |<---------data[1]------->|        
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  1 | 2 | 3 |  4 | 5 |  6 | 7 | 8 |  9 |10 |11 |12 |13 |14 | 15 |  src bits index
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  0 | 0 | 1 |  0 | 0 |  0 | 0 | 0 |  0 |  0 |  0 |  0  |  0 |  0 |   0 |  src  bits in memory
+		///+++++++++++++++++++++++++++++++++++
+		/// 
+		/// start write first 3 bits 101 after shifting to right by , 00000 101 
+		/// write result                                                                      00010 101
+
 		DCHECK(bits2Read > 0);
-		DCHECK(bits2Read <= GetPayLoadBits());
+		DCHECK(GetPayLoadBits() >= bits2Read);
 		//if (bits2Read <= 0 || bits2Read > GetPayLoadBits()) return;
 
 		/// get offset that overlaps one byte boudary, &7 is same to %8, but faster
@@ -227,6 +243,13 @@ namespace JACKIE_INET
 
 		/// byte position where start to read
 		ByteSize readPosByte = mReadingPosBits >> 3;
+
+		if (startReadPosBits == 0 && (bits2Read & 7) == 0)
+		{
+			memcpy(dest, data + (mReadingPosBits >> 3), bits2Read >> 3);
+			mReadingPosBits += bits2Read;
+			return;
+		}
 
 		/// if @mReadPosBits is aligned  do memcpy for efficiency
 		if (startReadPosBits == 0)
@@ -245,7 +268,6 @@ namespace JACKIE_INET
 			// return true;
 		}
 
-		BitSize bitsSizeInLastByte;
 		BitSize writePosByte = 0;
 		memset(dest, 0, BITS_TO_BYTES(bits2Read)); /// Must set all 0 
 
@@ -272,9 +294,8 @@ namespace JACKIE_INET
 			else
 			{
 				// Reading a partial byte for the last byte, shift right so the data is aligned on the right
-				bitsSizeInLastByte = 8 - bits2Read;
-				if (alignRight)  dest[writePosByte] >>= bitsSizeInLastByte;
-				writePosByte++;
+				if (alignRight)  dest[writePosByte] >>= (8 - bits2Read);
+				mReadingPosBits += bits2Read;
 				bits2Read = 0;
 			}
 		}
@@ -330,8 +351,23 @@ namespace JACKIE_INET
 
 	void JackieBits::WriteBits(const UInt8* src, BitSize bits2Write, bool rightAligned /*= true*/)
 	{
+		/// Assume bits to write are 10101010+00001111, 
+		/// bits2Write = 4, rightAligned = true, and so 
+		/// @mWritingPosBits = 5   @startWritePosBits = 5&7 = 5
+		/// 
+		/// |<-------data[0]------->|     |<---------data[1]------->|        
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  1 | 2 | 3 |  4 | 5 |  6 | 7 | 8 |  9 |10 |11 |12 |13 |14 | 15 |  src bits index
+		///+++++++++++++++++++++++++++++++++++
+		/// | 0 |  0 | 0 | 1 |  0 | 0 |  0 | 0 | 0 |  0 |  0 |  0 |  0  |  0 |  0 |   0 |  src  bits in memory
+		///+++++++++++++++++++++++++++++++++++
+		/// 
+		/// start write first 3 bits 101 after shifting to right by , 00000 101 
+		/// write result                                                                      00010 101
+
 		DCHECK(mReadOnly == false);
 		DCHECK(bits2Write > 0);
+
 		//if( mReadOnly ) return false;
 		//if( bits2Write == 0 ) return false;
 
@@ -350,11 +386,11 @@ namespace JACKIE_INET
 		}
 
 		UInt8 dataByte;
-		//const UInt8* inputPtr = src;
+		const UInt8* inputPtr = src;
 
 		while (bits2Write > 0)
 		{
-			dataByte = *(src++);
+			dataByte = *(inputPtr++);
 
 			/// if @dataByte is the last byte to write, we have to convert this byte into 
 			/// stream internal data by shifting the bits in this last byte to left-aligned
@@ -372,7 +408,6 @@ namespace JACKIE_INET
 				/// startWritePosBits != 0 means there are  overlapped bits to be further 
 				/// processed and so we cannot directly write @dataBytedirectly into stream
 				/// we have process overlapped bits before writting
-
 				/// firstly write the as the same number of bits from @dataByte intot
 				/// @data[mWritePosBits >> 3] to that in the right-half of 
 				/// @data[mWritePosBits >> 3]
@@ -383,7 +418,8 @@ namespace JACKIE_INET
 				/// 2. bits2Write > ( 8 - startWritePosBits ) means the rest space in 
 				/// @data[mWritePosBits >> 3] cannot hold all remaining bits in @dataByte
 				/// we have to write these reamining bits to the next byte 
-				if (startWritePosBits > 0 && bits2Write > (8 - startWritePosBits))
+				DCHECK(startWritePosBits > 0);
+				if (bits2Write > (8 - startWritePosBits))
 				{
 					/// write remaining bits into the  byte next to @data[mWritePosBits >> 3]
 					data[(mWritingPosBits >> 3) + 1] = (dataByte << (8 - startWritePosBits));
