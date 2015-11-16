@@ -185,30 +185,28 @@ namespace JACKIE_INET
 		{
 			// Less memory efficient but saves on news and deletes
 			/// Cap to 1 meg buffer to save on huge allocations
-			if (newBitsAllocCount > 1048576)
-				newBitsAllocCount = 1048576;
+			// [11/16/2015 JACKIE]  
+			/// fix bug: newBitsAllocCount should plus 1MB if < 1MB, otherwise it should doule itself
+			if (newBitsAllocCount > 1048576) /// 1024B*1024 = 1048576B = 1024KB = 1MB
+				newBitsAllocCount  += 1048576;
 			else
 				newBitsAllocCount <<= 1;
-
-			//if (newBitsAllocCount - (bits2Append + mWritingPosBits) > 1048576)
-			//	newBitsAllocCount = bits2Append + mWritingPosBits + 1048576; // official
-
 			// Use realloc and free so we are more efficient than delete and new for resizing
 			BitSize bytes2Alloc = BITS_TO_BYTES(newBitsAllocCount);
 			if (data == mStacBuffer)
 			{
-				if (bytes2Alloc >= JACKIESTREAM_STACK_ALLOC_SIZE)
+				if (bytes2Alloc > JACKIESTREAM_STACK_ALLOC_SIZE)
 				{
 					//printf("data == mStacBuffer\n");
 					data = (UInt8 *)jackieMalloc_Ex(bytes2Alloc, TRACE_FILE_AND_LINE_);
-					//if (mWritingPosBits > 0)
+					if (mWritingPosBits > 0)
 						memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
 					mNeedFree = true;
 				}
 			}
 			else
 			{
-			/*	printf("data != mStacBuffer\n");*/
+				//printf("data != mStacBuffer\n");
 				/// if allocate new memory, old data is copied and old memory is frred
 				data = (UInt8*)jackieRealloc_Ex(data, bytes2Alloc, TRACE_FILE_AND_LINE_);
 				mNeedFree = true;
