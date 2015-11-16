@@ -461,7 +461,6 @@ namespace JACKIE_INET
 		//if( bits2Write == 0 ) return;
 		//if( bits2Write > jackieBits->GetPayLoadBits() ) return;
 
-		//AppendBitsCouldRealloc(bits2Write);
 		/////// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
 		//BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
 		//JINFO << "numberOfBitsMod8 " << numberOfBitsMod8;
@@ -473,13 +472,17 @@ namespace JACKIE_INET
 		//	return;
 		//}
 
-		//JINFO << "if (numberOfBitsMod8 > 0)";
+		////JINFO << "if (numberOfBitsMod8 > 0)";
 		///// if numberOfBitsMod8 > 0, this means there are bits to write in the byte of
 		///// @jackieBits->data[[jackieBits->mReadPosBits >> 3]]
-		//UInt8 byte2Write = jackieBits->data[jackieBits->mReadingPosBits >> 3];
-		//data[mWritingPosBits >> 3] |= (byte2Write << numberOfBitsMod8) >> (mWritingPosBits & 7);
-
 		//BitSize partialBits2Written = 8 - numberOfBitsMod8;
+		//AppendBitsCouldRealloc(partialBits2Written);
+
+		//UInt8 byte2Write = jackieBits->data[jackieBits->mReadingPosBits >> 3];
+		//byte2Write <<= numberOfBitsMod8;
+		//byte2Write >>= (mWritingPosBits & 7);
+		//data[mWritingPosBits >> 3] |= byte2Write;
+
 		//BitSize partialBits = 8 - (mWritingPosBits & 7);
 		//Int32 remianingBit2Write = partialBits2Written - partialBits;
 		//if (remianingBit2Write > 0)

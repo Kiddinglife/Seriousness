@@ -412,19 +412,17 @@ static void test_JackieStream__funcs()
 	DCHECK(particialByte == v);
 	DCHECK(s8.GetPayLoadBits() == 0);
 
-	s8.Write(uint24);
-	uint24 = 0;
-	s8.Read(uint24);
-	DCHECK(uint24.val == 24);
-
-	for (int i = 0; i >= 0; i--)
+	for (int i = 10; i >= 0; i--)
 	{
-		UInt32 looptimes = 50000;
+		UInt32 looptimes = 10000000;
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
 			s8.Write(uint24);
 
 			s8 << guid;
+
+			s8.WriteMini(uint24);
+
 			s8 << addr;
 
 			s8.WriteMini(uint24);
@@ -440,7 +438,7 @@ static void test_JackieStream__funcs()
 			s8.WriteMini(int32);
 
 			s8.WriteBits(&particialByte, 4, true);
-
+			s8.Write(uint24);
 			s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
 
 			s8.WriteIntegerRange(curr, min, max);
@@ -461,101 +459,102 @@ static void test_JackieStream__funcs()
 
 			s8.WriteBits(&particialByte, 7, false);
 		}
-		//for (UInt32 i = 1; i <= looptimes; i++)
-		//{
-		//	uint24 = 0;
-		//	s8.Read(uint24);
-		//	DCHECK(uint24.val == 24);
+		/*for (UInt32 i = 1; i <= looptimes; i++)
+		{
+			uint24 = 0;
+			s8.Read(uint24);
+			DCHECK(uint24.val == 24);
 
-		//	JackieGUID guidd;
-		//	s8 >> guidd;
-		//	DCHECK(guid == guidd);
+			JackieGUID guidd;
+			s8 >> guidd;
+			DCHECK(guid == guidd);
 
-		//	JackieAddress addrr;
-		//	s8 >> addrr;
-		//	DCHECK(addr == addrr);
+			JackieAddress addrr;
+			s8 >> addrr;
+			DCHECK(addr == addrr);
 
-		//	UInt24 mini_uint24;
-		//	s8.ReadMini(mini_uint24);
-		//	DCHECK(mini_uint24.val == 24);
+			UInt24 mini_uint24;
+			s8.ReadMini(mini_uint24);
+			DCHECK(mini_uint24.val == 24);
 
-		//	s8.Read(uint8);
-		//	s8.Read(int64);
-		//	UInt8 mini_uint8;
-		//	s8.ReadMini(mini_uint8);
-		//	DCHECK(mini_uint8 == uint8);
-		//	Int64 mini_int64;
-		//	s8.ReadMini(mini_int64);
-		//	DCHECK(mini_int64 == int64);
+			s8.Read(uint8);
+			s8.Read(int64);
+			UInt8 mini_uint8;
+			s8.ReadMini(mini_uint8);
+			DCHECK(mini_uint8 == uint8);
+			Int64 mini_int64;
+			s8.ReadMini(mini_int64);
+			DCHECK(mini_int64 == int64);
 
-		//	s8.Read(uint16);
-		//	s8.Read(int32);
-		//	UInt16 mini_uint16;
-		//	s8.ReadMini(mini_uint16);
-		//	DCHECK(mini_uint16 == uint16);
-		//	Int32 mini_int32;
-		//	s8.ReadMini(mini_int32);
-		//	DCHECK(mini_int32 == int32);
+			s8.Read(uint16);
+			s8.Read(int32);
+			UInt16 mini_uint16;
+			s8.ReadMini(mini_uint16);
+			DCHECK(mini_uint16 == uint16);
+			Int32 mini_int32;
+			s8.ReadMini(mini_int32);
+			DCHECK(mini_int32 == int32);
 
 
-		//	UInt8 v = 0;
-		//	s8.ReadBits(&v, 4, true);
-		//	DCHECK(v == 0);
+			UInt8 v = 0;
+			s8.ReadBits(&v, 4, true);
+			DCHECK(v == 0);
 
-		//	vec vectorr;
-		//	s8.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
-		//	DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
-		//	DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
-		//	DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+			vec vectorr;
+			s8.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
+			DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
+			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
 
-		//	UInt32 v1;
-		//	s8.ReadIntegerRange(v1, min, max);
-		//	DCHECK(v1 == curr);
+			UInt32 v1;
+			s8.ReadIntegerRange(v1, min, max);
+			DCHECK(v1 == curr);
 
-		//	vec vectorrr;
-		//	s8.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
-		//	DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
-		//	DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
-		//	DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+			vec vectorrr;
+			s8.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
+			DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
+			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
 
-		//	s8.Read(uint32);
-		//	s8.Read(int16);
-		//	UInt32 mini_uint32;
-		//	s8.ReadMini(mini_uint32);
-		//	DCHECK(mini_uint32 == uint32);
-		//	Int16 mini_int16;
-		//	s8.ReadMini(mini_int16);
-		//	DCHECK(mini_int16 == int16);
+			s8.Read(uint32);
+			s8.Read(int16);
+			UInt32 mini_uint32;
+			s8.ReadMini(mini_uint32);
+			DCHECK(mini_uint32 == uint32);
+			Int16 mini_int16;
+			s8.ReadMini(mini_int16);
+			DCHECK(mini_int16 == int16);
 
-		//	v = 0;
-		//	s8.ReadBits(&v, 4, false);
-		//	DCHECK(particialByte == ((v >> 4) << 4));
+			v = 0;
+			s8.ReadBits(&v, 4, false);
+			DCHECK(particialByte == ((v >> 4) << 4));
 
-		//	s8.Read(uint64);
-		//	s8.Read(int8);
-		//	UInt64 mini_uint64;
-		//	s8.ReadMini(mini_uint64);
-		//	DCHECK(mini_uint64 == uint64);
-		//	Int8 mini_int8;
-		//	s8.ReadMini(mini_int8);
-		//	DCHECK(mini_int8 == int8);
+			s8.Read(uint64);
+			s8.Read(int8);
+			UInt64 mini_uint64;
+			s8.ReadMini(mini_uint64);
+			DCHECK(mini_uint64 == uint64);
+			Int8 mini_int8;
+			s8.ReadMini(mini_int8);
+			DCHECK(mini_int8 == int8);
 
-		//	v = 0;
-		//	s8.ReadBits(&v, 7, false);
-		//	DCHECK(particialByte == ((v >> 1) << 1));
+			v = 0;
+			s8.ReadBits(&v, 7, false);
+			DCHECK(particialByte == ((v >> 1) << 1));
 
-		//	DCHECK(uint8 == 8);
-		//	DCHECK(int8 == -8);
-		//	DCHECK(uint16 == 16);
-		//	DCHECK(int16 == -16);
-		//	DCHECK(uint24.val == 24);
-		//	DCHECK(uint32 == 32);
-		//	DCHECK(int32 == -32);
-		//	DCHECK(uint64 == 64);
-		//	DCHECK(int64 == -64);
-		//}
+			DCHECK(uint8 == 8);
+			DCHECK(int8 == -8);
+			DCHECK(uint16 == 16);
+			DCHECK(int16 == -16);
+			DCHECK(uint24.val == 24);
+			DCHECK(uint32 == 32);
+			DCHECK(int32 == -32);
+			DCHECK(uint64 == 64);
+			DCHECK(int64 == -64);
+		}*/
 
 		s9 << s8;
+
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
 			uint24 = 0;
@@ -566,11 +565,15 @@ static void test_JackieStream__funcs()
 			s9 >> guidd;
 			DCHECK(guid == guidd);
 
+			UInt24 mini_uint24=0;
+			s9.ReadMini(mini_uint24);
+			DCHECK(mini_uint24.val == 24);
+
 			JackieAddress addrr;
 			s9 >> addrr;
 			DCHECK(addr == addrr);
 
-			UInt24 mini_uint24;
+			mini_uint24=0;
 			s9.ReadMini(mini_uint24);
 			DCHECK(mini_uint24.val == 24);
 
@@ -596,6 +599,10 @@ static void test_JackieStream__funcs()
 			UInt8 v = 0;
 			s9.ReadBits(&v, 4, true);
 			DCHECK(v == 0);
+
+			uint24 = 0;
+			s9.Read(uint24);
+			DCHECK(uint24.val == 24);
 
 			vec vectorr;
 			s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
