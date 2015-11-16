@@ -757,7 +757,8 @@ namespace JACKIE_INET
 		inline void Read(UInt24 &dest)
 		{
 			AlignReadPosBitsByteBoundary();
-			if (GetPayLoadBits() < 24) return;
+			DCHECK(GetPayLoadBits()>=24);
+			//if (GetPayLoadBits() < 24) return;
 
 			if (!IsBigEndian())
 			{
@@ -951,10 +952,11 @@ namespace JACKIE_INET
 			IntegerType &value,
 			const IntegerType minimum,
 			const IntegerType maximum,
-			bool allowOutsideRange)
+			bool allowOutsideRange = false)
 		{
 			/// get the high byte bits size
-			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(IntegerType(maximum - minimum));
+			IntegerType diff = maximum - minimum;
+			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(diff);
 			ReadIntegerRange(value, minimum, maximum, requiredBits, allowOutsideRange);
 		}
 
@@ -1008,7 +1010,7 @@ namespace JACKIE_INET
 				Read(isOutsideRange);
 				if (isOutsideRange)
 				{
-					Read(value);
+					ReadMini(value);
 					return;
 				}
 			}
@@ -1017,7 +1019,7 @@ namespace JACKIE_INET
 			ReadBits((UInt8*)&value, requiredBits, true);
 			if (IsBigEndian())
 			{
-				value >>= (BYTES_TO_BITS(sizeof(value)) - requiredBits);
+				ReverseBytes((UInt8*)&value, sizeof(value));
 			}
 			value += minimum;
 
@@ -1487,7 +1489,7 @@ namespace JACKIE_INET
 		inline void Write(const UInt24 &inTemplateVar)
 		{
 			AlignWritePosBits2ByteBoundary();
-			AppendBitsCouldRealloc(BYTES_TO_BITS(3));
+			AppendBitsCouldRealloc(24);
 
 			if (!IsBigEndian())
 			{
@@ -1502,7 +1504,7 @@ namespace JACKIE_INET
 				data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
 			}
 
-			mWritingPosBits += BYTES_TO_BITS(3);
+			mWritingPosBits += 24;
 		}
 
 		/// @func Write 
@@ -1792,40 +1794,38 @@ namespace JACKIE_INET
 			const IntegerType max,
 			bool allowOutsideRange = false)
 		{
-			static int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) -
-				GetLeadingZeroSize(IntegerType(max - mini));
+			//int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) -
+			//	GetLeadingZeroSize(IntegerType(max - mini));
+			 IntegerType diff = max - mini;
+			 int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(diff);
 			WriteIntegerRange(value, mini, max, requiredBits, allowOutsideRange);
 		}
 
 		/// @Brief
-		/// Assume@valueBeyondMini's value is 0x000012
-		///------------------> Memory Address
-		///+++++++++++
-		///| 00 | 00 | 00 | 12 |  Big Endian
-		///+++++++++++
-		///+++++++++++
-		///| 12 | 00 | 00 | 00 |  Little Endian 
-		///+++++++++++
+		/// Assume@valueBeyondMini's value is 00000000 - 00101100 
+		/// ------------------> Memory Address
+		/// 00000000   00101100   Big Endian
+		/// 00101100   00000000   Little Endian 
 		/// so for big endian, we need to reverse byte so that
-		/// the high byte of 0x00 that was put in low address can be written correctly
+		/// the high byte of 00101100 that was put in low address can be written correctly
 		/// for little endian, we do nothing.
 		template <class IntegerType>
 		void WriteIntegerRange(
 			const IntegerType value,
-			const IntegerType minimum,
-			const IntegerType maximum,
+			const IntegerType mini,
+			const IntegerType max,
 			const int requiredBits,
 			bool allowOutsideRange = false)
 		{
 			DCHECK(max >= mini);
-			DCHECK(allowOutsideRange == true || (value >= minimum && value <= maximum));
+			DCHECK(allowOutsideRange == true || (value >= mini && value <= max));
 
 			if (allowOutsideRange)
 			{
 				if (value <mini || value>max)  ///< out of range
 				{
 					Write(true);
-					Write(value);
+					WriteMini(value);
 					return;
 				}
 				Write(false); ///< inside range
@@ -1836,11 +1836,11 @@ namespace JACKIE_INET
 			{
 				UInt8 output[sizeof(IntegerType)];
 				ReverseBytes((UInt8*)&valueBeyondMini, output, sizeof(IntegerType));
-				WriteBits(output, requiredBits);
+				WriteBits(output, requiredBits, true);
 			}
 			else
 			{
-				WriteBits((UInt8*)&valueBeyondMini, requiredBits);
+				WriteBits((UInt8*)&valueBeyondMini, requiredBits, true);
 			}
 		}
 
@@ -2110,6 +2110,10 @@ namespace JACKIE_INET
 		void PrintBit(void);
 		void PrintHex(void);
 
+
+		/// @briefAssume we have value of 00101100   00000000   Little Endian
+		/// the required bits are 8(0000000)+2(first 2 bits from left to right in 00101100)
+		/// = 10 buts in total
 		inline static int GetLeadingZeroSize(Int8 x)
 		{
 			return GetLeadingZeroSize((UInt8)x);

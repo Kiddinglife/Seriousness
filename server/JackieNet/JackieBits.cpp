@@ -257,9 +257,12 @@ namespace JACKIE_INET
 			/// if @bitsSize is not multiple times of 8, 
 			/// process the last read byte to shit the bits
 			BitSize offset = bits2Read & 7;
-			if (offset > 0 && alignRight)
+			if (offset > 0)
 			{
-				dest[BITS_TO_BYTES(bits2Read) - 1] >>= (8 - offset);
+				if (alignRight)
+					dest[BITS_TO_BYTES(bits2Read) - 1] >>= (8 - offset);
+				else
+					dest[BITS_TO_BYTES(bits2Read) - 1] |= 0;
 			}
 			return;
 			// return true;
@@ -291,7 +294,14 @@ namespace JACKIE_INET
 			else
 			{
 				// Reading a partial byte for the last byte, shift right so the data is aligned on the right
-				if (alignRight)  dest[writePosByte] >>= (8 - bits2Read);
+				/*if (alignRight) dest[writePosByte] >>= (8 - bits2Read);*/
+
+				//  [11/16/2015 JACKIE] Add: zero unused bits  
+				if (alignRight)
+					dest[writePosByte] >>= (8 - bits2Read); /// right align result byte: 0000 1111
+				else
+					dest[writePosByte] |= 0;  /// left align result byte: 1111 0000 
+
 				///  [11/15/2015 JACKIE] fix bug of not incrementing mReadingPosBits
 				mReadingPosBits += bits2Read;
 				bits2Read = 0;
@@ -448,12 +458,14 @@ namespace JACKIE_INET
 		//if( bits2Write == 0 ) return;
 		//if( bits2Write > jackieBits->GetPayLoadBits() ) return;
 
-		/// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
+		///// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
 		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
 		if (numberOfBitsMod8 == 0)
 		{
-			this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
-				bits2Write, false);
+			WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3), bits2Write,
+				false);
+			jackieBits->mReadingPosBits += bits2Write;
+			return;
 		}
 
 		/// if numberOfBitsMod8 > 0, this means there are bits to write in the byte of
@@ -465,11 +477,15 @@ namespace JACKIE_INET
 		{
 			numberOfBitsMod8 = mWritingPosBits & 7;
 			if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
-				(0x80 >> (jackieBits->mReadingPosBits & 7))))
-				data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8); // Write bit 1
-			else // write bit 0
-				data[mWritingPosBits >> 3] = (data[mWritingPosBits >> 3]
-				>> (8 - numberOfBitsMod8)) << (8 - numberOfBitsMod8);
+				(0x80 >> (jackieBits->mReadingPosBits & 7))))  /// Write bit 1
+			{
+				data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8);
+			}
+			else /// write bit 0
+			{
+				data[mWritingPosBits >> 3] |= 0;
+			}
+
 			jackieBits->mReadingPosBits++;
 			mWritingPosBits++;
 			bits2Write--;
@@ -478,56 +494,56 @@ namespace JACKIE_INET
 		/// after writting partial bits, numberOfBitsMod8 must be zero
 		/// we can now safely call WriteBits() for further process
 		DCHECK((jackieBits->mReadingPosBits & 7) == 0);
-		this->WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3),
-			bits2Write, false);
+		WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3), bits2Write, false);
+		jackieBits->mReadingPosBits += bits2Write;
 
+
+		/// official way
 		//AppendBitsCouldRealloc(bits2Write);
 		///// write all bytes for efficiency
-		//if( numberOfBitsMod8 == 0 && ( mWritePosBits & 7 ) == 0 )
+		//if (numberOfBitsMod8 == 0 && (mWritingPosBits & 7) == 0)
 		//{
-		//	int readOffsetBytes = jackieBits->mReadPosBits >> 3;
+		//	int readOffsetBytes = jackieBits->mReadingPosBits >> 3;
 		//	int numBytes = bits2Write >> 3;
-		//	memcpy(data + ( mWritePosBits >> 3 ),
-		//		jackieBits->Data() + readOffsetBytes, numBytes);
+		//	memcpy(data + (mWritingPosBits >> 3),
+		//		jackieBits->data + readOffsetBytes, numBytes);
 		//	bits2Write -= BYTES_TO_BITS(numBytes);
-		//	jackieBits->mReadPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
-		//	mWritePosBits += BYTES_TO_BITS(numBytes);
+		//	jackieBits->mReadingPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
+		//	mWritingPosBits += BYTES_TO_BITS(numBytes);
 		//}
-
 		///// write remaining bits one by one
 		///*	bool isOne;*/
-		//while( bits2Write-- > 0 && jackieBits->mReadPosBits + 1 <=
-		//	jackieBits->mWritePosBits )
+		////while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
+		//while (bits2Write-- > 0)
 		//{
-		//	numberOfBitsMod8 = mWritePosBits & 7;
-		//	//if( numberOfBitsMod8 == 0 )
-		//	//{
-		//	/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
-		//	//if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
-		//	//	( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
-		//	//	// Write 1
-		//	//	data[mWritePosBits >> 3] = 0x80;
-		//	//else
-		//	//	data[mWritePosBits >> 3] = 0;
-		//	//} else
-		//	//{
-		//	//	/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
-		//	//	if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
-		//	//		( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
-		//	//	{
-		//	//		/// set dest bit to 1 if the src bit is 1,do-nothing if the src bit is 0
-		//	//		data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 );
-		//	//	}
-		//	//}
+		//	numberOfBitsMod8 = mWritingPosBits & 7;
+		//	if (numberOfBitsMod8 == 0)
+		//	{
+		//		/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+		//		if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
+		//			(0x80 >> (jackieBits->mReadingPosBits & 7))))
+		//			// Write 1
+		//			data[mWritingPosBits >> 3] = 0x80;
+		//		else
+		//			data[mWritingPosBits >> 3] = 0;
+		//	}
+		//	else
+		//	{
+		//		/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+		//		if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
+		//			(0x80 >> (jackieBits->mReadingPosBits & 7))))
+		//		{
+		//			/// set dest bit to 1 if the src bit is 1,do-nothing if the src bit is 0
+		//			data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8);
+		//		}
+		//		else
+		//		{
+		//			data[mWritingPosBits >> 3] |= 0;
+		//		}
+		//	}
 
-		//	if( ( jackieBits->data[jackieBits->mReadPosBits >> 3] &
-		//		( 0x80 >> ( jackieBits->mReadPosBits & 7 ) ) ) )
-		//		data[mWritePosBits >> 3] |= 0x80 >> ( numberOfBitsMod8 ); // Write bit 1
-		//	else // write bit 0
-		//		data[mWritePosBits >> 3] = ( data[mWritePosBits >> 3]
-		//		>> ( 8 - numberOfBitsMod8 ) ) << ( 8 - numberOfBitsMod8 );
-		//	jackieBits->mReadPosBits++;
-		//	mWritePosBits++;
+		//	jackieBits->mReadingPosBits++;
+		//	mWritingPosBits++;
 		//}
 	}
 
