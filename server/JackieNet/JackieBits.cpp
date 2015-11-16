@@ -197,18 +197,18 @@ namespace JACKIE_INET
 			BitSize bytes2Alloc = BITS_TO_BYTES(newBitsAllocCount);
 			if (data == mStacBuffer)
 			{
-				if (bytes2Alloc > JACKIESTREAM_STACK_ALLOC_SIZE)
+				if (bytes2Alloc >= JACKIESTREAM_STACK_ALLOC_SIZE)
 				{
-					printf("data == mStacBuffer\n");
+					//printf("data == mStacBuffer\n");
 					data = (UInt8 *)jackieMalloc_Ex(bytes2Alloc, TRACE_FILE_AND_LINE_);
-					if (mWritingPosBits > 0)
+					//if (mWritingPosBits > 0)
 						memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
 					mNeedFree = true;
 				}
 			}
 			else
 			{
-				printf("data != mStacBuffer\n");
+			/*	printf("data != mStacBuffer\n");*/
 				/// if allocate new memory, old data is copied and old memory is frred
 				data = (UInt8*)jackieRealloc_Ex(data, bytes2Alloc, TRACE_FILE_AND_LINE_);
 				mNeedFree = true;
@@ -514,7 +514,6 @@ namespace JACKIE_INET
 			mWritingPosBits += BYTES_TO_BITS(numBytes);
 		}
 		/// write remaining bits one by one
-		/*	bool isOne;*/
 		//while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
 		while (bits2Write-- > 0)
 		{
