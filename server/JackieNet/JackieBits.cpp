@@ -2,17 +2,18 @@
 
 namespace JACKIE_INET
 {
+	static const BitSize JACKIESTREAM_STACK_ALLOC_BITS_SIZE = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
 	STATIC_FACTORY_DEFINITIONS(JackieBits, JackieBits);
 
 	JackieBits::JackieBits() :
-		mBitsAllocSize(BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE)),
+		mBitsAllocSize(JACKIESTREAM_STACK_ALLOC_BITS_SIZE),
 		mWritingPosBits(0),
 		mReadingPosBits(0),
 		data(mStacBuffer),
 		mNeedFree(false),
 		mReadOnly(false)
 	{
-		//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
+		//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE); // NO NEED TO SET ALL ZEROS
 	}
 
 	JackieBits::JackieBits(const BitSize initialBytesAllocate) :
@@ -23,10 +24,10 @@ namespace JACKIE_INET
 		if (initialBytesAllocate <= JACKIESTREAM_STACK_ALLOC_SIZE)
 		{
 			data = mStacBuffer;
-			mBitsAllocSize = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
+			mBitsAllocSize = JACKIESTREAM_STACK_ALLOC_BITS_SIZE;
 			mNeedFree = false;
 			DCHECK_NOTNULL(data);
-			//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
+			//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE); // NO NEED TO SET ALL ZEROS
 		}
 		else
 		{
@@ -34,7 +35,7 @@ namespace JACKIE_INET
 			mBitsAllocSize = BYTES_TO_BITS(initialBytesAllocate);
 			mNeedFree = true;
 			DCHECK_NOTNULL(data);
-			//memset(data, 0, initialBytesAllocate);
+			//memset(data, 0, initialBytesAllocate); // NO NEED TO SET ALL ZEROS
 		}
 	}
 	JackieBits::JackieBits(UInt8* src, const ByteSize len, bool copy/*=false*/) :
@@ -52,16 +53,16 @@ namespace JACKIE_INET
 				{
 					data = mStacBuffer;
 					mNeedFree = false;
-					mBitsAllocSize = BYTES_TO_BITS(JACKIESTREAM_STACK_ALLOC_SIZE);
+					mBitsAllocSize = JACKIESTREAM_STACK_ALLOC_BITS_SIZE;
 					DCHECK_NOTNULL(data);
-					//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE);
+					//memset(data, 0, JACKIESTREAM_STACK_ALLOC_SIZE); // NO NEED TO SET ALL ZEROS
 				}
 				else
 				{
 					data = (UInt8*)jackieMalloc_Ex(len, TRACE_FILE_AND_LINE_);
 					mNeedFree = true;
 					DCHECK_NOTNULL(data);
-					//memset(data, 0, len);
+					//memset(data, 0, len); // NO NEED TO SET ALL ZEROS
 				}
 				memcpy(data, src, len);
 			}
@@ -79,10 +80,10 @@ namespace JACKIE_INET
 	}
 	JackieBits::~JackieBits()
 	{
-		if (mNeedFree && mBitsAllocSize > (JACKIESTREAM_STACK_ALLOC_SIZE << 3))
+		if (mNeedFree && mBitsAllocSize > JACKIESTREAM_STACK_ALLOC_BITS_SIZE)
+		{
 			jackieFree_Ex(data, TRACE_FILE_AND_LINE_);
-		/// realloc and free are more efficient than delete and new  
-		/// because it will not call ctor and dtor
+		}
 	}
 
 	void JackieBits::ReadMini(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
@@ -184,10 +185,11 @@ namespace JACKIE_INET
 		{
 			// Less memory efficient but saves on news and deletes
 			/// Cap to 1 meg buffer to save on huge allocations
-			newBitsAllocCount <<= 1;
+			if (newBitsAllocCount > 1048576)
+				newBitsAllocCount = 1048576;
+			else
+				newBitsAllocCount <<= 1;
 
-			if (newBitsAllocCount - (bits2Append + mWritingPosBits + 1) > 1048576)
-				newBitsAllocCount = bits2Append + mWritingPosBits + 1048576;
 			//if (newBitsAllocCount - (bits2Append + mWritingPosBits) > 1048576)
 			//	newBitsAllocCount = bits2Append + mWritingPosBits + 1048576; // official
 
@@ -197,18 +199,22 @@ namespace JACKIE_INET
 			{
 				if (bytes2Alloc > JACKIESTREAM_STACK_ALLOC_SIZE)
 				{
+					printf("data == mStacBuffer\n");
 					data = (UInt8 *)jackieMalloc_Ex(bytes2Alloc, TRACE_FILE_AND_LINE_);
-					memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
+					if (mWritingPosBits > 0)
+						memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
+					mNeedFree = true;
 				}
 			}
 			else
 			{
-				/// will free old memory and allocate 
-				/// new memory if cannot reallocate at same starting address
+				printf("data != mStacBuffer\n");
+				/// if allocate new memory, old data is copied and old memory is frred
 				data = (UInt8*)jackieRealloc_Ex(data, bytes2Alloc, TRACE_FILE_AND_LINE_);
+				mNeedFree = true;
 			}
 
-			DCHECK_NOTNULL(data);
+			DCHECK(data != 0);
 		}
 
 		if (newBitsAllocCount > mBitsAllocSize)
@@ -395,11 +401,11 @@ namespace JACKIE_INET
 		}
 
 		UInt8 dataByte;
-		const UInt8* inputPtr = src;
+		//const UInt8* inputPtr = src;
 
 		while (bits2Write > 0)
 		{
-			dataByte = *(inputPtr++);
+			dataByte = *(src++);
 
 			/// if @dataByte is the last byte to write, we have to convert this byte into 
 			/// stream internal data by shifting the bits in this last byte to left-aligned
@@ -453,98 +459,94 @@ namespace JACKIE_INET
 		DCHECK(mReadOnly == false);
 		DCHECK(bits2Write > 0);
 		DCHECK(bits2Write <= jackieBits->GetPayLoadBits());
-
 		//if( mReadOnly ) return;
 		//if( bits2Write == 0 ) return;
 		//if( bits2Write > jackieBits->GetPayLoadBits() ) return;
 
-		///// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
-		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
-		if (numberOfBitsMod8 == 0)
-		{
-			WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3), bits2Write,
-				false);
-			jackieBits->mReadingPosBits += bits2Write;
-			return;
-		}
+		//AppendBitsCouldRealloc(bits2Write);
+		/////// if numberOfBitsMod8 == 0, we call WriteBits() directly for efficiency
+		//BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
+		//JINFO << "numberOfBitsMod8 " << numberOfBitsMod8;
+		//if (numberOfBitsMod8 == 0)
+		//{
+		//	JINFO << "if (numberOfBitsMod8 == 0)";
+		//	WriteBits(&jackieBits->data[jackieBits->mReadingPosBits >> 3], bits2Write, false);
+		//	jackieBits->mReadingPosBits += bits2Write;
+		//	return;
+		//}
 
-		/// if numberOfBitsMod8 > 0, this means there are bits to write in the byte of
-		/// @jackieBits->data[[jackieBits->mReadPosBits >> 3]]
+		//JINFO << "if (numberOfBitsMod8 > 0)";
+		///// if numberOfBitsMod8 > 0, this means there are bits to write in the byte of
+		///// @jackieBits->data[[jackieBits->mReadPosBits >> 3]]
+		//UInt8 byte2Write = jackieBits->data[jackieBits->mReadingPosBits >> 3];
+		//data[mWritingPosBits >> 3] |= (byte2Write << numberOfBitsMod8) >> (mWritingPosBits & 7);
+
+		//BitSize partialBits2Written = 8 - numberOfBitsMod8;
+		//BitSize partialBits = 8 - (mWritingPosBits & 7);
+		//Int32 remianingBit2Write = partialBits2Written - partialBits;
+		//if (remianingBit2Write > 0)
+		//{
+		//	data[(mWritingPosBits >> 3) + 1] = byte2Write << (8 - remianingBit2Write);
+		//}
+
+		//jackieBits->mReadingPosBits += partialBits2Written;
+		//mWritingPosBits += partialBits2Written;
+		//bits2Write -= partialBits2Written;
+
+		///// after writting partial bits, numberOfBitsMod8 must be zero
+		///// we can now safely call WriteBits() for further process
+		//DCHECK((jackieBits->mReadingPosBits & 7) == 0);
+		//WriteBits(&jackieBits->data[jackieBits->mReadingPosBits >> 3], bits2Write, false);
+		//jackieBits->mReadingPosBits += bits2Write;
+
+		/// official way
 		AppendBitsCouldRealloc(bits2Write);
-		BitSize partialBits2Write = (8 - numberOfBitsMod8);
-
-		while (partialBits2Write-- > 0)
+		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
+		/// write all bytes for efficiency
+		if (numberOfBitsMod8 == 0 && (mWritingPosBits & 7) == 0)
+		{
+			int readOffsetBytes = jackieBits->mReadingPosBits >> 3;
+			int numBytes = bits2Write >> 3;
+			memcpy(data + (mWritingPosBits >> 3),
+				jackieBits->data + readOffsetBytes, numBytes);
+			bits2Write -= BYTES_TO_BITS(numBytes);
+			jackieBits->mReadingPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
+			mWritingPosBits += BYTES_TO_BITS(numBytes);
+		}
+		/// write remaining bits one by one
+		/*	bool isOne;*/
+		//while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
+		while (bits2Write-- > 0)
 		{
 			numberOfBitsMod8 = mWritingPosBits & 7;
-			if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
-				(0x80 >> (jackieBits->mReadingPosBits & 7))))  /// Write bit 1
+			if (numberOfBitsMod8 == 0)
 			{
-				data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8);
+				/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+				if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
+					(0x80 >> (jackieBits->mReadingPosBits & 7))))
+					// Write 1
+					data[mWritingPosBits >> 3] = 0x80;
+				else
+					data[mWritingPosBits >> 3] = 0;
 			}
-			else /// write bit 0
+			else
 			{
-				data[mWritingPosBits >> 3] |= 0;
+				/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
+				if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
+					(0x80 >> (jackieBits->mReadingPosBits & 7))))
+				{
+					/// set dest bit to 1 if the src bit is 1,do-nothing if the src bit is 0
+					data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8);
+				}
+				else
+				{
+					data[mWritingPosBits >> 3] |= 0;
+				}
 			}
 
 			jackieBits->mReadingPosBits++;
 			mWritingPosBits++;
-			bits2Write--;
 		}
-
-		/// after writting partial bits, numberOfBitsMod8 must be zero
-		/// we can now safely call WriteBits() for further process
-		DCHECK((jackieBits->mReadingPosBits & 7) == 0);
-		WriteBits(jackieBits->data + (jackieBits->mReadingPosBits >> 3), bits2Write, false);
-		jackieBits->mReadingPosBits += bits2Write;
-
-
-		/// official way
-		//AppendBitsCouldRealloc(bits2Write);
-		///// write all bytes for efficiency
-		//if (numberOfBitsMod8 == 0 && (mWritingPosBits & 7) == 0)
-		//{
-		//	int readOffsetBytes = jackieBits->mReadingPosBits >> 3;
-		//	int numBytes = bits2Write >> 3;
-		//	memcpy(data + (mWritingPosBits >> 3),
-		//		jackieBits->data + readOffsetBytes, numBytes);
-		//	bits2Write -= BYTES_TO_BITS(numBytes);
-		//	jackieBits->mReadingPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
-		//	mWritingPosBits += BYTES_TO_BITS(numBytes);
-		//}
-		///// write remaining bits one by one
-		///*	bool isOne;*/
-		////while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
-		//while (bits2Write-- > 0)
-		//{
-		//	numberOfBitsMod8 = mWritingPosBits & 7;
-		//	if (numberOfBitsMod8 == 0)
-		//	{
-		//		/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
-		//		if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
-		//			(0x80 >> (jackieBits->mReadingPosBits & 7))))
-		//			// Write 1
-		//			data[mWritingPosBits >> 3] = 0x80;
-		//		else
-		//			data[mWritingPosBits >> 3] = 0;
-		//	}
-		//	else
-		//	{
-		//		/// see if this src bit  is 1 or 0, 0x80 (16)= 128(10)= 10000000 (2)
-		//		if ((jackieBits->data[jackieBits->mReadingPosBits >> 3] &
-		//			(0x80 >> (jackieBits->mReadingPosBits & 7))))
-		//		{
-		//			/// set dest bit to 1 if the src bit is 1,do-nothing if the src bit is 0
-		//			data[mWritingPosBits >> 3] |= 0x80 >> (numberOfBitsMod8);
-		//		}
-		//		else
-		//		{
-		//			data[mWritingPosBits >> 3] |= 0;
-		//		}
-		//	}
-
-		//	jackieBits->mReadingPosBits++;
-		//	mWritingPosBits++;
-		//}
 	}
 
 	void JackieBits::WriteFloatRange(float src, float floatMin, float floatMax)

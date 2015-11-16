@@ -115,7 +115,11 @@ namespace JACKIE_INET
 		/// @author mengdi[Jackie]
 		JackieBits(UInt8* src, const ByteSize len, bool copy = false);
 
+		/// DEFAULT CTOR
 		JackieBits();
+
+		/// realloc and free are more efficient than delete and new  
+		/// because it will not call ctor and dtor
 		~JackieBits();
 
 
@@ -756,26 +760,20 @@ namespace JACKIE_INET
 		template <>
 		inline void Read(UInt24 &dest)
 		{
-			AlignReadPosBitsByteBoundary();
-			DCHECK(GetPayLoadBits()>=24);
+			DCHECK(GetPayLoadBits() >= 24);
 			//if (GetPayLoadBits() < 24) return;
 
 			if (!IsBigEndian())
 			{
-				((UInt8 *)&dest.val)[0] = data[(mReadingPosBits >> 3) + 0];
-				((UInt8 *)&dest.val)[1] = data[(mReadingPosBits >> 3) + 1];
-				((UInt8 *)&dest.val)[2] = data[(mReadingPosBits >> 3) + 2];
+				ReadBits((UInt8 *)&dest.val, 24, false);
 				((UInt8 *)&dest.val)[3] = 0;
 			}
 			else
 			{
-				((UInt8 *)&dest.val)[3] = data[(mReadingPosBits >> 3) + 0];
-				((UInt8 *)&dest.val)[2] = data[(mReadingPosBits >> 3) + 1];
-				((UInt8 *)&dest.val)[1] = data[(mReadingPosBits >> 3) + 2];
+				ReadBits((UInt8 *)&dest.val, 24, false);
+				ReverseBytes((UInt8 *)&dest.val, 3);
 				((UInt8 *)&dest.val)[0] = 0;
 			}
-
-			mReadingPosBits += 24;
 		}
 
 		template <>
@@ -1488,23 +1486,32 @@ namespace JACKIE_INET
 		template <>
 		inline void Write(const UInt24 &inTemplateVar)
 		{
-			AlignWritePosBits2ByteBoundary();
-			AppendBitsCouldRealloc(24);
+			//AlignWritePosBits2ByteBoundary();
+			//AppendBitsCouldRealloc(24);
 
 			if (!IsBigEndian())
 			{
-				data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[0];
-				data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[1];
-				data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[2];
+				WriteBits((UInt8 *)&inTemplateVar.val, 24, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[0], 8, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[1], 8, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[2], 8, false);
+				//data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[0];
+				//data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[1];
+				//data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[2];
 			}
 			else
 			{
-				data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[3];
-				data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[2];
-				data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
+				ReverseBytes((UInt8 *)&inTemplateVar.val, 3);
+				WriteBits((UInt8 *)&inTemplateVar.val, 24, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[3], 8, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[2], 8, false);
+				//WriteBits(&((UInt8 *)&inTemplateVar.val)[1], 8, false);
+				//data[(mWritingPosBits >> 3) + 0] = ((UInt8 *)&inTemplateVar.val)[3];
+				//data[(mWritingPosBits >> 3) + 1] = ((UInt8 *)&inTemplateVar.val)[2];
+				//data[(mWritingPosBits >> 3) + 2] = ((UInt8 *)&inTemplateVar.val)[1];
 			}
 
-			mWritingPosBits += 24;
+			//mWritingPosBits += 24;
 		}
 
 		/// @func Write 
@@ -1796,8 +1803,8 @@ namespace JACKIE_INET
 		{
 			//int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) -
 			//	GetLeadingZeroSize(IntegerType(max - mini));
-			 IntegerType diff = max - mini;
-			 int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(diff);
+			IntegerType diff = max - mini;
+			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(diff);
 			WriteIntegerRange(value, mini, max, requiredBits, allowOutsideRange);
 		}
 
@@ -1982,12 +1989,12 @@ namespace JACKIE_INET
 		/// @return The length in bits of the stream.
 		/// @notice
 		/// all bytes are copied besides the bytes in GetPayLoadBits()
-		BitSize Copy(UInt8** _data) const
+		BitSize Copy(UInt8*& _data) const
 		{
 			DCHECK(mWritingPosBits > 0);
-			*_data = (UInt8*)jackieMalloc_Ex(BITS_TO_BYTES(mWritingPosBits),
+			_data = (UInt8*)jackieMalloc_Ex(BITS_TO_BYTES(mWritingPosBits),
 				TRACE_FILE_AND_LINE_);
-			memcpy(*_data, data, sizeof(UInt8) * BITS_TO_BYTES(mWritingPosBits));
+			memcpy(_data, data, sizeof(UInt8) * BITS_TO_BYTES(mWritingPosBits));
 			return mWritingPosBits;
 		}
 

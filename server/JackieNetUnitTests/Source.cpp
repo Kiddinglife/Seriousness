@@ -374,6 +374,7 @@ static void test_JackieStream__funcs()
 
 	JINFO << "Test alll write and read";
 	JackieBits s8;
+	JackieBits s9;
 
 	UInt24 uint24 = 24;
 	UInt8 uint8 = 8;
@@ -400,20 +401,27 @@ static void test_JackieStream__funcs()
 	s8.ReadIntegerRange(curr, min, max);
 	DCHECK(curr == 12);
 
+	s8.Write(uint24);
+	uint24 = 0;
+	s8.Read(uint24);
+	DCHECK(uint24.val == 24);
+
 	s8.WriteBits(&particialByte, 7, false);
 	UInt8 v = 0;
 	s8.ReadBits(&v, 7, false);
 	DCHECK(particialByte == v);
+	DCHECK(s8.GetPayLoadBits() == 0);
 
-	for (int i = 10; i >= 0; i--)
+	for (int i = 1; i >= 0; i--)
 	{
-		UInt32 looptimes = 10000;
+		UInt32 looptimes = 1000;
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
+			s8.Write(uint24);
+
 			s8 << guid;
 			s8 << addr;
 
-			s8.Write(uint24);
 			s8.WriteMini(uint24);
 
 			s8.Write(uint8);
@@ -540,11 +548,26 @@ static void test_JackieStream__funcs()
 		}
 		}*/
 
-		JackieBits s9;
+		char str[256];
+		JackieBits::PrintBit(str, 64, s8.Data());
+		JINFO << str;
+
+		JINFO << "<<";
 		s9 << s8;
-		s8.Reset();
+
+		JackieBits::PrintBit(str, 24, &s9.Data()[s9.ReadPosBits() >> 3]);
+		JINFO << str;
+
+
+		JackieBits::PrintBit(str, 24, (UInt8*)&uint24);
+		JINFO << str;
+
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
+			uint24 = 0;
+			s9.Read(uint24);
+			DCHECK(uint24.val == 24);
+
 			JackieGUID guidd;
 			s9 >> guidd;
 			DCHECK(guid == guidd);
@@ -553,10 +576,9 @@ static void test_JackieStream__funcs()
 			s9 >> addrr;
 			DCHECK(addr == addrr);
 
-			s9.Read(uint24);
 			UInt24 mini_uint24;
 			s9.ReadMini(mini_uint24);
-			DCHECK(mini_uint24 == uint24);
+			DCHECK(mini_uint24.val == 24);
 
 			s9.Read(uint8);
 			s9.Read(int64);
@@ -633,6 +655,9 @@ static void test_JackieStream__funcs()
 			DCHECK(uint64 == 64);
 			DCHECK(int64 == -64);
 		}
+
+		s8.Reset();
+		s9.Reset();
 	}
 }
 enum
