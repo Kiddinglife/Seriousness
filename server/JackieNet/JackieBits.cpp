@@ -169,8 +169,8 @@ namespace JACKIE_INET
 
 	void JackieBits::AppendBitsCouldRealloc(const BitSize bits2Append)
 	{
-		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits; /// official
-		BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1;
+		BitSize newBitsAllocCount = bits2Append + mWritingPosBits; /// official
+		//BitSize newBitsAllocCount = bits2Append + mWritingPosBits + 1;
 
 		// If this assert hits then we need to specify mReadOnly as false 
 		// It needs to reallocate to hold all the data and can't do it unless we allocated to begin with
@@ -188,7 +188,7 @@ namespace JACKIE_INET
 			// [11/16/2015 JACKIE]  
 			/// fix bug: newBitsAllocCount should plus 1MB if < 1MB, otherwise it should doule itself
 			if (newBitsAllocCount > 1048576) /// 1024B*1024 = 1048576B = 1024KB = 1MB
-				newBitsAllocCount  += 1048576;
+				newBitsAllocCount += 1048576;
 			else
 				newBitsAllocCount <<= 1;
 			// Use realloc and free so we are more efficient than delete and new for resizing
@@ -199,8 +199,7 @@ namespace JACKIE_INET
 				{
 					//printf("data == mStacBuffer\n");
 					data = (UInt8 *)jackieMalloc_Ex(bytes2Alloc, TRACE_FILE_AND_LINE_);
-					if (mWritingPosBits > 0)
-						memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
+					if (mWritingPosBits > 0) memcpy(data, mStacBuffer, BITS_TO_BYTES(mBitsAllocSize));
 					mNeedFree = true;
 				}
 			}
