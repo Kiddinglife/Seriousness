@@ -374,7 +374,6 @@ static void test_JackieStream__funcs()
 
 	JINFO << "Test alll write and read";
 	JackieBits s8;
-	JackieBits s9;
 
 	UInt24 uint24 = 24;
 	UInt8 uint8 = 8;
@@ -412,9 +411,9 @@ static void test_JackieStream__funcs()
 	DCHECK(particialByte == v);
 	DCHECK(s8.GetPayLoadBits() == 0);
 
-	for (int i = 10; i >= 0; i--)
+	for (int i = 100; i >= 0; i--)
 	{
-		UInt32 looptimes = 10000000;
+		UInt32 looptimes = 10000;
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
 			s8.Write(uint24);
@@ -553,6 +552,7 @@ static void test_JackieStream__funcs()
 			DCHECK(int64 == -64);
 		}*/
 
+		JackieBits s9;
 		s9 << s8;
 
 		for (UInt32 i = 1; i <= looptimes; i++)
