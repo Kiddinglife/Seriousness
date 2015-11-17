@@ -1665,8 +1665,7 @@ namespace JACKIE_INET
 		/// 就和平常书写的一样，先写高位，即低地址存储高位。
 		/// 如char a=0x12.存储从低位到高位就为0001 0010
 		/// @author mengdi[Jackie]
-		void WriteMini(const UInt8* src, const BitSize bits2Write,
-			const bool isUnsigned);
+		void WriteMini(const UInt8* src, const BitSize bits2Write, const bool isUnsigned);
 
 
 		/// @func WriteMini 

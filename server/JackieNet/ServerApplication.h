@@ -37,7 +37,7 @@ namespace JACKIE_INET
 {
 	class JACKIE_EXPORT ServerApplication  //: public IServerApplication
 	{
-		private:
+	private:
 #if LIBCAT_SECURITY == 1
 		// Encryption and security
 		bool _using_security, _require_client_public_key;
@@ -85,10 +85,10 @@ namespace JACKIE_INET
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
 
-		bool(*recvHandler)( JISRecvParams* );
-		void(*userUpdateThreadPtr)( IServerApplication *, void * );
+		bool(*recvHandler)(JISRecvParams*);
+		void(*userUpdateThreadPtr)(IServerApplication *, void *);
 		void *userUpdateThreadData;
-		bool(*incomeDatagramEventHandler)( JISRecvParams * );
+		bool(*incomeDatagramEventHandler)(JISRecvParams *);
 		bool updateCycleIsRunning;
 		volatile bool endThreads; ///Set this to true to terminate threads execution 
 		volatile bool isNetworkUpdateThreadActive; ///true if the send thread is active. 
@@ -198,11 +198,11 @@ namespace JACKIE_INET
 		LockFreeQueue<IPlugin*> pluginListTS;
 		ArraryQueue<IPlugin*> pluginListNTS;
 
-		public:
+	public:
 		/// only user thread pushtail into the queue, other threads only read it so no need lock
 		ArraryQueue<JackieINetSocket*, 8 > bindedSockets;
 
-		public:
+	public:
 		STATIC_FACTORY_DECLARATIONS(ServerApplication);
 		ServerApplication();
 		virtual ~ServerApplication();
@@ -212,7 +212,7 @@ namespace JACKIE_INET
 		void ResetSendReceipt(void);
 		Packet* GetPacketOnce(void);
 
-		private:
+	private:
 		void ProcessOneRecvParam(JISRecvParams* recvParams);
 		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
@@ -223,7 +223,7 @@ namespace JACKIE_INET
 		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);
 		void AdjustTimestamp(Packet*& incomePacket) const;
 
-		public:
+	public:
 		virtual StartupResult Start(UInt32 maxConnections,
 			BindSocket *socketDescriptors,
 			UInt32 socketDescriptorCount, Int32 threadPriority = -99999);
@@ -253,7 +253,7 @@ namespace JACKIE_INET
 		///========================================
 		void CancelConnectionRequest(const JackieAddress& target);
 
-		private:
+	private:
 		void ClearAllCommandQs(void);
 		void ClearSocketQueryOutputs(void);
 		void ClearAllRecvParamsQs(void);
@@ -296,7 +296,7 @@ namespace JACKIE_INET
 		void PacketGoThroughPlugins(Packet*& incomePacket);
 		void UpdatePlugins(void);
 
-		public:
+	public:
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
 		void ReclaimPacket(Packet *packet);
 		/// only recv thread will take charge of alloc packet in multi-threads env

@@ -80,7 +80,7 @@ namespace JACKIE_INET
 		myGuid = JACKIE_NULL_GUID;
 		firstExternalID = JACKIE_NULL_ADDRESS;
 
-		for( UInt32 index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
+		for (UInt32 index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++)
 		{
 			IPAddress[index] = JACKIE_NULL_ADDRESS;
 		}
@@ -121,22 +121,22 @@ namespace JACKIE_INET
 		UInt32 bindLocalSocketsCount,
 		Int32 threadPriority /*= -99999*/)
 	{
-		if( IsActive() ) return StartupResult::ALREADY_STARTED;
+		if (IsActive()) return StartupResult::ALREADY_STARTED;
 
 		// If getting the guid failed in the constructor, try again
-		if( myGuid.g == 0 )
+		if (myGuid.g == 0)
 		{
 			GenerateGUID();
-			if( myGuid.g == 0 ) return StartupResult::COULD_NOT_GENERATE_GUID;
+			if (myGuid.g == 0) return StartupResult::COULD_NOT_GENERATE_GUID;
 		}
 
-		if( myGuid == JACKIE_NULL_GUID )
+		if (myGuid == JACKIE_NULL_GUID)
 		{
-			rnr.SeedMT((UInt32) ( ( myGuid.g >> 32 ) ^ myGuid.g ));
+			rnr.SeedMT((UInt32)((myGuid.g >> 32) ^ myGuid.g));
 			myGuid.g = rnr.RandomMT();
 		}
 
-		if( threadPriority == -99999 )
+		if (threadPriority == -99999)
 		{
 #if  defined(_WIN32)
 			threadPriority = 0;
@@ -148,10 +148,10 @@ namespace JACKIE_INET
 		InitIPAddress();
 
 		assert(bindLocalSockets && bindLocalSocketsCount >= 1);
-		if( bindLocalSockets == 0 || bindLocalSocketsCount < 1 )
+		if (bindLocalSockets == 0 || bindLocalSocketsCount < 1)
 			return INVALID_JACKIE_LOCAL_SOCKET;
 
-		assert(maxConn > 0); if( maxConn <= 0 ) return INVALID_MAX_CONNECTIONS;
+		assert(maxConn > 0); if (maxConn <= 0) return INVALID_MAX_CONNECTIONS;
 
 		/// Start to bind given sockets 
 		UInt32 index;
@@ -159,9 +159,9 @@ namespace JACKIE_INET
 		JISBerkleyBindParams berkleyBindParams;
 		JISBindResult bindResult;
 		DeallocBindedSockets();
-		for( index = 0; index < bindLocalSocketsCount; index++ )
+		for (index = 0; index < bindLocalSocketsCount; index++)
 		{
-			do { sock = JISAllocator::AllocJIS(); } while( sock == 0 );
+			do { sock = JISAllocator::AllocJIS(); } while (sock == 0);
 			DCHECK_EQ(bindedSockets.PushTail(sock), true);
 
 #if defined(__native_client__)
@@ -184,10 +184,10 @@ namespace JACKIE_INET
 				return SOCKET_FAILED_TO_BIND;
 			}
 #else
-			if( sock->IsBerkleySocket() )
+			if (sock->IsBerkleySocket())
 			{
 				berkleyBindParams.port = bindLocalSockets[index].port;
-				berkleyBindParams.hostAddress = (char*) bindLocalSockets[index].hostAddress;
+				berkleyBindParams.hostAddress = (char*)bindLocalSockets[index].hostAddress;
 				berkleyBindParams.addressFamily = bindLocalSockets[index].socketFamily;
 				berkleyBindParams.type = SOCK_DGRAM;
 				berkleyBindParams.protocol = bindLocalSockets[index].extraSocketOptions;
@@ -208,14 +208,14 @@ namespace JACKIE_INET
 				berkleyBindParams.isBlocKing = true;
 #endif
 
-				bindResult = ( (JISBerkley*) sock )->Bind(&berkleyBindParams,
+				bindResult = ((JISBerkley*)sock)->Bind(&berkleyBindParams,
 					TRACE_FILE_AND_LINE_);
 
-				if(
+				if (
 #if NET_SUPPORT_IPV6 ==0
 					bindLocalSockets[index].socketFamily != AF_INET ||
 #endif
-					bindResult == JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED )
+					bindResult == JISBindResult_REQUIRES_NET_SUPPORT_IPV6_DEFINED)
 				{
 					JISAllocator::DeallocJIS(sock);
 					DeallocBindedSockets();
@@ -223,27 +223,28 @@ namespace JACKIE_INET
 					return SOCKET_FAMILY_NOT_SUPPORTED;
 				}
 
-				switch( bindResult )
+				switch (bindResult)
 				{
-					case JISBindResult_FAILED_BIND_SOCKET:
-						DeallocBindedSockets();
-						JERROR << "Bind Failed (FAILED_BIND_SOCKET) ! ";
-						return SOCKET_PORT_ALREADY_IN_USE;
-						break;
+				case JISBindResult_FAILED_BIND_SOCKET:
+					DeallocBindedSockets();
+					JERROR << "Bind Failed (FAILED_BIND_SOCKET) ! ";
+					return SOCKET_PORT_ALREADY_IN_USE;
+					break;
 
-					case JISBindResult_FAILED_SEND_RECV_TEST:
-						DeallocBindedSockets();
-						JERROR << "Bind Failed (FAILED_SEND_RECV_TEST) ! ";
-						return SOCKET_FAILED_TEST_SEND_RECV;
-						break;
+				case JISBindResult_FAILED_SEND_RECV_TEST:
+					DeallocBindedSockets();
+					JERROR << "Bind Failed (FAILED_SEND_RECV_TEST) ! ";
+					return SOCKET_FAILED_TEST_SEND_RECV;
+					break;
 
-					default:
-						assert(bindResult == JISBindResult_SUCCESS);
-						JDEBUG << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
-						sock->SetUserConnectionSocketIndex(index);
-						break;
+				default:
+					assert(bindResult == JISBindResult_SUCCESS);
+					JDEBUG << "Bind [" << sock->GetBoundAddress().ToString() << "] Successfully";
+					sock->SetUserConnectionSocketIndex(index);
+					break;
 				}
-			} else
+			}
+			else
 			{
 				JWARNING << "Bind Failed (@TO-DO UNKNOWN BERKELY SOCKET) ! ";
 				assert("@TO-DO UNKNOWN BERKELY SOCKET" && 0);
@@ -255,12 +256,12 @@ namespace JACKIE_INET
 
 		/// after binding, assign IPAddress port number
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-		if( bindedSockets[0]->IsBerkleySocket() )
+		if (bindedSockets[0]->IsBerkleySocket())
 		{
-			for( index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++ )
+			for (index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++)
 			{
-				if( IPAddress[index] == JACKIE_NULL_ADDRESS ) break;
-				IPAddress[index].SetPortHostOrder(( (JISBerkley*) bindedSockets[0] )->GetBoundAddress().GetPortHostOrder());
+				if (IPAddress[index] == JACKIE_NULL_ADDRESS) break;
+				IPAddress[index].SetPortHostOrder(((JISBerkley*)bindedSockets[0])->GetBoundAddress().GetPortHostOrder());
 			}
 		}
 #endif
@@ -268,9 +269,9 @@ namespace JACKIE_INET
 		JISRecvParamsPool = JACKIE_INET::OP_NEW_ARRAY < MemoryPool < JISRecvParams >>(bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 #if USE_SINGLE_THREAD == 0
 		deAllocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < LockFreeQueue <
-			JISRecvParams* >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams* >> (bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 		allocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < LockFreeQueue <
-			JISRecvParams* >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams* >> (bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 #else
 		deAllocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < ArraryQueue
 			< JISRecvParams* >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
@@ -279,10 +280,10 @@ namespace JACKIE_INET
 #endif
 
 		/// setup connections list
-		if( maxConnections == 0 )
+		if (maxConnections == 0)
 		{
 			// Don't allow more incoming connections than we have peers.
-			if( maxPassiveConnections > maxConn ) maxPassiveConnections = maxConn;
+			if (maxPassiveConnections > maxConn) maxPassiveConnections = maxConn;
 			maxConnections = maxConn;
 
 			remoteSystemList = JACKIE_INET::OP_NEW_ARRAY<RemoteEndPoint>(maxConnections, TRACE_FILE_AND_LINE_);
@@ -292,9 +293,9 @@ namespace JACKIE_INET
 
 			index = maxConnections*RemoteEndPointLookupHashMutiple;
 			remoteSystemLookup = JACKIE_INET::OP_NEW_ARRAY<RemoteEndPointIndex*>(index, TRACE_FILE_AND_LINE_);
-			memset((void**) remoteSystemLookup, 0, index*sizeof(RemoteEndPointIndex*));
+			memset((void**)remoteSystemLookup, 0, index*sizeof(RemoteEndPointIndex*));
 
-			for( index = 0; index < maxConnections; index++ )
+			for (index = 0; index < maxConnections; index++)
 			{
 				// remoteSystemList in Single thread
 				remoteSystemList[index].isActive = false;
@@ -303,7 +304,7 @@ namespace JACKIE_INET
 				remoteSystemList[index].myExternalSystemAddress = JACKIE_NULL_ADDRESS;
 				remoteSystemList[index].status = RemoteEndPoint::NO_ACTION;
 				remoteSystemList[index].MTUSize = defaultMTUSize;
-				remoteSystemList[index].remoteSystemIndex = (SystemIndex) index;
+				remoteSystemList[index].remoteSystemIndex = (SystemIndex)index;
 
 #ifdef _DEBUG
 				remoteSystemList[index].reliabilityLayer.ApplyNetworkSimulator(_packetloss, _minExtraPing, _extraPingVariance);
@@ -314,12 +315,12 @@ namespace JACKIE_INET
 
 
 		/// Setup Plugins 
-		for( index = 0; index < pluginListTS.Size(); index++ )
+		for (index = 0; index < pluginListTS.Size(); index++)
 		{
 			pluginListTS[index]->OnRakPeerStartup();
 		}
 
-		for( index = 0; index < pluginListNTS.Size(); index++ )
+		for (index = 0; index < pluginListNTS.Size(); index++)
 		{
 			pluginListNTS[index]->OnRakPeerStartup();
 		}
@@ -328,7 +329,7 @@ namespace JACKIE_INET
 		///  setup thread things
 		endThreads = true;
 		isNetworkUpdateThreadActive = false;
-		if( endThreads )
+		if (endThreads)
 		{
 			ClearAllCommandQs();
 			ClearSocketQueryOutputs();
@@ -344,11 +345,11 @@ namespace JACKIE_INET
 			/// this will create @bindLocalSocketsCount number of of recv threads 
 			/// That is if you have two NICs, will create two recv threads to handle
 			/// each of socket
-			for( index = 0; index < bindLocalSocketsCount; index++ )
+			for (index = 0; index < bindLocalSocketsCount; index++)
 			{
-				if( bindedSockets[index]->IsBerkleySocket() )
+				if (bindedSockets[index]->IsBerkleySocket())
 				{
-					if( CreateRecvPollingThread(threadPriority, index) != 0 )
+					if (CreateRecvPollingThread(threadPriority, index) != 0)
 					{
 						End(0);
 						return FAILED_TO_CREATE_RECV_THREAD;
@@ -357,7 +358,7 @@ namespace JACKIE_INET
 			}
 
 			/// Wait for the threads to activate. When they are active they will set these variables to true
-			while( !isRecvPollingThreadActive.GetValue() ) JackieSleep(10);
+			while (!isRecvPollingThreadActive.GetValue()) JackieSleep(10);
 #else
 			/// we handle recv in this thread, that is we only have two threads in the app this recv thread and th other send thread
 			isRecvPollingThreadActive.Increment();
@@ -365,17 +366,17 @@ namespace JACKIE_INET
 #endif
 
 			/// use another thread to charge of sending
-			if( !isNetworkUpdateThreadActive )
+			if (!isNetworkUpdateThreadActive)
 			{
 #if USE_SINGLE_THREAD == 0
-				if( CreateNetworkUpdateThread(threadPriority) != 0 )
+				if (CreateNetworkUpdateThread(threadPriority) != 0)
 				{
 					End(0);
 					JERROR << "ServerApplication::Start() Failed (FAILED_TO_CREATE_SEND_THREAD) ! ";
 					return FAILED_TO_CREATE_NETWORK_UPDATE_THREAD;
 				}
 				/// Wait for the threads to activate. When they are active they will set these variables to true
-				while( !isNetworkUpdateThreadActive ) JackieSleep(10);
+				while (!isNetworkUpdateThreadActive) JackieSleep(10);
 #else
 				/// we only have one thread to handle recv and send so just simply set it to true
 				isNetworkUpdateThreadActive = true;
@@ -411,7 +412,7 @@ namespace JACKIE_INET
 		JDEBUG << "Recv thread " << Index << " Reclaim All JISRecvParams";
 
 		JISRecvParams* recvParams = 0;
-		for( UInt32 index = 0; index < deAllocRecvParamQ[Index].Size(); index++ )
+		for (UInt32 index = 0; index < deAllocRecvParamQ[Index].Size(); index++)
 		{
 			DCHECK_EQ(deAllocRecvParamQ[Index].PopHead(recvParams), true);
 			JISRecvParamsPool[Index].Reclaim(recvParams);
@@ -421,24 +422,24 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "Recv Thread" << Index << " Alloc An JISRecvParams";
 		JISRecvParams* ptr = 0;
-		do { ptr = JISRecvParamsPool[Index].Allocate(); } while( ptr == 0 );
+		do { ptr = JISRecvParamsPool[Index].Allocate(); } while (ptr == 0);
 		return ptr;
 	}
 	void ServerApplication::ClearAllRecvParamsQs()
 	{
-		for( UInt32 index = 0; index < bindedSockets.Size(); index++ )
+		for (UInt32 index = 0; index < bindedSockets.Size(); index++)
 		{
 			JISRecvParams *recvParams = 0;
-			for( UInt32 i = 0; i < allocRecvParamQ[index].Size(); i++ )
+			for (UInt32 i = 0; i < allocRecvParamQ[index].Size(); i++)
 			{
 				DCHECK_EQ(allocRecvParamQ[index].PopHead(recvParams), true);
-				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
+				if (recvParams->data != 0) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 				JISRecvParamsPool[index].Reclaim(recvParams);
 			}
-			for( UInt32 i = 0; i < deAllocRecvParamQ[index].Size(); i++ )
+			for (UInt32 i = 0; i < deAllocRecvParamQ[index].Size(); i++)
 			{
 				DCHECK_EQ(deAllocRecvParamQ[index].PopHead(recvParams), true);
-				if( recvParams->data != 0 ) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
+				if (recvParams->data != 0) jackieFree_Ex(recvParams->data, TRACE_FILE_AND_LINE_);
 				JISRecvParamsPool[index].Reclaim(recvParams);
 			}
 			allocRecvParamQ[index].Clear();
@@ -453,7 +454,7 @@ namespace JACKIE_INET
 		JDEBUG << "User Thread Reclaims All Commands";
 
 		Command* bufferedCommand = 0;
-		for( UInt32 index = 0; index < deAllocCommandQ.Size(); index++ )
+		for (UInt32 index = 0; index < deAllocCommandQ.Size(); index++)
 		{
 			DCHECK_EQ(
 				deAllocCommandQ.PopHead(bufferedCommand),
@@ -466,7 +467,7 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "User Thread Alloc An Command";
 		Command* ptr = 0;
-		do { ptr = commandPool.Allocate(); } while( ptr == 0 );
+		do { ptr = commandPool.Allocate(); } while (ptr == 0);
 		return ptr;
 	}
 	void ServerApplication::ClearAllCommandQs(void)
@@ -474,18 +475,18 @@ namespace JACKIE_INET
 		Command *bcs = 0;
 
 		/// first reclaim the elem in 
-		for( UInt32 i = 0; i < allocCommandQ.Size(); i++ )
+		for (UInt32 i = 0; i < allocCommandQ.Size(); i++)
 		{
 			DCHECK_EQ(allocCommandQ.PopHead(bcs), true);
 			DCHECK_NOTNULL(bcs);
-			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
+			if (bcs->data != 0) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
-		for( UInt32 i = 0; i < deAllocCommandQ.Size(); i++ )
+		for (UInt32 i = 0; i < deAllocCommandQ.Size(); i++)
 		{
 			DCHECK_EQ(deAllocCommandQ.PopHead(bcs), true);
 			DCHECK_NOTNULL(bcs);
-			if( bcs->data != 0 ) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
+			if (bcs->data != 0) jackieFree_Ex(bcs->data, TRACE_FILE_AND_LINE_);
 			commandPool.Reclaim(bcs);
 		}
 		deAllocCommandQ.Clear();
@@ -501,18 +502,18 @@ namespace JACKIE_INET
 
 		// Sort the addresses from lowest to highest
 		int startingIdx = 0;
-		while( startingIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 &&
-			IPAddress[startingIdx] != JACKIE_NULL_ADDRESS )
+		while (startingIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 &&
+			IPAddress[startingIdx] != JACKIE_NULL_ADDRESS)
 		{
 			int lowestIdx = startingIdx;
-			for( int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && IPAddress[curIdx] != JACKIE_NULL_ADDRESS; curIdx++ )
+			for (int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && IPAddress[curIdx] != JACKIE_NULL_ADDRESS; curIdx++)
 			{
-				if( IPAddress[curIdx] < IPAddress[startingIdx] )
+				if (IPAddress[curIdx] < IPAddress[startingIdx])
 				{
 					lowestIdx = curIdx;
 				}
 			}
-			if( startingIdx != lowestIdx )
+			if (startingIdx != lowestIdx)
 			{
 				JackieAddress temp = IPAddress[startingIdx];
 				IPAddress[startingIdx] = IPAddress[lowestIdx];
@@ -524,9 +525,9 @@ namespace JACKIE_INET
 
 	void ServerApplication::DeallocBindedSockets(void)
 	{
-		for( UInt32 index = 0; index < bindedSockets.Size(); index++ )
+		for (UInt32 index = 0; index < bindedSockets.Size(); index++)
 		{
-			if( bindedSockets[index] != 0 ) JISAllocator::DeallocJIS(bindedSockets[index]);
+			if (bindedSockets[index] != 0) JISAllocator::DeallocJIS(bindedSockets[index]);
 		}
 	}
 	void ServerApplication::ClearSocketQueryOutputs(void)
@@ -539,10 +540,10 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
-		do { p = packetPool.Allocate(); } while( p == 0 );
+		do { p = packetPool.Allocate(); } while (p == 0);
 
 		//p = new ( (void*) p ) Packet; we do not need call default ctor
-		p->data = (unsigned char*) jackieMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
+		p->data = (unsigned char*)jackieMalloc_Ex(dataSize, TRACE_FILE_AND_LINE_);
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
 		p->freeInternalData = true;
@@ -555,10 +556,10 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
-		do { p = packetPool.Allocate(); } while( p == 0 );
+		do { p = packetPool.Allocate(); } while (p == 0);
 
 		//p = new ( (void*) p ) Packet; no custom ctor so no need to call default ctor
-		p->data = (unsigned char*) data;
+		p->data = (unsigned char*)data;
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
 		p->freeInternalData = true;
@@ -572,10 +573,10 @@ namespace JACKIE_INET
 		JDEBUG << "Network Thread Reclaims All Packets";
 
 		Packet* packet;
-		for( UInt32 index = 0; index < deAllocPacketQ.Size(); index++ )
+		for (UInt32 index = 0; index < deAllocPacketQ.Size(); index++)
 		{
 			DCHECK_EQ(deAllocPacketQ.PopHead(packet), true);
-			if( packet->freeInternalData )
+			if (packet->freeInternalData)
 			{
 				//packet->~Packet(); no custom dtor so no need to call default dtor
 				jackieFree_Ex(packet->data, TRACE_FILE_AND_LINE_);
@@ -592,10 +593,10 @@ namespace JACKIE_INET
 
 	int ServerApplication::CreateRecvPollingThread(int threadPriority, UInt32 index)
 	{
-		char* arg = (char*) jackieMalloc_Ex(sizeof(ServerApplication*) + sizeof(index), TRACE_FILE_AND_LINE_);
+		char* arg = (char*)jackieMalloc_Ex(sizeof(ServerApplication*) + sizeof(index), TRACE_FILE_AND_LINE_);
 		ServerApplication* serv = this;
 		memcpy(arg, &serv, sizeof(ServerApplication*));
-		memcpy(arg + sizeof(ServerApplication*), (char*) &index, sizeof(index));
+		memcpy(arg + sizeof(ServerApplication*), (char*)&index, sizeof(index));
 		return JACKIE_Thread::Create(JACKIE_INET::RunRecvCycleLoop, arg, threadPriority);
 	}
 	int ServerApplication::CreateNetworkUpdateThread(int threadPriority)
@@ -606,20 +607,20 @@ namespace JACKIE_INET
 	{
 		endThreads = true;
 #if USE_SINGLE_THREAD == 0
-		for( UInt32 i = 0; i < bindedSockets.Size(); i++ )
+		for (UInt32 i = 0; i < bindedSockets.Size(); i++)
 		{
-			if( bindedSockets[i]->IsBerkleySocket() )
+			if (bindedSockets[i]->IsBerkleySocket())
 			{
-				JISBerkley* sock = (JISBerkley*) bindedSockets[i];
-				if( sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET )
+				JISBerkley* sock = (JISBerkley*)bindedSockets[i];
+				if (sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET)
 				{
 					/// try to send 0 data to let recv thread keep running
 					/// to detect the isRecvPollingThreadActive === false so that stop the thread
-					char zero[ ] = "This is used to Stop Recv Thread";
+					char zero[] = "This is used to Stop Recv Thread";
 					JISSendParams sendParams = { zero, sizeof(zero), 0, sock->GetBoundAddress(), 0 };
 					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
 					TimeMS timeout = Get32BitsTimeMS() + 1000;
-					while( isRecvPollingThreadActive.GetValue() > 0 && Get32BitsTimeMS() < timeout )
+					while (isRecvPollingThreadActive.GetValue() > 0 && Get32BitsTimeMS() < timeout)
 					{
 						sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
 						JackieSleep(100);
@@ -654,18 +655,19 @@ namespace JACKIE_INET
 		DCHECK_NE(recvParams->senderINetAddress.GetPortHostOrder(), 0);
 
 		bool isOfflinerecvParams = true;
-		if( ProcessOneOfflineRecvParam(recvParams, &isOfflinerecvParams) ) return;
+		if (ProcessOneOfflineRecvParam(recvParams, &isOfflinerecvParams)) return;
 
 		/// See if this datagram came from a connected system
 		RemoteEndPoint* remoteEndPoint =
 			GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
-		if( remoteEndPoint != 0 ) // if this datagram comes from connected system
+		if (remoteEndPoint != 0) // if this datagram comes from connected system
 		{
-			if( !isOfflinerecvParams )
+			if (!isOfflinerecvParams)
 			{
 				remoteEndPoint->reliabilityLayer.ProcessJISRecvParamsFromConnectedEndPoint(this, remoteEndPoint->MTUSize);
 			}
-		} else
+		}
+		else
 		{
 			char str[256];
 			recvParams->senderINetAddress.ToString(true, str);
@@ -688,7 +690,7 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "Network Thread Process ConnectionRequest CancelQ";
 
-		if( connReqCancelQ.IsEmpty() )
+		if (connReqCancelQ.IsEmpty())
 		{
 			JDEBUG << "ConnectionRequestCancelQ is EMPTY";
 			return;
@@ -698,13 +700,13 @@ namespace JACKIE_INET
 		ConnectionRequest* connReq = 0;
 
 		connReqCancelQLock.Lock();
-		for( UInt32 index = 0; index < connReqCancelQ.Size(); index++ )
+		for (UInt32 index = 0; index < connReqCancelQ.Size(); index++)
 		{
 			/// Cancel pending connection attempt, if there is one
 			connReqQLock.Lock();
-			for( UInt32 i = 0; i < connReqQ.Size(); i++ )
+			for (UInt32 i = 0; i < connReqQ.Size(); i++)
 			{
-				if( connReqQ[i]->receiverAddr == connReqCancelAddr )
+				if (connReqQ[i]->receiverAddr == connReqCancelAddr)
 				{
 #if LIBCAT_SECURITY==1
 					CAT_AUDIT_PRINTF("AUDIT: Deleting requestedConnectionQueue %i client_handshake %x\n", i, connReqQ[i]->client_handshake);
@@ -725,32 +727,32 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "Network Thread Process ConnectionRequestQ";
 
-		if( connReqQ.IsEmpty() )
+		if (connReqQ.IsEmpty())
 		{
 			JDEBUG << "ConnectionRequestQ is EMPTY";
 			return;
 		}
 
-		if( timeUS == 0 )
+		if (timeUS == 0)
 		{
 			timeUS = Get64BitsTimeUS();
-			timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
+			timeMS = (TimeMS)(timeUS / (TimeUS)1000);
 		}
 
 		ConnectionRequest *connReq;
 
 		connReqQLock.Lock();
-		for( UInt32 index = 0; index < connReqQ.Size(); index++ )
+		for (UInt32 index = 0; index < connReqQ.Size(); index++)
 		{
 			connReq = connReqQ[index];
-			if( connReq->nextRequestTime < timeMS )
+			if (connReq->nextRequestTime < timeMS)
 			{
 				/// reach the max try times 
-				if( connReq->requestsMade == connReq->connAttemptTimes + 1 )
+				if (connReq->requestsMade == connReq->connAttemptTimes + 1)
 				{
 
 					/// free data inside conn req
-					if( connReq->data != 0 )
+					if (connReq->data != 0)
 					{
 						jackieFree_Ex(connReq->data, TRACE_FILE_AND_LINE_);
 						connReq->data = 0;
@@ -773,25 +775,25 @@ namespace JACKIE_INET
 
 					/// remove this conn request fron  queue
 					connReqQ.RemoveAtIndex(index);
-				} else /// try to connect again
+				}
+				else /// try to connect again
 				{
 					/// more times try to request connection, less mtu used
 					int MTUSizeIndex = connReq->requestsMade /
-						( connReq->connAttemptTimes / mtuSizesCount );
-					if( MTUSizeIndex >= mtuSizesCount )
+						(connReq->connAttemptTimes / mtuSizesCount);
+					if (MTUSizeIndex >= mtuSizesCount)
 						MTUSizeIndex = mtuSizesCount - 1;
 
 					connReq->requestsMade++;
 					connReq->nextRequestTime = timeMS + connReq->connAttemptIntervalMS;
 
-					/// @TO-DO
 					JackieBits bitStream;
-					//bitStream.Write((MessageID) ID_OPEN_CONNECTION_REQUEST_1);
-					//bitStream.WriteAlignedBytes((const unsigned char*) OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-					//bitStream.Write((MessageID) RAKNET_PROTOCOL_VERSION);
-					//bitStream.PadWithZeroToByteLength(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
+					bitStream.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_1);
+					bitStream.WriteAlignedBytes((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+					bitStream.Write((MessageID)RAKNET_PROTOCOL_VERSION);
+					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
-					JDEBUG << "The " << (int) connReq->requestsMade
+					JDEBUG << "The " << (int)connReq->requestsMade
 						<< " times to try to connect to remote sever [" << connReq->receiverAddr.ToString() << "]";
 
 					/// @TO-DO i am now in here
@@ -810,7 +812,7 @@ namespace JACKIE_INET
 		RemoteEndPoint* remoteEndPoint = 0;
 
 		/// process command queue
-		for( UInt32 index = 0; index < allocCommandQ.Size(); index++ )
+		for (UInt32 index = 0; index < allocCommandQ.Size(); index++)
 		{
 
 			/// no need to check if bufferedCommand == 0, because we never push 0 pointer
@@ -818,50 +820,50 @@ namespace JACKIE_INET
 			DCHECK_NOTNULL(cmd);
 			DCHECK_NOTNULL(cmd->data);
 
-			switch( cmd->command )
+			switch (cmd->command)
 			{
-				case Command::BCS_SEND:
-					JDEBUG << "BCS_SEND";
-					/// GetTime is a very slow call so do it once and as late as possible
-					if( timeUS == 0 )
-					{
-						timeUS = Get64BitsTimeUS();
-						timeMS = (TimeMS) ( timeUS / (TimeUS) 1000 );
-					}
-					/// send data stored in this bc right now
-					if( SendRightNow(timeUS, true, cmd) == false )
-						jackieFree_Ex(cmd->data, TRACE_FILE_AND_LINE_);
-					/// Set the new connection state AFTER we call sendImmediate in case we are 
-					/// setting it to a disconnection state, which does not allow further sends
-					if( cmd->repStatus != RemoteEndPoint::NO_ACTION )
-					{
-						remoteEndPoint = GetRemoteEndPoint(
-							cmd->systemIdentifier, true, true);
-						if( remoteEndPoint != 0 )
-							remoteEndPoint->status = cmd->repStatus;
-					}
-					break;
-				case Command::BCS_CLOSE_CONNECTION:
-					JDEBUG << "BCS_CLOSE_CONNECTION";
-					CloseConnectionInternally(false, true, cmd);
-					break;
-				case Command::BCS_CHANGE_SYSTEM_ADDRESS: //re-rout
+			case Command::BCS_SEND:
+				JDEBUG << "BCS_SEND";
+				/// GetTime is a very slow call so do it once and as late as possible
+				if (timeUS == 0)
+				{
+					timeUS = Get64BitsTimeUS();
+					timeMS = (TimeMS)(timeUS / (TimeUS)1000);
+				}
+				/// send data stored in this bc right now
+				if (SendRightNow(timeUS, true, cmd) == false)
+					jackieFree_Ex(cmd->data, TRACE_FILE_AND_LINE_);
+				/// Set the new connection state AFTER we call sendImmediate in case we are 
+				/// setting it to a disconnection state, which does not allow further sends
+				if (cmd->repStatus != RemoteEndPoint::NO_ACTION)
+				{
 					remoteEndPoint = GetRemoteEndPoint(
 						cmd->systemIdentifier, true, true);
-					if( remoteEndPoint != 0 )
-					{
-						Int32 existingSystemIndex =
-							GetRemoteEndPointIndex(remoteEndPoint->systemAddress);
-						RefRemoteEndPoint(
-							cmd->systemIdentifier.systemAddress, existingSystemIndex);
-					}
-					break;
-				case Command::BCS_GET_SOCKET:
-					JDEBUG << "BCS_GET_SOCKET";
-					break;
-				default:
-					JERROR << "Not Found Matched BufferedCommand";
-					break;
+					if (remoteEndPoint != 0)
+						remoteEndPoint->status = cmd->repStatus;
+				}
+				break;
+			case Command::BCS_CLOSE_CONNECTION:
+				JDEBUG << "BCS_CLOSE_CONNECTION";
+				CloseConnectionInternally(false, true, cmd);
+				break;
+			case Command::BCS_CHANGE_SYSTEM_ADDRESS: //re-rout
+				remoteEndPoint = GetRemoteEndPoint(
+					cmd->systemIdentifier, true, true);
+				if (remoteEndPoint != 0)
+				{
+					Int32 existingSystemIndex =
+						GetRemoteEndPointIndex(remoteEndPoint->systemAddress);
+					RefRemoteEndPoint(
+						cmd->systemIdentifier.systemAddress, existingSystemIndex);
+				}
+				break;
+			case Command::BCS_GET_SOCKET:
+				JDEBUG << "BCS_GET_SOCKET";
+				break;
+			default:
+				JERROR << "Not Found Matched BufferedCommand";
+				break;
 			}
 
 			JDEBUG << "Network Thread Reclaims One Command";
@@ -874,9 +876,9 @@ namespace JACKIE_INET
 		JDEBUG << "Network Thread Process Alloc JISRecvParamsQ";
 
 		JISRecvParams* recvParams = 0;
-		for( UInt32 outter = 0; outter < bindedSockets.Size(); outter++ )
+		for (UInt32 outter = 0; outter < bindedSockets.Size(); outter++)
 		{
-			for( UInt32 inner = 0; inner < allocRecvParamQ[outter].Size(); inner++ )
+			for (UInt32 inner = 0; inner < allocRecvParamQ[outter].Size(); inner++)
 			{
 				/// no need to check if recvParams == 0, because we never push 0 pointer
 				DCHECK_EQ(allocRecvParamQ[outter].PopHead(recvParams), true);
@@ -891,11 +893,11 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "@TO-DO AdjustTimestamp()";
 
-		if( (unsigned char) incomePacket->data[0] == ID_TIMESTAMP )
+		if ((unsigned char)incomePacket->data[0] == ID_TIMESTAMP)
 		{
-			if( incomePacket->length >= sizeof(char) + sizeof(Time) )
+			if (incomePacket->length >= sizeof(char) + sizeof(Time))
 			{
-				char* data = (char*) &incomePacket->data[sizeof(char)];
+				char* data = (char*)&incomePacket->data[sizeof(char)];
 				//#ifdef _DEBUG
 				//				RakAssert(IsActive());
 				//				RakAssert(data);
@@ -917,37 +919,38 @@ namespace JACKIE_INET
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieAddress&
 		sa, bool neededBySendThread, bool onlyWantActiveEndPoint) const
 	{
-		if( sa == JACKIE_NULL_ADDRESS ) return 0;
+		if (sa == JACKIE_NULL_ADDRESS) return 0;
 
-		if( neededBySendThread )
+		if (neededBySendThread)
 		{
 			Int32 index = GetRemoteEndPointIndex(sa);
-			if( index != -1 )
+			if (index != -1)
 			{
-				if( !onlyWantActiveEndPoint || remoteSystemList[index].isActive )
+				if (!onlyWantActiveEndPoint || remoteSystemList[index].isActive)
 				{
 					DCHECK_EQ(remoteSystemList[index].systemAddress, sa);
 					return &remoteSystemList[index];
 				}
 			}
-		} else
+		}
+		else
 		{
 			/// Active EndPoints take priority.  But if matched end point is inactice, 
 			/// return the first EndPoint match found
 			Int32 inActiveEndPointIndex = -1;
-			for( UInt32 index = 0; index < maxConnections; index++ )
+			for (UInt32 index = 0; index < maxConnections; index++)
 			{
-				if( remoteSystemList[index].systemAddress == sa )
+				if (remoteSystemList[index].systemAddress == sa)
 				{
-					if( remoteSystemList[index].isActive )
+					if (remoteSystemList[index].isActive)
 						return &remoteSystemList[index];
-					else if( inActiveEndPointIndex == -1 )
+					else if (inActiveEndPointIndex == -1)
 						inActiveEndPointIndex = index;
 				}
 			}
 
 			/// matched end pint was found but it is inactive
-			if( inActiveEndPointIndex != -1 && !onlyWantActiveEndPoint )
+			if (inActiveEndPointIndex != -1 && !onlyWantActiveEndPoint)
 				return &remoteSystemList[inActiveEndPointIndex];
 		}
 
@@ -958,7 +961,7 @@ namespace JACKIE_INET
 		JACKIE_INET_Address_GUID_Wrapper& senderWrapper, bool neededBySendThread,
 		bool onlyWantActiveEndPoint) const
 	{
-		if( senderWrapper.guid != JACKIE_NULL_GUID )
+		if (senderWrapper.guid != JACKIE_NULL_GUID)
 			return GetRemoteEndPoint(senderWrapper.guid, onlyWantActiveEndPoint);
 		else
 			return GetRemoteEndPoint(senderWrapper.systemAddress, neededBySendThread,
@@ -967,11 +970,11 @@ namespace JACKIE_INET
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieGUID&
 		senderGUID, bool onlyWantActiveEndPoint) const
 	{
-		if( senderGUID == JACKIE_NULL_GUID ) return 0;
-		for( UInt32 i = 0; i < maxConnections; i++ )
+		if (senderGUID == JACKIE_NULL_GUID) return 0;
+		for (UInt32 i = 0; i < maxConnections; i++)
 		{
-			if( remoteSystemList[i].guid == senderGUID &&
-				( onlyWantActiveEndPoint == false || remoteSystemList[i].isActive ) )
+			if (remoteSystemList[i].guid == senderGUID &&
+				(onlyWantActiveEndPoint == false || remoteSystemList[i].isActive))
 			{
 				return remoteSystemList + i;
 			}
@@ -981,17 +984,17 @@ namespace JACKIE_INET
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieAddress& sa) const
 	{
 		Int32 index = GetRemoteEndPointIndex(sa);
-		if( index == -1 ) return 0;
+		if (index == -1) return 0;
 		return remoteSystemList + index;
 	}
 	Int32 ServerApplication::GetRemoteEndPointIndex(const JackieAddress &sa) const
 	{
 		UInt32 hashindex = JackieAddress::ToHashCode(sa);
-		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
+		hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
 		RemoteEndPointIndex* curr = remoteSystemLookup[hashindex];
-		while( curr != 0 )
+		while (curr != 0)
 		{
-			if( remoteSystemList[curr->index].systemAddress == sa )
+			if (remoteSystemList[curr->index].systemAddress == sa)
 				return curr->index;
 			curr = curr->next;
 		}
@@ -1003,12 +1006,12 @@ namespace JACKIE_INET
 	{
 		RemoteEndPoint* remote = remoteSystemList + index;
 		JackieAddress old = remote->systemAddress;
-		if( old != JACKIE_NULL_ADDRESS )
+		if (old != JACKIE_NULL_ADDRESS)
 		{
 			// The system might be active if rerouting
 			DCHECK_EQ(remoteSystemList[index].isActive, false);
 			// Remove the reference if the reference is pointing to this inactive system
-			if( GetRemoteEndPoint(old) == remote )
+			if (GetRemoteEndPoint(old) == remote)
 			{
 				DeRefRemoteEndPoint(old);
 			}
@@ -1018,20 +1021,21 @@ namespace JACKIE_INET
 		remoteSystemList[index].systemAddress = sa;
 
 		UInt32 hashindex = JackieAddress::ToHashCode(sa);
-		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
+		hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
 
 		RemoteEndPointIndex *rsi = 0;
-		do { rsi = remoteSystemIndexPool.Allocate(); } while( rsi == 0 );
+		do { rsi = remoteSystemIndexPool.Allocate(); } while (rsi == 0);
 
-		if( remoteSystemLookup[hashindex] == 0 )
+		if (remoteSystemLookup[hashindex] == 0)
 		{
 			rsi->next = 0;
 			rsi->index = index;
 			remoteSystemLookup[hashindex] = rsi;
-		} else
+		}
+		else
 		{
 			RemoteEndPointIndex *cur = remoteSystemLookup[hashindex];
-			while( cur->next != 0 ) { cur = cur->next; } /// move to last one
+			while (cur->next != 0) { cur = cur->next; } /// move to last one
 			cur->next = rsi;
 			rsi->next = 0;
 			rsi->index = index;
@@ -1041,19 +1045,20 @@ namespace JACKIE_INET
 	void ServerApplication::DeRefRemoteEndPoint(const JackieAddress &sa)
 	{
 		UInt32 hashindex = JackieAddress::ToHashCode(sa);
-		hashindex = hashindex % ( maxConnections * RemoteEndPointLookupHashMutiple );
+		hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
 
 		RemoteEndPointIndex *cur = remoteSystemLookup[hashindex];
 		RemoteEndPointIndex *last = 0;
 
-		while( cur != 0 )
+		while (cur != 0)
 		{
-			if( remoteSystemList[cur->index].systemAddress == sa )
+			if (remoteSystemList[cur->index].systemAddress == sa)
 			{
-				if( last == 0 )
+				if (last == 0)
 				{
 					remoteSystemLookup[hashindex] = cur->next;
-				} else
+				}
+				else
 				{
 					last->next = cur->next;
 				}
@@ -1081,103 +1086,103 @@ namespace JACKIE_INET
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
-		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity " << (int) incomePacket->data[0];
+		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity " << (int)incomePacket->data[0];
 		UInt32 i;
-		for( i = 0; i < pluginListTS.Size(); i++ )
+		for (i = 0; i < pluginListTS.Size(); i++)
 		{
-			switch( (UInt32) incomePacket->data[0] )
+			switch ((UInt32)incomePacket->data[0])
 			{
-				case ID_DISCONNECTION_NOTIFICATION:
-					pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
-					break;
-				case ID_CONNECTION_LOST:
-					pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
-					break;
-				case ID_NEW_INCOMING_CONNECTION:
-					pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
-					break;
-				case ID_CONNECTION_REQUEST_ACCEPTED:
-					pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
-					break;
-				case ID_CONNECTION_ATTEMPT_FAILED:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
-					break;
-				case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
-					break;
-				case ID_OUR_SYSTEM_REQUIRES_SECURITY:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
-					break;
-				case ID_PUBLIC_KEY_MISMATCH:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
-					break;
-				case ID_ALREADY_CONNECTED:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
-					break;
-				case ID_NO_FREE_INCOMING_CONNECTIONS:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
-					break;
-				case ID_CONNECTION_BANNED:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
-					break;
-				case ID_INVALID_PASSWORD:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
-					break;
-				case ID_INCOMPATIBLE_PROTOCOL_VERSION:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
-					break;
-				case ID_IP_RECENTLY_CONNECTED:
-					pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
-					break;
+			case ID_DISCONNECTION_NOTIFICATION:
+				pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
+				break;
+			case ID_CONNECTION_LOST:
+				pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
+				break;
+			case ID_NEW_INCOMING_CONNECTION:
+				pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
+				break;
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+				pluginListTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
+				break;
+			case ID_CONNECTION_ATTEMPT_FAILED:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
+				break;
+			case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
+				break;
+			case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
+				break;
+			case ID_PUBLIC_KEY_MISMATCH:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
+				break;
+			case ID_ALREADY_CONNECTED:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
+				break;
+			case ID_NO_FREE_INCOMING_CONNECTIONS:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
+				break;
+			case ID_CONNECTION_BANNED:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
+				break;
+			case ID_INVALID_PASSWORD:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
+				break;
+			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
+				break;
+			case ID_IP_RECENTLY_CONNECTED:
+				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
+				break;
 			}
 		}
 
-		for( i = 0; i < pluginListNTS.Size(); i++ )
+		for (i = 0; i < pluginListNTS.Size(); i++)
 		{
-			switch( incomePacket->data[0] )
+			switch (incomePacket->data[0])
 			{
-				case ID_DISCONNECTION_NOTIFICATION:
-					pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
-					break;
-				case ID_CONNECTION_LOST:
-					pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
-					break;
-				case ID_NEW_INCOMING_CONNECTION:
-					pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
-					break;
-				case ID_CONNECTION_REQUEST_ACCEPTED:
-					pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
-					break;
-				case ID_CONNECTION_ATTEMPT_FAILED:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
-					break;
-				case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
-					break;
-				case ID_OUR_SYSTEM_REQUIRES_SECURITY:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
-					break;
-				case ID_PUBLIC_KEY_MISMATCH:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
-					break;
-				case ID_ALREADY_CONNECTED:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
-					break;
-				case ID_NO_FREE_INCOMING_CONNECTIONS:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
-					break;
-				case ID_CONNECTION_BANNED:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
-					break;
-				case ID_INVALID_PASSWORD:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
-					break;
-				case ID_INCOMPATIBLE_PROTOCOL_VERSION:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
-					break;
-				case ID_IP_RECENTLY_CONNECTED:
-					pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
-					break;
+			case ID_DISCONNECTION_NOTIFICATION:
+				pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);
+				break;
+			case ID_CONNECTION_LOST:
+				pluginListNTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_CONNECTION_LOST);
+				break;
+			case ID_NEW_INCOMING_CONNECTION:
+				pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, true);
+				break;
+			case ID_CONNECTION_REQUEST_ACCEPTED:
+				pluginListNTS[i]->OnNewConnection(incomePacket->systemAddress, incomePacket->guid, false);
+				break;
+			case ID_CONNECTION_ATTEMPT_FAILED:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
+				break;
+			case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
+				break;
+			case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
+				break;
+			case ID_PUBLIC_KEY_MISMATCH:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_PUBLIC_KEY_MISMATCH);
+				break;
+			case ID_ALREADY_CONNECTED:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
+				break;
+			case ID_NO_FREE_INCOMING_CONNECTIONS:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
+				break;
+			case ID_CONNECTION_BANNED:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_BANNED);
+				break;
+			case ID_INVALID_PASSWORD:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INVALID_PASSWORD);
+				break;
+			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
+				break;
+			case ID_IP_RECENTLY_CONNECTED:
+				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
+				break;
 			}
 		}
 
@@ -1190,32 +1195,34 @@ namespace JACKIE_INET
 		UInt32 i;
 		PluginActionType pluginResult;
 
-		for( i = 0; i < pluginListTS.Size(); i++ )
+		for (i = 0; i < pluginListTS.Size(); i++)
 		{
 			pluginResult = pluginListTS[i]->OnRecvPacket(incomePacket);
-			if( pluginResult == PROCESSED_BY_ME_THEN_DEALLOC )
+			if (pluginResult == PROCESSED_BY_ME_THEN_DEALLOC)
 			{
 				ReclaimPacket(incomePacket);
 				// Will do the loop again and get another incomePacket
 				incomePacket = 0;
 				break; // break out of the enclosing forloop
-			} else if( pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC )
+			}
+			else if (pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC)
 			{
 				incomePacket = 0;
 				break;
 			}
 		}
 
-		for( i = 0; i < pluginListNTS.Size(); i++ )
+		for (i = 0; i < pluginListNTS.Size(); i++)
 		{
 			pluginResult = pluginListNTS[i]->OnRecvPacket(incomePacket);
-			if( pluginResult == PROCESSED_BY_ME_THEN_DEALLOC )
+			if (pluginResult == PROCESSED_BY_ME_THEN_DEALLOC)
 			{
 				ReclaimPacket(incomePacket);
 				// Will do the loop again and get another incomePacket
 				incomePacket = 0;
 				break; // break out of the enclosing forloop
-			} else if( pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC )
+			}
+			else if (pluginResult == HOLD_ON_BY_ME_NOT_DEALLOC)
 			{
 				incomePacket = 0;
 				break;
@@ -1226,11 +1233,11 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "User Thread Update Plugins";
 		UInt32 i;
-		for( i = 0; i < pluginListTS.Size(); i++ )
+		for (i = 0; i < pluginListTS.Size(); i++)
 		{
 			pluginListTS[i]->Update();
 		}
-		for( i = 0; i < pluginListNTS.Size(); i++ )
+		for (i = 0; i < pluginListNTS.Size(); i++)
 		{
 			pluginListNTS[i]->Update();
 		}
@@ -1242,7 +1249,7 @@ namespace JACKIE_INET
 		TIMED_FUNC();
 
 #if USE_SINGLE_THREAD == 0
-		if( !( IsActive() ) ) return 0;
+		if (!(IsActive())) return 0;
 #endif
 
 #if USE_SINGLE_THREAD != 0
@@ -1260,7 +1267,7 @@ namespace JACKIE_INET
 
 		Packet *incomePacket = 0;
 		/// Pop out one Packet from queue
-		if( allocPacketQ.Size() > 0 )
+		if (allocPacketQ.Size() > 0)
 		{
 			//////////////////////////////////////////////////////////////////////////
 			/// Get one income packet from bufferedPacketsQueue
@@ -1342,20 +1349,21 @@ namespace JACKIE_INET
 		recvParams = AllocJISRecvParams(index);
 		recvParams->socket = bindedSockets[index];
 
-		if( ( (JISBerkley*) bindedSockets[index] )->RecvFrom(recvParams) > 0 )
+		if (((JISBerkley*)bindedSockets[index])->RecvFrom(recvParams) > 0)
 		{
 			DCHECK_EQ(allocRecvParamQ[index].PushTail(recvParams), true);
 
-			if( incomeDatagramEventHandler != 0 )
+			if (incomeDatagramEventHandler != 0)
 			{
-				if( !incomeDatagramEventHandler(recvParams) ) JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
+				if (!incomeDatagramEventHandler(recvParams)) JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 			}
 
 #if USE_SINGLE_THREAD == 0
-			if( allocRecvParamQ[index].Size() > 0 ) quitAndDataEvents.TriggerEvent();
+			if (allocRecvParamQ[index].Size() > 0) quitAndDataEvents.TriggerEvent();
 #endif
 
-		} else
+		}
+		else
 		{
 			JISRecvParamsPool[index].Reclaim(recvParams);
 		}
@@ -1363,13 +1371,13 @@ namespace JACKIE_INET
 	}
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
-		ServerApplication *serv = *(ServerApplication**) arguments;
-		UInt32 index = *( (UInt32*) ( (char*) arguments + sizeof(ServerApplication*) ) );
+		ServerApplication *serv = *(ServerApplication**)arguments;
+		UInt32 index = *((UInt32*)((char*)arguments + sizeof(ServerApplication*)));
 
 		serv->isRecvPollingThreadActive.Increment();
 
 		JDEBUG << "Recv thread " << "is running in backend....";
-		while( !serv->endThreads )
+		while (!serv->endThreads)
 		{
 			serv->RunRecvCycleOnce(index);
 			JackieSleep(1000);
@@ -1382,11 +1390,11 @@ namespace JACKIE_INET
 	}
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunNetworkUpdateCycleLoop)
 	{
-		ServerApplication *serv = (ServerApplication*) arguments;
+		ServerApplication *serv = (ServerApplication*)arguments;
 		serv->isNetworkUpdateThreadActive = true;
 
 		JDEBUG << "Send polling thread is running in backend....";
-		while( !serv->endThreads )
+		while (!serv->endThreads)
 		{
 			/// Normally, buffered sending packets go out every other 10 ms.
 			/// or TriggerEvent() is called by recv thread
@@ -1416,19 +1424,19 @@ namespace JACKIE_INET
 		TimeUS lastTime, thisTime, diff;
 		unsigned char diffByte = 0;
 		// Sleep a small random time, then use the last 4 bits as a source of randomness
-		for( int j = 0; j < 4; j++ )
+		for (int j = 0; j < 4; j++)
 		{
 			diffByte = 0;
-			for( int index = 0; index < 4; index++ )
+			for (int index = 0; index < 4; index++)
 			{
 				lastTime = Get64BitsTimeUS();
 				JackieSleep(1);
 				thisTime = Get64BitsTimeUS();
 				diff = thisTime - lastTime;
-				diffByte ^= (unsigned char) ( ( diff & 15 ) << ( index * 2 ) ); ///0xF = 1111 = 15
-				if( index == 3 ) diffByte ^= (unsigned char) ( ( diff & 15 ) >> 2 );
+				diffByte ^= (unsigned char)((diff & 15) << (index * 2)); ///0xF = 1111 = 15
+				if (index == 3) diffByte ^= (unsigned char)((diff & 15) >> 2);
 			}
-			( (unsigned char*) &g )[4 + j] ^= diffByte;
+			((unsigned char*)&g)[4 + j] ^= diffByte;
 		}
 		return g;
 	}
@@ -1443,32 +1451,32 @@ namespace JACKIE_INET
 
 	JACKIE_INET::ConnectionAttemptResult ServerApplication::Connect(const char* host, UInt16 port, const char *pwd /*= 0*/, UInt32 pwdLen /*= 0*/, JACKIE_Public_Key *publicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, UInt32 ConnectionAttemptTimes /*= 6*/, UInt32 ConnectionAttemptIntervalMS /*= 1000*/, TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
 	{
-		if( host == 0 )
+		if (host == 0)
 		{
 			JERROR << "invalid host adress !";
 			return INVALID_PARAM;
 		}
-		if( port == 0 )
+		if (port == 0)
 		{
 			JERROR << "invalid port ! !";
 			return INVALID_PARAM;
 		}
-		if( endThreads )
+		if (endThreads)
 		{
 			JERROR << "not call Start() !\n";
 			return INVALID_PARAM;
 		}
 
-		if( pwdLen > 255 ) pwdLen = 255;
-		if( pwd == 0 ) pwdLen = 0;
+		if (pwdLen > 255) pwdLen = 255;
+		if (pwd == 0) pwdLen = 0;
 
 		bool found = false;
-		for( UInt32 i = 0; i < bindedSockets.Size(); i++ )
+		for (UInt32 i = 0; i < bindedSockets.Size(); i++)
 		{
-			if( bindedSockets[i]->GetUserConnectionSocketIndex() == ConnectionSocketIndex )
+			if (bindedSockets[i]->GetUserConnectionSocketIndex() == ConnectionSocketIndex)
 				found = true;
 		}
-		if( !found )
+		if (!found)
 		{
 			JERROR << "invalid ConnectionSocketIndex";
 			return INVALID_PARAM;
@@ -1477,13 +1485,13 @@ namespace JACKIE_INET
 		JackieAddress addr;
 		bool ret = addr.FromString(host, port,
 			bindedSockets[ConnectionSocketIndex]->GetBoundAddress().GetIPVersion());
-		if( !ret || addr == JACKIE_NULL_ADDRESS ) return CANNOT_RESOLVE_DOMAIN_NAME;
+		if (!ret || addr == JACKIE_NULL_ADDRESS) return CANNOT_RESOLVE_DOMAIN_NAME;
 
-		if( GetRemoteEndPoint(addr, false, true) != 0 )
+		if (GetRemoteEndPoint(addr, false, true) != 0)
 			return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
 
 
-		if( GetRemoteEndPoint(addr, false, true) != 0 )
+		if (GetRemoteEndPoint(addr, false, true) != 0)
 			return ALREADY_CONNECTED_TO_ENDPOINT;
 
 		ConnectionRequest* connReq = JACKIE_INET::OP_NEW<ConnectionRequest>(TRACE_FILE_AND_LINE_);
@@ -1506,13 +1514,13 @@ namespace JACKIE_INET
 		if( !GenerateConnectionRequestChallenge(connReq, publicKey) )
 			return SECURITY_INITIALIZATION_FAILED;
 #else
-		(void) publicKey;
+		(void)publicKey;
 #endif
 
 		connReqCancelQLock.Lock();
-		for( UInt32 Index = 0; Index < connReqQ.Size(); Index++ )
+		for (UInt32 Index = 0; Index < connReqQ.Size(); Index++)
 		{
-			if( connReqQ[Index]->receiverAddr == addr )
+			if (connReqQ[Index]->receiverAddr == addr)
 			{
 				connReqCancelQLock.Unlock();
 				JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
