@@ -96,6 +96,8 @@ namespace JACKIE_INET
 		JackieINetSocket() : eventHandler(0) { }
 		virtual ~JackieINetSocket() { }
 
+		virtual  JISSendResult Send(JISSendParams *sendParameters,
+			const char *file, unsigned int line) = 0;
 
 		// In order for the handler to trigger, some platforms must call PollRecvFrom, 
 		// some platforms this create an internal thread.

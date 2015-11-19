@@ -661,15 +661,15 @@ static void test_JackieStream__funcs()
 		s9.Reset();
 	}
 }
+
 enum
 {
-	//////////////////////////////////////////////////////////////////////////
 	GlobalFunctions_h,
 	superfastfunction_func,
 	isDomainIPAddr_func,
 	DomainNameToIP_func,
 	Itoa_func,
-	//////////////////////////////////////////////////////////////////////////
+
 	JACKIE_INET_Address_h,
 	size_func,
 	ToHashCode_func,
@@ -677,32 +677,31 @@ enum
 	SetToLoopBack_func,
 	IsLoopback_func,
 	IsLANAddress_func,
-	//////////////////////////////////////////////////////////////////////////
+
 	JACKIE_INet_GUID_h,
 	JACKIE_INet_GUID_ToString_func,
-	//////////////////////////////////////////////////////////////////////////
+
 	CLASS_JACKIE_INET_Address_GUID_Wrapper,
 	JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func,
-	//////////////////////////////////////////////////////////////////////////
+
 	NetTime_h,
-	//////////////////////////////////////////////////////////////////////////
+
 	ClassJISAllocator,
-	//////////////////////////////////////////////////////////////////////////
+
 	JACKIE_INet_Socket_h,
 	ClassJISBerkley,
-	//////////////////////////////////////////////////////////////////////////
+
 	MemoryPool_h,
-	//////////////////////////////////////////////////////////////////////////
+
 	CircularArrayQueueSingleThread,
 	Test_Queue_funcs,
-	//////////////////////////////////////////////////////////////////////////
+
 	ServerApplication_H,
 	JackieStream_H,
 	Start,
 	AllClass,
 	AllFuncs
 };
-
 
 //static int testcase = GlobalFunctions_h;
 //static int testfunc = AllFuncs;
@@ -724,17 +723,15 @@ enum
 
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
-//
-//
+
 //static int testcase = CircularArrayQueueSingleThread;
 //static int testfunc = Test_Queue_funcs;
-//
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
 
-static int testcase = JackieStream_H;
+static int testcase = ServerApplication_H;
 static int testfunc = AllFuncs;
 
+//static int testcase = JackieStream_H;
+//static int testfunc = AllFuncs;
 
 int main(int argc, char** argv)
 {

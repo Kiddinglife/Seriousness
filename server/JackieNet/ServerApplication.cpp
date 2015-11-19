@@ -2,6 +2,8 @@
 #include "WSAStartupSingleton.h"
 #include "EasyLog.h"
 #include "MessageID.h"
+#include "JackieINetVersion.h"
+#include "JackieSlidingWindows.h"
 
 #if !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ )
 #include <stdlib.h> // malloc
@@ -166,18 +168,18 @@ namespace JACKIE_INET
 
 #if defined(__native_client__)
 			NativeClientBindParameters ncbp;
-			RNS2_NativeClient * nativeClientSocket = (RNS2_NativeClient*) r2;
+			RNS2_NativeClient * nativeClientSocket = (RNS2_NativeClient*)r2;
 			ncbp.eventHandler = this;
-			ncbp.forceHostAddress = (char*) bindLocalSockets[index].hostAddress;
+			ncbp.forceHostAddress = (char*)bindLocalSockets[index].hostAddress;
 			ncbp.is_ipv6 = bindLocalSockets[index].socketFamily == AF_INET6;
 			ncbp.nativeClientInstance = bindLocalSockets[index].chromeInstance;
 			ncbp.port = bindLocalSockets[index].port;
 			nativeClientSocket->Bind(&ncbp, _FILE_AND_LINE_);
 #elif defined(WINDOWS_STORE_RT)
 			RNS2BindResult br;
-			( (RNS2_WindowsStore8*) r2 )->SetRecvEventHandler(this);
-			br = ( (RNS2_WindowsStore8*) r2 )->Bind(ref new Platform::String());
-			if( br != BR_SUCCESS )
+			((RNS2_WindowsStore8*)r2)->SetRecvEventHandler(this);
+			br = ((RNS2_WindowsStore8*)r2)->Bind(ref new Platform::String());
+			if (br != BR_SUCCESS)
 			{
 				RakNetSocket2Allocator::DeallocRNS2(r2);
 				DerefAllSockets();
@@ -274,9 +276,9 @@ namespace JACKIE_INET
 			JISRecvParams* >> (bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 #else
 		deAllocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < ArraryQueue
-			< JISRecvParams* >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
+			< JISRecvParams* >> (bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 		allocRecvParamQ = JACKIE_INET::OP_NEW_ARRAY < ArraryQueue <
-			JISRecvParams* >> ( bindedSockets.Size(), TRACE_FILE_AND_LINE_ );
+			JISRecvParams* >> (bindedSockets.Size(), TRACE_FILE_AND_LINE_);
 #endif
 
 		/// setup connections list
@@ -644,9 +646,9 @@ namespace JACKIE_INET
 #if LIBCAT_SECURITY==1
 #ifdef CAT_AUDIT
 		printf("AUDIT: RECV ");
-		for( int ii = 0; ii < length; ++ii )
+		for (int ii = 0; ii < length; ++ii)
 		{
-			printf("%02x", ( cat::u8 )data[ii]);
+			printf("%02x", (cat::u8)data[ii]);
 		}
 		printf("\n");
 #endif
@@ -789,15 +791,72 @@ namespace JACKIE_INET
 
 					JackieBits bitStream;
 					bitStream.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_1);
-					bitStream.WriteAlignedBytes((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bitStream.Write((MessageID)RAKNET_PROTOCOL_VERSION);
+					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
+						sizeof(OFFLINE_MESSAGE_DATA_ID));
+					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
 					JDEBUG << "The " << (int)connReq->requestsMade
 						<< " times to try to connect to remote sever [" << connReq->receiverAddr.ToString() << "]";
 
 					/// @TO-DO i am now in here
+					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
+					{
+						pluginListNTS[i]->OnDirectSocketSend(bitStream.DataInt8(), bitStream.GetPayLoadBits(), connReq->receiverAddr);
+					}
 
+					JackieINetSocket* socket2Use;
+					if (connReq->socket == 0)
+					{
+						socket2Use = this->bindedSockets[connReq->socketIndex];
+					}
+					else
+					{
+						socket2Use = connReq->socket;
+					}
+
+					connReq->receiverAddr.FixForIPVersion(socket2Use->GetBoundAddress());
+#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
+					if (socket2Use->IsBerkleySocket())
+						((JISBerkley*)socket2Use)->SetDoNotFragment(1);
+#endif
+					Time sendToStart = GetTimeMS();
+					JISSendParams jsp;
+					jsp.data = bitStream.DataInt8();
+					jsp.length = bitStream.GetWrittenBytesCount();
+					jsp.receiverINetAddress = connReq->receiverAddr;
+					if (socket2Use->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
+					{
+						/// do not use this MTU size again
+						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
+						connReq->nextRequestTime = timeMS;
+					}
+					else
+					{
+						Time sendToEnd = GetTimeMS();
+						if (sendToEnd - sendToStart > 100)
+						{
+							/// Drop to lowest MTU
+							int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
+								* (mtuSizesCount - 1);
+							if (lowestMtuIndex > connReq->requestsMade)
+							{
+								connReq->requestsMade = (unsigned char)lowestMtuIndex;
+								connReq->nextRequestTime = timeMS;
+							}
+							else
+							{
+								connReq->requestsMade =
+									(unsigned char)(connReq->connAttemptTimes + 1);
+							}
+						}
+					}
+
+					/// set back  the SetDoNotFragment to allowed fragment
+#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
+					if (socket2Use->IsBerkleySocket())
+						((JISBerkley*)socket2Use)->SetDoNotFragment(0);
+#endif
 				}
 			}
 		}
@@ -1511,7 +1570,7 @@ namespace JACKIE_INET
 
 #if LIBCAT_SECURITY ==1
 		CAT_AUDIT_PRINTF("AUDIT: In SendConnectionRequest()\n");
-		if( !GenerateConnectionRequestChallenge(connReq, publicKey) )
+		if (!GenerateConnectionRequestChallenge(connReq, publicKey))
 			return SECURITY_INITIALIZATION_FAILED;
 #else
 		(void)publicKey;

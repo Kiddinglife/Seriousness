@@ -183,6 +183,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="JackieSlidingWindows.cpp" />
     <ClCompile Include="JackieSpinLock.cpp" />
     <ClCompile Include="JackieBits.cpp" />
     <ClCompile Include="GlobalFunctions.cpp" />
@@ -204,6 +205,8 @@
   <ItemGroup>
     <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="atomic_ops.h" />
+    <ClInclude Include="JackieINetVersion.h" />
+    <ClInclude Include="JackieSlidingWindows.h" />
     <ClInclude Include="JackieSpinLock.h" />
     <ClInclude Include="JackieBits.h" />
     <ClInclude Include="EasyLog.h" />

@@ -5,9 +5,6 @@
 
 namespace JACKIE_INET
 {
-	static const char* IPV6_LOOPBACK = "::1";
-	static const char* IPV4_LOOPBACK = "127.0.0.1";
-
 #ifndef SWIG
 	const JackieAddress JACKIE_NULL_ADDRESS;
 	const JackieGUID JACKIE_NULL_GUID;

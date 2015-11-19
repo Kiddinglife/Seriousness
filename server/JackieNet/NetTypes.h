@@ -90,10 +90,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #endif
 
 	const SystemIndex UNASSIGNED_PLAYER_INDEX = 65535; ///  Index of an unassigned player
-	const NetworkID UNASSIGNED_NETWORK_ID = (UInt64) -1; /// Unassigned object ID
-	const int MAX_RPC_MAP_SIZE = ( (RPCIndex) -1 ) - 1; // 254
-	const int UNDEFINED_RPC_INDEX = ( (RPCIndex) -1 ); // 255
+	const NetworkID UNASSIGNED_NETWORK_ID = (UInt64)-1; /// Unassigned object ID
+	const int MAX_RPC_MAP_SIZE = ((RPCIndex)-1) - 1; // 254
+	const int UNDEFINED_RPC_INDEX = ((RPCIndex)-1); // 255
 	const int PING_TIMES_ARRAY_SIZE = 5;
+
+	const char *IPV6_LOOPBACK = "::1";
+	const char *IPV4_LOOPBACK = "127.0.0.1";
 
 	enum ThreadType { RecvThreadType, SendThreadType };
 
@@ -260,17 +263,16 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// so for debugging it's easier to check what port is being held
 		UInt16 debugPort;
 
-
 		/// Constructors
 		JackieAddress();
 		JackieAddress(const char *str);
 		JackieAddress(const char *str, UInt16 port);
 
-		JackieAddress& operator = ( const JackieAddress& input );
-		bool operator==( const JackieAddress& right ) const;
-		bool operator!=( const JackieAddress& right ) const;
-		bool operator > ( const JackieAddress& right ) const;
-		bool operator < ( const JackieAddress& right ) const;
+		JackieAddress& operator = (const JackieAddress& input);
+		bool operator==(const JackieAddress& right) const;
+		bool operator!=(const JackieAddress& right) const;
+		bool operator > (const JackieAddress& right) const;
+		bool operator < (const JackieAddress& right) const;
 
 		/// @internal Return the size to write to a bitStream
 		static Int32 size(void);
@@ -300,6 +302,29 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		/// set the port from another JACKIE_INET_Address structure
 		void SetPortNetworkOrder(const JackieAddress& right);
+
+		void FixForIPVersion(const JackieAddress &boundAddressToSocket)
+		{
+			char str[128];
+			ToString(false, str);
+			// TODO - what about 255.255.255.255?
+			if (strcmp(str, IPV6_LOOPBACK) == 0)
+			{
+				if (boundAddressToSocket.GetIPVersion() == 4)
+				{
+					FromString(IPV4_LOOPBACK, (Int8)0, (UInt8)4);
+				}
+			}
+			else if (strcmp(str, IPV4_LOOPBACK) == 0)
+			{
+#if NET_SUPPORT_IPV6==1
+				if (boundAddressToSocket.GetIPVersion() == 6)
+				{
+					FromString(IPV6_LOOPBACK, (Int8)0,  (UInt8)6);
+				}
+#endif
+			}
+		}
 
 		/// Call SetToLoopback(), with whatever IP version is currently held. Defaults to IPV4
 		void SetToLoopBack(void);
@@ -369,7 +394,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		JackieGUID();
 		explicit JackieGUID(UInt64 _g);
-		JackieGUID& operator = ( const JackieGUID& input );
+		JackieGUID& operator = (const JackieGUID& input);
 
 
 		/// Return the GUID as a static string. 
@@ -386,10 +411,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		static unsigned long ToUInt32(const JackieGUID &g);
 		static int size();
 
-		bool operator==( const JackieGUID& right ) const;
-		bool operator!=( const JackieGUID& right ) const;
-		bool operator > ( const JackieGUID& right ) const;
-		bool operator < ( const JackieGUID& right ) const;
+		bool operator==(const JackieGUID& right) const;
+		bool operator!=(const JackieGUID& right) const;
+		bool operator > (const JackieGUID& right) const;
+		bool operator < (const JackieGUID& right) const;
 	};
 
 	struct JACKIE_EXPORT JACKIE_INET_Address_GUID_Wrapper
@@ -399,7 +424,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		SystemIndex GetSystemIndex(void) const
 		{
-			if( guid != JACKIE_NULL_GUID )
+			if (guid != JACKIE_NULL_GUID)
 				return guid.systemIndex; else return systemAddress.systemIndex;
 		}
 
@@ -441,29 +466,29 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			guid = input;
 			systemAddress = JACKIE_NULL_ADDRESS;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JACKIE_INET_Address_GUID_Wrapper& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = (const JACKIE_INET_Address_GUID_Wrapper& input)
 		{
 			guid = input.guid;
 			systemAddress = input.systemAddress;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieAddress& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = (const JackieAddress& input)
 		{
 			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = ( const JackieGUID& input )
+		JACKIE_INET_Address_GUID_Wrapper& operator = (const JackieGUID& input)
 		{
 			guid = input;
 			systemAddress = JACKIE_NULL_ADDRESS;
 			return *this;
 		}
-		bool operator==( const JACKIE_INET_Address_GUID_Wrapper& right ) const
+		bool operator==(const JACKIE_INET_Address_GUID_Wrapper& right) const
 		{
-			return ( guid != JACKIE_NULL_GUID && guid == right.guid ) ||
-				( systemAddress != JACKIE_NULL_ADDRESS &&
-				systemAddress == right.systemAddress );
+			return (guid != JACKIE_NULL_GUID && guid == right.guid) ||
+				(systemAddress != JACKIE_NULL_ADDRESS &&
+				systemAddress == right.systemAddress);
 		}
 	};
 
@@ -476,36 +501,36 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		operator unsigned int() const { return val; }
 
 		UInt24(const UInt24& a) { val = a.val; }
-		UInt24 operator++( ) { ++val; val &= 0x00FFFFFF; return *this; }
-		UInt24 operator--( ) { --val; val &= 0x00FFFFFF; return *this; }
-		UInt24 operator++( int ) { UInt24 temp(val); ++val; val &= 0x00FFFFFF; return temp; }
-		UInt24 operator--( int ) { UInt24 temp(val); --val; val &= 0x00FFFFFF; return temp; }
-		UInt24 operator&( const UInt24& a ) { return UInt24(val&a.val); }
-		UInt24& operator=( const UInt24& a ) { val = a.val; return *this; }
-		UInt24& operator+=( const UInt24& a ) { val += a.val; val &= 0x00FFFFFF; return *this; }
-		UInt24& operator-=( const UInt24& a ) { val -= a.val; val &= 0x00FFFFFF; return *this; }
-		bool operator==( const UInt24& right ) const { return val == right.val; }
-		bool operator!=( const UInt24& right ) const { return val != right.val; }
-		bool operator > ( const UInt24& right ) const { return val > right.val; }
-		bool operator < ( const UInt24& right ) const { return val < right.val; }
-		const UInt24 operator+( const UInt24 &other ) const { return UInt24(val + other.val); }
-		const UInt24 operator-( const UInt24 &other ) const { return UInt24(val - other.val); }
-		const UInt24 operator/( const UInt24 &other ) const { return UInt24(val / other.val); }
-		const UInt24 operator*( const UInt24 &other ) const { return UInt24(val*other.val); }
+		UInt24 operator++() { ++val; val &= 0x00FFFFFF; return *this; }
+		UInt24 operator--() { --val; val &= 0x00FFFFFF; return *this; }
+		UInt24 operator++(int) { UInt24 temp(val); ++val; val &= 0x00FFFFFF; return temp; }
+		UInt24 operator--(int) { UInt24 temp(val); --val; val &= 0x00FFFFFF; return temp; }
+		UInt24 operator&(const UInt24& a) { return UInt24(val&a.val); }
+		UInt24& operator=(const UInt24& a) { val = a.val; return *this; }
+		UInt24& operator+=(const UInt24& a) { val += a.val; val &= 0x00FFFFFF; return *this; }
+		UInt24& operator-=(const UInt24& a) { val -= a.val; val &= 0x00FFFFFF; return *this; }
+		bool operator==(const UInt24& right) const { return val == right.val; }
+		bool operator!=(const UInt24& right) const { return val != right.val; }
+		bool operator > (const UInt24& right) const { return val > right.val; }
+		bool operator < (const UInt24& right) const { return val < right.val; }
+		const UInt24 operator+(const UInt24 &other) const { return UInt24(val + other.val); }
+		const UInt24 operator-(const UInt24 &other) const { return UInt24(val - other.val); }
+		const UInt24 operator/(const UInt24 &other) const { return UInt24(val / other.val); }
+		const UInt24 operator*(const UInt24 &other) const { return UInt24(val*other.val); }
 
 		UInt24(const unsigned int& a) { val = a; val &= 0x00FFFFFF; }
-		UInt24 operator&( const unsigned int& a ) { return UInt24(val&a); }
-		UInt24& operator=( const unsigned int& a ) { val = a; val &= 0x00FFFFFF; return *this; }
-		UInt24& operator+=( const unsigned int& a ) { val += a; val &= 0x00FFFFFF; return *this; }
-		UInt24& operator-=( const unsigned int& a ) { val -= a; val &= 0x00FFFFFF; return *this; }
-		bool operator==( const unsigned int& right ) const { return val == ( right & 0x00FFFFFF ); }
-		bool operator!=( const unsigned int& right ) const { return val != ( right & 0x00FFFFFF ); }
-		bool operator > ( const unsigned int& right ) const { return val > ( right & 0x00FFFFFF ); }
-		bool operator < ( const unsigned int& right ) const { return val < ( right & 0x00FFFFFF ); }
-		const UInt24 operator+( const unsigned int &other ) const { return UInt24(val + other); }
-		const UInt24 operator-( const unsigned int &other ) const { return UInt24(val - other); }
-		const UInt24 operator/( const unsigned int &other ) const { return UInt24(val / other); }
-		const UInt24 operator*( const unsigned int &other ) const { return UInt24(val*other); }
+		UInt24 operator&(const unsigned int& a) { return UInt24(val&a); }
+		UInt24& operator=(const unsigned int& a) { val = a; val &= 0x00FFFFFF; return *this; }
+		UInt24& operator+=(const unsigned int& a) { val += a; val &= 0x00FFFFFF; return *this; }
+		UInt24& operator-=(const unsigned int& a) { val -= a; val &= 0x00FFFFFF; return *this; }
+		bool operator==(const unsigned int& right) const { return val == (right & 0x00FFFFFF); }
+		bool operator!=(const unsigned int& right) const { return val != (right & 0x00FFFFFF); }
+		bool operator > (const unsigned int& right) const { return val > (right & 0x00FFFFFF); }
+		bool operator < (const unsigned int& right) const { return val < (right & 0x00FFFFFF); }
+		const UInt24 operator+(const unsigned int &other) const { return UInt24(val + other); }
+		const UInt24 operator-(const unsigned int &other) const { return UInt24(val - other); }
+		const UInt24 operator/(const unsigned int &other) const { return UInt24(val / other); }
+		const UInt24 operator*(const unsigned int &other) const { return UInt24(val*other); }
 	};
 
 

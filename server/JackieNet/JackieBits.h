@@ -148,7 +148,8 @@ namespace JACKIE_INET
 		BitSize WritePosBits() const { return mWritingPosBits; }
 		BitSize WritePosByte() const { return BITS_TO_BYTES(mWritingPosBits); }
 		BitSize ReadPosBits() const { return mReadingPosBits; }
-		UInt8 * Data() const { return data; }
+		UInt8* Data() const { return data; }
+		Int8* DataInt8() const { return (Int8*)data; }
 		void Data(UInt8* val){ data = val; mReadOnly = true; }
 		void WritePosBits(BitSize val) { mWritingPosBits = val; }
 		void ReadPosBits(BitSize val) { mReadingPosBits = val; }
@@ -1261,6 +1262,10 @@ namespace JACKIE_INET
 		inline void Write(const Int8* src, const ByteSize bytes2Write)
 		{
 			WriteBits((UInt8*)src, BYTES_TO_BITS(bytes2Write), true);
+		}
+		inline void Write(const UInt8* src, const ByteSize bytes2Write)
+		{
+			WriteBits(src, BYTES_TO_BITS(bytes2Write), true);
 		}
 
 		/// @brief Write one JackieBits to another.
