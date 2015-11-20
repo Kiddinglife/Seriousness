@@ -300,7 +300,7 @@ namespace JACKIE_INET
 		/// 2. Returns value is either > 0(send succeeds) or <0 (send error)
 		/// 3. ! WILL NEVER return 0 because we never send empty msg to the receiver
 		//////////////////////////////////////////////////////////////////////////
-		JISSendResult Send(JISSendParams *sendParameters, const char *file, unsigned int line);
+		virtual JISSendResult Send(JISSendParams *sendParameters, const char *file, unsigned int line) override;
 		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
 
 		/// Constructor not called at this monment !

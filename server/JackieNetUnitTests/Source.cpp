@@ -288,17 +288,23 @@ static void test_Queue_funcs()
 	}
 }
 
+static bool IncomeDatagramEventHandler(JISRecvParams *param)
+{
+	JINFO << "recv from  " << param->senderINetAddress.ToString() <<", bytes "<<param->bytesRead << ", " << param->data;
+	return true;
+}
 #include "JackieNet/ServerApplication.h"
 static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::BindSocket socketDescriptor;
-	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; //USE_BLOBKING_SOCKET
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; 
 	socketDescriptor.port = 32000;
 	socketDescriptor.socketFamily = AF_INET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
+	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
 	app->Start(4, &socketDescriptor, 1);
 
 	app->Connect("localhost", 32000);
@@ -443,96 +449,96 @@ static void test_JackieStream__funcs()
 		}
 		/*for (UInt32 i = 1; i <= looptimes; i++)
 		{
-			uint24 = 0;
-			s8.Read(uint24);
-			DCHECK(uint24.val == 24);
+		uint24 = 0;
+		s8.Read(uint24);
+		DCHECK(uint24.val == 24);
 
-			JackieGUID guidd;
-			s8 >> guidd;
-			DCHECK(guid == guidd);
+		JackieGUID guidd;
+		s8 >> guidd;
+		DCHECK(guid == guidd);
 
-			JackieAddress addrr;
-			s8 >> addrr;
-			DCHECK(addr == addrr);
+		JackieAddress addrr;
+		s8 >> addrr;
+		DCHECK(addr == addrr);
 
-			UInt24 mini_uint24;
-			s8.ReadMini(mini_uint24);
-			DCHECK(mini_uint24.val == 24);
+		UInt24 mini_uint24;
+		s8.ReadMini(mini_uint24);
+		DCHECK(mini_uint24.val == 24);
 
-			s8.Read(uint8);
-			s8.Read(int64);
-			UInt8 mini_uint8;
-			s8.ReadMini(mini_uint8);
-			DCHECK(mini_uint8 == uint8);
-			Int64 mini_int64;
-			s8.ReadMini(mini_int64);
-			DCHECK(mini_int64 == int64);
+		s8.Read(uint8);
+		s8.Read(int64);
+		UInt8 mini_uint8;
+		s8.ReadMini(mini_uint8);
+		DCHECK(mini_uint8 == uint8);
+		Int64 mini_int64;
+		s8.ReadMini(mini_int64);
+		DCHECK(mini_int64 == int64);
 
-			s8.Read(uint16);
-			s8.Read(int32);
-			UInt16 mini_uint16;
-			s8.ReadMini(mini_uint16);
-			DCHECK(mini_uint16 == uint16);
-			Int32 mini_int32;
-			s8.ReadMini(mini_int32);
-			DCHECK(mini_int32 == int32);
+		s8.Read(uint16);
+		s8.Read(int32);
+		UInt16 mini_uint16;
+		s8.ReadMini(mini_uint16);
+		DCHECK(mini_uint16 == uint16);
+		Int32 mini_int32;
+		s8.ReadMini(mini_int32);
+		DCHECK(mini_int32 == int32);
 
 
-			UInt8 v = 0;
-			s8.ReadBits(&v, 4, true);
-			DCHECK(v == 0);
+		UInt8 v = 0;
+		s8.ReadBits(&v, 4, true);
+		DCHECK(v == 0);
 
-			vec vectorr;
-			s8.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
-			DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
-			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
-			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+		vec vectorr;
+		s8.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
+		DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
+		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
+		DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
 
-			UInt32 v1;
-			s8.ReadIntegerRange(v1, min, max);
-			DCHECK(v1 == curr);
+		UInt32 v1;
+		s8.ReadIntegerRange(v1, min, max);
+		DCHECK(v1 == curr);
 
-			vec vectorrr;
-			s8.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
-			DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
-			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
-			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+		vec vectorrr;
+		s8.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
+		DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
+		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
+		DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
 
-			s8.Read(uint32);
-			s8.Read(int16);
-			UInt32 mini_uint32;
-			s8.ReadMini(mini_uint32);
-			DCHECK(mini_uint32 == uint32);
-			Int16 mini_int16;
-			s8.ReadMini(mini_int16);
-			DCHECK(mini_int16 == int16);
+		s8.Read(uint32);
+		s8.Read(int16);
+		UInt32 mini_uint32;
+		s8.ReadMini(mini_uint32);
+		DCHECK(mini_uint32 == uint32);
+		Int16 mini_int16;
+		s8.ReadMini(mini_int16);
+		DCHECK(mini_int16 == int16);
 
-			v = 0;
-			s8.ReadBits(&v, 4, false);
-			DCHECK(particialByte == ((v >> 4) << 4));
+		v = 0;
+		s8.ReadBits(&v, 4, false);
+		DCHECK(particialByte == ((v >> 4) << 4));
 
-			s8.Read(uint64);
-			s8.Read(int8);
-			UInt64 mini_uint64;
-			s8.ReadMini(mini_uint64);
-			DCHECK(mini_uint64 == uint64);
-			Int8 mini_int8;
-			s8.ReadMini(mini_int8);
-			DCHECK(mini_int8 == int8);
+		s8.Read(uint64);
+		s8.Read(int8);
+		UInt64 mini_uint64;
+		s8.ReadMini(mini_uint64);
+		DCHECK(mini_uint64 == uint64);
+		Int8 mini_int8;
+		s8.ReadMini(mini_int8);
+		DCHECK(mini_int8 == int8);
 
-			v = 0;
-			s8.ReadBits(&v, 7, false);
-			DCHECK(particialByte == ((v >> 1) << 1));
+		v = 0;
+		s8.ReadBits(&v, 7, false);
+		DCHECK(particialByte == ((v >> 1) << 1));
 
-			DCHECK(uint8 == 8);
-			DCHECK(int8 == -8);
-			DCHECK(uint16 == 16);
-			DCHECK(int16 == -16);
-			DCHECK(uint24.val == 24);
-			DCHECK(uint32 == 32);
-			DCHECK(int32 == -32);
-			DCHECK(uint64 == 64);
-			DCHECK(int64 == -64);
+		DCHECK(uint8 == 8);
+		DCHECK(int8 == -8);
+		DCHECK(uint16 == 16);
+		DCHECK(int16 == -16);
+		DCHECK(uint24.val == 24);
+		DCHECK(uint32 == 32);
+		DCHECK(int32 == -32);
+		DCHECK(uint64 == 64);
+		DCHECK(int64 == -64);
 		}*/
 
 		JackieBits s9;
@@ -548,7 +554,7 @@ static void test_JackieStream__funcs()
 			s9 >> guidd;
 			DCHECK(guid == guidd);
 
-			UInt24 mini_uint24=0;
+			UInt24 mini_uint24 = 0;
 			s9.ReadMini(mini_uint24);
 			DCHECK(mini_uint24.val == 24);
 
@@ -556,7 +562,7 @@ static void test_JackieStream__funcs()
 			s9 >> addrr;
 			DCHECK(addr == addrr);
 
-			mini_uint24=0;
+			mini_uint24 = 0;
 			s9.ReadMini(mini_uint24);
 			DCHECK(mini_uint24.val == 24);
 

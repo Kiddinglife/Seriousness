@@ -85,10 +85,13 @@ namespace JACKIE_INET
 		/// Use a hash, with binaryAddress plus port mod length as the index
 		RemoteEndPointIndex **remoteSystemLookup;
 
+	public:
 		bool(*recvHandler)(JISRecvParams*);
 		void(*userUpdateThreadPtr)(IServerApplication *, void *);
 		void *userUpdateThreadData;
 		bool(*incomeDatagramEventHandler)(JISRecvParams *);
+
+	private:
 		bool updateCycleIsRunning;
 		volatile bool endThreads; ///Set this to true to terminate threads execution 
 		volatile bool isNetworkUpdateThreadActive; ///true if the send thread is active. 

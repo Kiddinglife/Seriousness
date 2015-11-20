@@ -735,6 +735,8 @@ namespace JACKIE_INET
 			return;
 		}
 
+		JDEBUG << "Connection Request Q not EMPTY";
+
 		if (timeUS == 0)
 		{
 			timeUS = Get64BitsTimeUS();
@@ -794,6 +796,7 @@ namespace JACKIE_INET
 					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
 					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					/// must not fragment because UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
 					JDEBUG << "The "
@@ -801,7 +804,6 @@ namespace JACKIE_INET
 						<< " times to try to connect to remote sever ["
 						<< connReq->receiverAddr.ToString() << "]";
 
-					/// @TO-DO i am now in here
 					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
 					{
 						pluginListNTS[i]->OnDirectSocketSend(bitStream.DataInt8(), bitStream.GetPayLoadBits(), connReq->receiverAddr);
@@ -1308,7 +1310,7 @@ namespace JACKIE_INET
 
 	Packet* ServerApplication::GetPacketOnce(void)
 	{
-		TIMED_FUNC();
+		//	TIMED_FUNC();
 
 #if USE_SINGLE_THREAD == 0
 		if (!(IsActive())) return 0;
@@ -1327,11 +1329,11 @@ namespace JACKIE_INET
 		/// UPDATE all plugins
 		UpdatePlugins();
 
-		Packet *incomePacket = 0;
 		/// Pop out one Packet from queue
 		if (allocPacketQ.Size() > 0)
 		{
 			//////////////////////////////////////////////////////////////////////////
+			Packet *incomePacket = 0;
 			/// Get one income packet from bufferedPacketsQueue
 			DCHECK_EQ(allocPacketQ.PopHead(incomePacket), true);
 			DCHECK_NOTNULL(incomePacket->data);
@@ -1343,10 +1345,11 @@ namespace JACKIE_INET
 			/// these messages generated remotely
 			PacketGoThroughPluginCBs(incomePacket);
 			PacketGoThroughPlugins(incomePacket);
+			return incomePacket;
 			//////////////////////////////////////////////////////////////////////////
 		}
 
-		return incomePacket;
+		return 0;
 	}
 	bool ServerApplication::RunNetworkUpdateCycleOnce()
 	{
@@ -1401,14 +1404,12 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::RunRecvCycleOnce(UInt32 index)
 	{
-		TIMED_FUNC();
-
-		JISRecvParams* recvParams = 0;
+		//TIMED_FUNC();
 
 		ReclaimAllJISRecvParams(index);
 
 		//do { recvParams = JISRecvParamsPool[index].Allocate(); } while( recvParams == 0 );
-		recvParams = AllocJISRecvParams(index);
+		JISRecvParams* recvParams = AllocJISRecvParams(index);
 		recvParams->socket = bindedSockets[index];
 
 		if (((JISBerkley*)bindedSockets[index])->RecvFrom(recvParams) > 0)
@@ -1431,6 +1432,7 @@ namespace JACKIE_INET
 		}
 
 	}
+
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
 		ServerApplication *serv = *(ServerApplication**)arguments;
