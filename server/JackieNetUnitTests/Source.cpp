@@ -13,7 +13,6 @@ INITIALIZE_EASYLOGGINGPP
 
 using namespace JACKIE_INET;
 
-//////////////////////////// GlobalFunctions_h starts ////////////////////////////////////////////
 static void test_superfastfunction_func()
 {
 	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
@@ -34,7 +33,6 @@ static void test_itoa_func()
 	char result[3];
 	std::cout << "\nvalue(int 12)= " << Itoa(12, result, 10) << "\n";
 }
-
 static void test_DomainNameToIP_func()
 {
 	// needed for getaddrinfo
@@ -57,7 +55,6 @@ static void test_DomainNameToIP_func()
 	std::cout << "\nvalue(ZMD-SERVER)=ip " << ip << "\n"; // = return 192.168.1.107
 }
 
-//////////////////////////// JACKIE_INET_Address_h starts ////////////////////////////////////////////
 #include "JackieNet\NetTypes.h"
 static void test_size_func()
 {
@@ -140,7 +137,6 @@ static void test_IsLANAddress_func()
 		printf_s("addr (%s) is not LANA addr \n", str1);
 }
 
-//////////////////////////// JACKIE_INet_GUID starts ////////////////////////////////////////////
 static void test_JACKIE_INet_GUID_ToString_func()
 {
 	std::cout << "JACKIE_INet_GUID::test_ToString_func() starts...\n";
@@ -153,7 +149,6 @@ static void test_JACKIE_INet_GUID_ToString_func()
 	printf_s("%d\n", JACKIE_INET::JackieGUID::ToUInt32(gui));
 }
 
-//////////////////////// JACKIE_INET_Address_GUID_Wrapper starts /////////////////////////
 static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 {
 	std::cout << "JACKIE_INET_Address_GUID_Wrapper::test_ToHashCode_func() starts...\n";
@@ -171,7 +166,6 @@ static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper1));
 }
 
-//////////////////////////////////////////////////////////////////////////
 #include "JackieNet/NetTime.h"
 static void test_NetTime_h_All_funcs()
 {
@@ -200,7 +194,6 @@ static void test_NetTime_h_All_funcs()
 	printf_s("GetTime(%i)\n", GetTimeMS());
 }
 
-///////////////////////////// JACKIE_INet_Socket_h /////////////////////////////
 using namespace JACKIE_INET;
 #include "JackieNet/JackieINetSocket.h"
 static void test_GetMyIP_Wins_Linux_funcs()
@@ -214,9 +207,6 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
-
-////////////////////////// test_MemoryPool_funcs ///////////////////////////
 #include "JackieNet/MemoryPool.h"
 struct TestMemoryPool
 {
@@ -234,9 +224,7 @@ static void test_MemoryPool_funcs()
 		memoryPool.Reclaim(test);
 	}
 }
-//////////////////////////////////////////////////////////////////////////
 
-/////////////////////// test_Queue_funcs ////////////////////////////
 #include "JackieNet/ArraryQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
@@ -299,9 +287,7 @@ static void test_Queue_funcs()
 		}
 	}
 }
-//////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////
 #include "JackieNet/ServerApplication.h"
 static void test_ServerApplication_funcs()
 {
@@ -315,7 +301,7 @@ static void test_ServerApplication_funcs()
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
 	app->Start(4, &socketDescriptor, 1);
 
-	app->Connect("127.0.0.1", 32000);
+	app->Connect("localhost", 32000);
 	//int ret;
 	//char* data = "JackieNet";
 	//JISSendParams sendParams;
@@ -323,8 +309,6 @@ static void test_ServerApplication_funcs()
 	//sendParams.length = strlen(data) + 1;
 	//sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
 	//do { ret = ( ( JACKIE_INET::JISBerkley* )app->bindedSockets[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
-
-
 
 	Packet* packet = 0;
 	//// Loop for input
@@ -355,7 +339,7 @@ static void test_ServerApplication_funcs()
 		//if( packet != 0 ) app->ReclaimOnePacket(packet);
 
 		JackieSleep(1500);
-		//break;
+		break;
 	}
 
 	Sleep(1001);
@@ -364,7 +348,6 @@ static void test_ServerApplication_funcs()
 	app->StopNetworkUpdateThread();
 	Sleep(1001);
 }
-//////////////////////////////////////////////////////////////////////////
 
 #include "JackieNet/JackieBits.h"
 struct vec{ float x, y, z; };

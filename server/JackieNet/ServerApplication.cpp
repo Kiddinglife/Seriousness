@@ -796,8 +796,10 @@ namespace JACKIE_INET
 					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
-					JDEBUG << "The " << (int)connReq->requestsMade
-						<< " times to try to connect to remote sever [" << connReq->receiverAddr.ToString() << "]";
+					JDEBUG << "The "
+						<< (int)connReq->requestsMade
+						<< " times to try to connect to remote sever ["
+						<< connReq->receiverAddr.ToString() << "]";
 
 					/// @TO-DO i am now in here
 					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
@@ -828,6 +830,7 @@ namespace JACKIE_INET
 					if (socket2Use->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
 					{
 						/// do not use this MTU size again
+						JINFO << "10040";
 						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
 						connReq->nextRequestTime = timeMS;
 					}
@@ -836,6 +839,7 @@ namespace JACKIE_INET
 						Time sendToEnd = GetTimeMS();
 						if (sendToEnd - sendToStart > 100)
 						{
+							JINFO << "> 100";
 							/// Drop to lowest MTU
 							int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
 								* (mtuSizesCount - 1);
@@ -846,8 +850,7 @@ namespace JACKIE_INET
 							}
 							else
 							{
-								connReq->requestsMade =
-									(unsigned char)(connReq->connAttemptTimes + 1);
+								connReq->requestsMade = (unsigned char)(connReq->connAttemptTimes + 1);
 							}
 						}
 					}

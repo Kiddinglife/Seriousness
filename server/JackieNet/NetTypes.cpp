@@ -6,6 +6,9 @@
 
 namespace JACKIE_INET
 {
+	const char *IPV6_LOOPBACK = "::1";
+	const char *IPV4_LOOPBACK = "127.0.0.1";
+
 #ifndef SWIG
 	const JackieAddress JACKIE_NULL_ADDRESS;
 	const JackieGUID JACKIE_NULL_GUID;
@@ -33,7 +36,7 @@ namespace JACKIE_INET
 #endif
 		remotePortWasStartedOn_PS3_PSP2 = 0;
 		port = _port;
-		if( _hostAddress != 0 ) strcpy_s(hostAddress, sizeof(hostAddress), _hostAddress);
+		if (_hostAddress != 0) strcpy_s(hostAddress, sizeof(hostAddress), _hostAddress);
 		hostAddress[0] = 0;
 		extraSocketOptions = 0;
 		socketFamily = AF_INET;
@@ -49,7 +52,7 @@ namespace JACKIE_INET
 	}
 	unsigned int JackieAddress::ToHashCode(const JackieAddress &sa)
 	{
-		unsigned int lastHash = SuperFastHashIncremental((const char*) & sa.address.addr4.sin_port,
+		unsigned int lastHash = SuperFastHashIncremental((const char*)& sa.address.addr4.sin_port,
 			sizeof(sa.address.addr4.sin_port), sizeof(sa.address.addr4.sin_port));
 
 #if NET_SUPPORT_IPV6==1
@@ -60,7 +63,7 @@ namespace JACKIE_INET
 			return SuperFastHashIncremental((const char*) & sa.address.addr6.sin6_addr.s6_addr, 
 			sizeof(sa.address.addr6.sin6_addr.s6_addr), lastHash);
 #else
-		return SuperFastHashIncremental((const char*) & sa.address.addr4.sin_addr.s_addr,
+		return SuperFastHashIncremental((const char*)& sa.address.addr4.sin_addr.s_addr,
 			sizeof(sa.address.addr4.sin_addr.s_addr), lastHash);
 #endif
 	}
@@ -68,7 +71,7 @@ namespace JACKIE_INET
 	JackieAddress::JackieAddress()
 	{
 		address.addr4.sin_family = AF_INET;
-		systemIndex = (SystemIndex) -1;
+		systemIndex = (SystemIndex)-1;
 		debugPort = 0;
 	}
 	JackieAddress::JackieAddress(const char *str)
@@ -76,16 +79,16 @@ namespace JACKIE_INET
 		address.addr4.sin_family = AF_INET;
 		SetPortHostOrder(0);
 		FromString(str);
-		systemIndex = (SystemIndex) -1;
+		systemIndex = (SystemIndex)-1;
 	}
 	JackieAddress::JackieAddress(const char *str, UInt16 port)
 	{
 		address.addr4.sin_family = AF_INET;
 		FromString(str, port);
-		systemIndex = (SystemIndex) -1;
+		systemIndex = (SystemIndex)-1;
 	}
-	JackieAddress& JackieAddress::operator = ( const
-		JackieAddress& input )
+	JackieAddress& JackieAddress::operator = (const
+		JackieAddress& input)
 	{
 		memcpy(&address, &input.address, sizeof(address));
 		systemIndex = input.systemIndex;
@@ -93,23 +96,23 @@ namespace JACKIE_INET
 		return *this;
 	}
 
-	bool JackieAddress::operator==( const JackieAddress& right ) const
+	bool JackieAddress::operator==(const JackieAddress& right) const
 	{
 		return address.addr4.sin_port == right.address.addr4.sin_port &&
-			( address.addr4.sin_family == AF_INET &&
-			address.addr4.sin_addr.s_addr == right.address.addr4.sin_addr.s_addr )
+			(address.addr4.sin_family == AF_INET &&
+			address.addr4.sin_addr.s_addr == right.address.addr4.sin_addr.s_addr)
 #if NET_SUPPORT_IPV6 == 1
 			|| ( address.addr4.sin_family == AF_INET6 && memcmp(address.addr6.sin6_addr.s6_addr, right.address.addr6.sin6_addr.s6_addr, sizeof(address.addr6.sin6_addr.s6_addr)) == 0 )
 #endif
 			;
 	}
-	bool JackieAddress::operator!=( const JackieAddress& right ) const
+	bool JackieAddress::operator!=(const JackieAddress& right) const
 	{
-		return ( *this == right ) == false;
+		return (*this == right) == false;
 	}
-	bool JackieAddress::operator>( const JackieAddress& right ) const
+	bool JackieAddress::operator>(const JackieAddress& right) const
 	{
-		if( address.addr4.sin_port == right.address.addr4.sin_port )
+		if (address.addr4.sin_port == right.address.addr4.sin_port)
 		{
 #if NET_SUPPORT_IPV6 ==1
 			if( address.addr4.sin_family == AF_INET )
@@ -121,9 +124,9 @@ namespace JACKIE_INET
 		}
 		return address.addr4.sin_port > right.address.addr4.sin_port;
 	}
-	bool JackieAddress::operator<( const JackieAddress& right ) const
+	bool JackieAddress::operator<(const JackieAddress& right) const
 	{
-		if( address.addr4.sin_port == right.address.addr4.sin_port )
+		if (address.addr4.sin_port == right.address.addr4.sin_port)
 		{
 #if NET_SUPPORT_IPV6==1
 			if( address.addr4.sin_family == AF_INET )
@@ -138,10 +141,11 @@ namespace JACKIE_INET
 
 	unsigned char JackieAddress::GetIPVersion(void) const
 	{
-		if( address.addr4.sin_family == AF_INET )
+		if (address.addr4.sin_family == AF_INET)
 		{
 			return 	4;
-		} else
+		}
+		else
 		{
 			return 6;
 		}
@@ -180,29 +184,28 @@ namespace JACKIE_INET
 	{
 		return address.addr4.sin_port;
 	}
-
-
 	void JackieAddress::SetToLoopBack(void)
 	{
 		SetToLoopBack(4);
 	}
 	void JackieAddress::SetToLoopBack(unsigned char ipVersion)
 	{
-		if( ipVersion == 4 )
+		if (ipVersion == 4)
 		{
 			FromString(IPV4_LOOPBACK, '\0', ipVersion);
-		} else
+		}
+		else
 		{
 			FromString(IPV6_LOOPBACK, '\0', ipVersion);
 		}
 	}
 	bool JackieAddress::IsLoopback(void) const
 	{
-		if( GetIPVersion() == 4 )
+		if (GetIPVersion() == 4)
 		{
-			if( htonl(address.addr4.sin_addr.s_addr) == 2130706433 )
+			if (htonl(address.addr4.sin_addr.s_addr) == 2130706433)
 				return true;
-			if( address.addr4.sin_addr.s_addr == 0 )
+			if (address.addr4.sin_addr.s_addr == 0)
 				return true;
 		}
 #if NET_SUPPORT_IPV6==1
@@ -220,28 +223,27 @@ namespace JACKIE_INET
 #if defined(__WIN32__)
 		return address.addr4.sin_addr.S_un.S_un_b.s_b1 == 10 || address.addr4.sin_addr.S_un.S_un_b.s_b1 == 192;
 #else
-		return ( address.addr4.sin_addr.s_addr >> 24 ) == 10 ||
-			( address.addr4.sin_addr.s_addr >> 24 ) == 192;
+		return (address.addr4.sin_addr.s_addr >> 24) == 10 ||
+			(address.addr4.sin_addr.s_addr >> 24) == 192;
 #endif
 	}
 
-
 	bool JackieAddress::SetIP4Address(const char *str, char portDelineator)
 	{
-		if( isDomainIPAddr(str) )
+		if (isDomainIPAddr(str))
 		{
 
 #if defined(_WIN32)
-			if( _strnicmp(str, "localhost", 9) == 0 )
+			if (_strnicmp(str, "localhost", 9) == 0)
 #else
 			if( strncasecmp(str, "localhost", 9) == 0 )
 #endif
 			{
 				address.addr4.sin_addr.s_addr = inet_addr__("127.0.0.1");
 
-				if( str[9] )
+				if (str[9])
 				{
-					SetPortHostOrder((unsigned short) atoi(str + 9));
+					SetPortHostOrder((unsigned short)atoi(str + 9));
 				}
 				return true;
 			}
@@ -249,35 +251,37 @@ namespace JACKIE_INET
 			char ip[65];
 			ip[0] = 0;
 			DomainNameToIP(str, ip);
-			if( ip[0] )
+			if (ip[0])
 			{
 				address.addr4.sin_addr.s_addr = inet_addr__(ip);
-			} else
+			}
+			else
 			{
 				*this = JACKIE_NULL_ADDRESS;
 				return false;
 			}
-		} else
+		}
+		else
 		{
 			// Split the string into the first part, and the : part
 			int index, portIndex;
 			char IPPart[22];
 			char portPart[10];
 			// Only write the valid parts, don't change existing if invalid
-			for( index = 0; str[index] && str[index] != portDelineator && index < 22; index++ )
+			for (index = 0; str[index] && str[index] != portDelineator && index < 22; index++)
 			{
-				if( str[index] != '.' && ( str[index]<'0' || str[index]>'9' ) )
+				if (str[index] != '.' && (str[index]<'0' || str[index]>'9'))
 					break;
 				IPPart[index] = str[index];
 			}
 			IPPart[index] = 0;
 			portPart[0] = 0;
-			if( str[index] && str[index + 1] )
+			if (str[index] && str[index + 1])
 			{
 				index++;
-				for( portIndex = 0; portIndex < 10 && str[index] && index < 22 + 10; index++, portIndex++ )
+				for (portIndex = 0; portIndex < 10 && str[index] && index < 22 + 10; index++, portIndex++)
 				{
-					if( str[index]<'0' || str[index]>'9' )
+					if (str[index]<'0' || str[index]>'9')
 						break;
 
 					portPart[portIndex] = str[index];
@@ -285,14 +289,14 @@ namespace JACKIE_INET
 				portPart[portIndex] = 0;
 			}
 
-			if( IPPart[0] )
+			if (IPPart[0])
 			{
 				address.addr4.sin_addr.s_addr = inet_addr__(IPPart);
 			}
 
-			if( portPart[0] )
+			if (portPart[0])
 			{
-				address.addr4.sin_port = htons((unsigned short) atoi(portPart));
+				address.addr4.sin_port = htons((unsigned short)atoi(portPart));
 				debugPort = ntohs(address.addr4.sin_port);
 			}
 		}
@@ -421,7 +425,7 @@ namespace JACKIE_INET
 	bool JackieAddress::FromString(const char *str, UInt16 port, unsigned char ipVersion)
 	{
 		bool b = FromString(str, '\0', ipVersion);
-		if( b == false )
+		if (b == false)
 		{
 			*this = JACKIE_NULL_ADDRESS;
 			return false;
@@ -430,8 +434,6 @@ namespace JACKIE_INET
 		debugPort = ntohs(address.addr4.sin_port);
 		return true;
 	}
-
-
 
 	const char* JackieAddress::ToString(bool writePort, char portDelineator) const
 	{
@@ -446,7 +448,7 @@ namespace JACKIE_INET
 		unsigned char lastStrIndex = strIndex;
 		strIndex++;
 		ToString(writePort, str[lastStrIndex & 7], portDelineator);
-		return (char*) str[lastStrIndex & 7];
+		return (char*)str[lastStrIndex & 7];
 	}
 	void JackieAddress::ToString(bool writePort, char *dest, char portDelineator) const
 	{
@@ -459,7 +461,7 @@ namespace JACKIE_INET
 	void JackieAddress::ToString_IPV4(bool writePort, char *dest, char portDelineator)
 		const
 	{
-		if( *this == JACKIE_NULL_ADDRESS )
+		if (*this == JACKIE_NULL_ADDRESS)
 		{
 			strcpy(dest, "UNASSIGNED_SYSTEM_ADDRESS");
 			return;
@@ -473,7 +475,7 @@ namespace JACKIE_INET
 		in.s_addr = address.addr4.sin_addr.s_addr;
 		const char *ntoaStr = inet_ntoa(in);
 		strcpy(dest, ntoaStr);
-		if( writePort )
+		if (writePort)
 		{
 			strcat(dest, portStr);
 			Itoa(GetPortHostOrder(), dest + strlen(dest), 10);
@@ -483,72 +485,69 @@ namespace JACKIE_INET
 		const
 	{
 		int ret;
-		(void) ret;
+		(void)ret;
 
-		if( *this == JACKIE_NULL_ADDRESS )
+		if (*this == JACKIE_NULL_ADDRESS)
 		{
 			strcpy(dest, "UNASSIGNED_SYSTEM_ADDRESS");
 			return;
 		}
 
-		if( address.addr4.sin_family == AF_INET )
+		if (address.addr4.sin_family == AF_INET)
 		{
-			ret = getnameinfo(( struct sockaddr * ) &address.addr4, sizeof(struct sockaddr_in), dest, 22, NULL, 0, NI_NUMERICHOST);
-		} else
+			ret = getnameinfo((struct sockaddr *) &address.addr4, sizeof(struct sockaddr_in), dest, 22, NULL, 0, NI_NUMERICHOST);
+		}
+		else
 		{
 #if NET_SUPPORT_IPV6 ==1
 			ret = getnameinfo(( struct sockaddr * ) &address.addr6, sizeof(struct sockaddr_in6), dest, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
 #endif
 		}
-		if( ret != 0 )
+		if (ret != 0)
 		{
 			dest[0] = 0;
 		}
 
-		if( writePort )
+		if (writePort)
 		{
 			unsigned char ch[2];
 			ch[0] = portDelineator;
 			ch[1] = 0;
-			strcat(dest, (const char*) ch);
+			strcat(dest, (const char*)ch);
 			Itoa(ntohs(address.addr4.sin_port), dest + strlen(dest), 10);
 		}
 	}
 
-
-
-
-
 	JackieGUID::JackieGUID(UInt64 _g)
 	{
 		g = _g;
-		systemIndex = (SystemIndex) -1;
+		systemIndex = (SystemIndex)-1;
 	}
 	JackieGUID::JackieGUID()
 	{
-		systemIndex = (SystemIndex) -1;
-		g = (UInt64) -1;
+		systemIndex = (SystemIndex)-1;
+		g = (UInt64)-1;
 	}
-	JackieGUID& JackieGUID::operator = ( const JackieGUID& input )
+	JackieGUID& JackieGUID::operator = (const JackieGUID& input)
 	{
 		g = input.g;
 		systemIndex = input.systemIndex;
 		return *this;
 	}
 
-	inline bool JackieGUID::operator==( const JackieGUID& right ) const
+	inline bool JackieGUID::operator==(const JackieGUID& right) const
 	{
 		return g == right.g;
 	}
-	inline bool JackieGUID::operator!=( const JackieGUID& right ) const
+	inline bool JackieGUID::operator!=(const JackieGUID& right) const
 	{
 		return g != right.g;
 	}
-	inline bool JackieGUID::operator > ( const JackieGUID& right ) const
+	inline bool JackieGUID::operator > (const JackieGUID& right) const
 	{
 		return g > right.g;
 	}
-	inline bool JackieGUID::operator < ( const JackieGUID& right ) const
+	inline bool JackieGUID::operator < (const JackieGUID& right) const
 	{
 		return g < right.g;
 	}
@@ -561,25 +560,25 @@ namespace JACKIE_INET
 		unsigned char lastStrIndex = strIndex;
 		strIndex++;
 		ToString(str[lastStrIndex & 7]);
-		return (char*) str[lastStrIndex & 7];
+		return (char*)str[lastStrIndex & 7];
 	}
 	void JackieGUID::ToString(char *dest) const
 	{
-		if( *this == JACKIE_NULL_GUID )
+		if (*this == JACKIE_NULL_GUID)
 			strcpy(dest, "JACKIE_INet_GUID_Null");
 		else
 			//sprintf(dest, "%u.%u.%u.%u.%u.%u", g[0], g[1], g[2], g[3], g[4], g[5]);
-			sprintf(dest, "%" PRINTF_64BITS_MODIFIER "u", ( long long unsigned int ) g);
+			sprintf(dest, "%" PRINTF_64BITS_MODIFIER "u", (long long unsigned int) g);
 		// sprintf(dest, "%u.%u.%u.%u.%u.%u", g[0], g[1], g[2], g[3], g[4], g[5]);
 	}
 	unsigned long JackieGUID::ToUInt32(const JackieGUID &g)
 	{
-		return ( (unsigned long) ( g.g >> 32 ) ) ^ ( (unsigned long) ( g.g & 0xFFFFFFFF ) );
+		return ((unsigned long)(g.g >> 32)) ^ ((unsigned long)(g.g & 0xFFFFFFFF));
 	}
-	inline int JackieGUID::size() { return ( int ) sizeof(UInt64); }
+	inline int JackieGUID::size() { return (int) sizeof(UInt64); }
 	bool JackieGUID::FromString(const char *source)
 	{
-		if( source == 0 )
+		if (source == 0)
 			return false;
 
 #if   defined(WIN32)
@@ -599,18 +598,18 @@ namespace JACKIE_INET
 	}
 	unsigned long JACKIE_INET_Address_GUID_Wrapper::ToHashCode(const JACKIE_INET_Address_GUID_Wrapper &aog)
 	{
-		if( aog.guid != JACKIE_NULL_GUID )
+		if (aog.guid != JACKIE_NULL_GUID)
 			return JackieGUID::ToUInt32(aog.guid);
 		return JackieAddress::ToHashCode(aog.systemAddress);
 	}
 	const char *JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort) const
 	{
-		if( guid != JACKIE_NULL_GUID ) return guid.ToString();
+		if (guid != JACKIE_NULL_GUID) return guid.ToString();
 		return systemAddress.ToString(writePort);
 	}
 	void JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort, char *dest) const
 	{
-		if( guid != JACKIE_NULL_GUID ) return guid.ToString(dest);
+		if (guid != JACKIE_NULL_GUID) return guid.ToString(dest);
 		return systemAddress.ToString(writePort, dest);
 	}
 
@@ -673,14 +672,14 @@ namespace JACKIE_INET
 		struct hostent * phe = gethostbyname(domainName);
 		WSAStartupSingleton::Deref();
 
-		if( phe == 0 || phe->h_addr_list[0] == 0 )
+		if (phe == 0 || phe->h_addr_list[0] == 0)
 		{
 			printf("Yow! Bad host lookup.\n");
 			memset(ip, 0, 65 * sizeof(char));
 			return;
 		}
 
-		if( phe->h_addr_list[0] == 0 )
+		if (phe->h_addr_list[0] == 0)
 		{
 			memset(ip, 0, 65 * sizeof(char));
 			return;
@@ -699,12 +698,12 @@ namespace JACKIE_INET
 	bool isDomainIPAddr(const char *host)
 	{
 		unsigned int i = 0;
-		while( host[i] )
+		while (host[i])
 		{
 			// IPV4: natpunch.jenkinssoftware.com
 			// IPV6: fe80::7c:31f7:fec4:27de%14
-			if( ( host[i] >= 'g' && host[i] <= 'z' ) ||
-				( host[i] >= 'A' && host[i] <= 'Z' ) )
+			if ((host[i] >= 'g' && host[i] <= 'z') ||
+				(host[i] >= 'A' && host[i] <= 'Z'))
 				return true;
 			++i;
 		}

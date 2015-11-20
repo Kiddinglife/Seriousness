@@ -74,14 +74,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #endif
 
 	/// \sa NetworkIDObject.h
-	typedef unsigned char   UniqueIDType;
-	typedef unsigned char   RPCIndex;
+	typedef UInt8   UniqueIDType;
+	typedef UInt8   RPCIndex;
 	typedef UInt16 SystemIndex;
 	typedef UInt64 NetworkID;
 	typedef UInt32 BitSize;
 	typedef UInt32 ByteSize;
-	/// First byte of a network message
-	typedef unsigned char MessageID;
+	typedef UInt8 MessageID; ///< First byte of a network message
 
 	/// Index of an invalid JACKIE_INET_Address and JACKIE_INet_GUID
 #ifndef SWIG
@@ -94,13 +93,13 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	const int MAX_RPC_MAP_SIZE = ((RPCIndex)-1) - 1; // 254
 	const int UNDEFINED_RPC_INDEX = ((RPCIndex)-1); // 255
 	const int PING_TIMES_ARRAY_SIZE = 5;
-
-	const char *IPV6_LOOPBACK = "::1";
-	const char *IPV4_LOOPBACK = "127.0.0.1";
+	//const extern char *IPV6_LOOPBACK = "::1";
+	//const extern char *IPV4_LOOPBACK = "127.0.0.1";
+	const extern char *IPV6_LOOPBACK;
+	const extern char *IPV4_LOOPBACK;
 
 	enum ThreadType { RecvThreadType, SendThreadType };
 
-	/// enums
 	enum StartupResult
 	{
 		STARTED,
@@ -906,10 +905,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned short dataLength;
 		char pwd[256];
 		unsigned char pwdLen;
-		unsigned socketIndex;
+		unsigned int socketIndex;
 		unsigned int extraData;
-		unsigned connAttemptTimes;
-		unsigned connAttemptIntervalMS;
+		unsigned int connAttemptTimes;
+		unsigned int connAttemptIntervalMS;
 		TimeMS timeout;
 		PublicKeyMode publicKeyMode;
 		JackieINetSocket* socket;
