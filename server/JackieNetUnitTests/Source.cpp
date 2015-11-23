@@ -345,7 +345,7 @@ static void test_ServerApplication_funcs()
 		//if( packet != 0 ) app->ReclaimOnePacket(packet);
 
 		JackieSleep(1500);
-		break;
+		//break;
 	}
 
 	Sleep(1001);
