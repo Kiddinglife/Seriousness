@@ -290,7 +290,7 @@ static void test_Queue_funcs()
 
 static bool IncomeDatagramEventHandler(JISRecvParams *param)
 {
-	JINFO << "recv from  " << param->senderINetAddress.ToString() <<", bytes "<<param->bytesRead << ", " << param->data;
+	JINFO << "recv from  " << param->senderINetAddress.ToString() << ", bytes " << param->bytesRead << ", " << param->data;
 	return true;
 }
 #include "JackieNet/ServerApplication.h"

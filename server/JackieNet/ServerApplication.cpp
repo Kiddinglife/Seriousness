@@ -319,12 +319,13 @@ namespace JACKIE_INET
 		/// Setup Plugins 
 		for (index = 0; index < pluginListTS.Size(); index++)
 		{
-			pluginListTS[index]->OnRakPeerStartup();
+			pluginListTS[index]->OnStartup();
+
 		}
 
 		for (index = 0; index < pluginListNTS.Size(); index++)
 		{
-			pluginListNTS[index]->OnRakPeerStartup();
+			pluginListNTS[index]->OnStartup();
 		}
 
 
