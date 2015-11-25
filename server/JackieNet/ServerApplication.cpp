@@ -399,12 +399,8 @@ namespace JACKIE_INET
 		unsigned char orderingChannel,
 		PacketSendPriority disconnectionNotificationPriority)
 	{
-
 	}
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index)
 	{
 		JDEBUG << "Network Thread Reclaims One JISRecvParams";
@@ -744,7 +740,7 @@ namespace JACKIE_INET
 			timeMS = (TimeMS)(timeUS / (TimeUS)1000);
 		}
 
-		ConnectionRequest *connReq;
+		ConnectionRequest *connReq = 0;
 
 		connReqQLock.Lock();
 		for (UInt32 index = 0; index < connReqQ.Size(); index++)
@@ -793,11 +789,11 @@ namespace JACKIE_INET
 					connReq->nextRequestTime = timeMS + connReq->connAttemptIntervalMS;
 
 					JackieBits bitStream;
-					bitStream.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_1);
+					bitStream.WriteMini((MessageID)ID_OPEN_CONNECTION_REQUEST_1);
 					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-					/// must not fragment because UDP_HEADER_SIZE = 28 > 1+16+1=18
+					bitStream.WriteMini((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					/// definitely will not be fragmented because UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
 
 					JDEBUG << "The "

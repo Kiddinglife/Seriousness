@@ -288,9 +288,22 @@ static void test_Queue_funcs()
 	}
 }
 
+#include "JackieNet/JackieBits.h"
 static bool IncomeDatagramEventHandler(JISRecvParams *param)
 {
-	JINFO << "recv from  " << param->senderINetAddress.ToString() << ", bytes " << param->bytesRead << ", " << param->data;
+	JINFO << "recv from  " << param->senderINetAddress.ToString() << ", bytes " << param->bytesRead;
+
+	JackieBits jb((UInt8*)param->data, param->bytesRead, false);
+
+	MessageID msgid;
+	jb.ReadMini(msgid);
+	JINFO << "ID_OPEN_CONNECTION_REQUEST_1 = " << (int)msgid;
+
+	jb.ReadSkipBytes(16);
+
+	jb.ReadMini(msgid);
+	JINFO << "JACKIE_INET_PROTOCOL_VERSION = " << (int)msgid;
+
 	return true;
 }
 #include "JackieNet/ServerApplication.h"

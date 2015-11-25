@@ -88,6 +88,7 @@ namespace JACKIE_INET
 
 	void JackieBits::ReadMini(UInt8* dest, const BitSize bits2Read, const bool isUnsigned)
 	{
+		//JINFO << "get pay loads in read mini " << GetPayLoadBits();
 		UInt32 currByte;
 		UInt8 byteMatch;
 		UInt8 halfByteMatch;
@@ -106,6 +107,7 @@ namespace JACKIE_INET
 		if (!IsBigEndian())
 		{
 			currByte = (bits2Read >> 3) - 1;
+			//JINFO << "currByte" << currByte;
 			while (currByte > 0)
 			{
 				// If we read a 1 then the data is byteMatch.
@@ -113,11 +115,13 @@ namespace JACKIE_INET
 				Read(b);
 				if (b)   // Check that bit
 				{
+					//JINFO << "matched";
 					dest[currByte] = byteMatch;
 					currByte--;
 				}
 				else /// the first byte is not matched 
 				{
+					//JINFO << "not matched";
 					// Read the rest of the bytes
 					ReadBits(dest, (currByte + 1) << 3);
 					return;
@@ -128,6 +132,7 @@ namespace JACKIE_INET
 		else
 		{
 			currByte = 0;
+			//JINFO << "currByte" << currByte;
 			while (currByte < ((bits2Read >> 3) - 1))
 			{
 				// If we read a 1 then the data is byteMatch.
@@ -135,11 +140,13 @@ namespace JACKIE_INET
 				Read(b);
 				if (b)   // Check that bit
 				{
+					//JINFO << "matched";
 					dest[currByte] = byteMatch;
 					currByte++;
 				}
 				else /// the first byte is not matched 
 				{
+					//JINFO << "ReadBits";
 					// Read the rest of the bytes
 					ReadBits(dest, bits2Read - (currByte << 3));
 					return;
@@ -584,12 +591,13 @@ namespace JACKIE_INET
 				/// then it would have the same value shifted
 				if (src[currByte] == byteMatch)
 				{
-					//JINFO << "match " << byteMatch;
+					//JINFO << "write match " << byteMatch;
 					Write(truee);
 					currByte--;
 				}
 				else /// the first byte is not matched
 				{
+					//JINFO << "write not match " << byteMatch;
 					Write(falsee);
 					// Write the remainder of the data after writing bit false
 					WriteBits(src, (currByte + 1) << 3, true);
@@ -613,11 +621,13 @@ namespace JACKIE_INET
 				/// then it would have the same value shifted
 				if (src[currByte] == byteMatch)
 				{
+					JINFO << "write match " << byteMatch;
 					Write(truee);
 					currByte++;
 				}
 				else /// the first byte is not matched
 				{
+					JINFO << "write not match " << byteMatch;
 					Write(falsee);
 					// Write the remainder of the data after writing bit false
 					WriteBits(src + currByte, bits2Write - (currByte << 3), true);
@@ -636,11 +646,14 @@ namespace JACKIE_INET
 			//JINFO << "match four zeros" << byteMatch;
 			Write(truee);
 			WriteBits(src + currByte, 4, true);
+			//JINFO << "get pay loads " << GetPayLoadBits();
 		}
 		else
 		{/// write a 0 and the remaining 8 bites.
+			//JINFO << "match one zeros" << byteMatch;
 			Write(falsee);
 			WriteBits(src + currByte, 8, true);
+			//JINFO << "get pay loads " << GetPayLoadBits();
 		}
 	}
 

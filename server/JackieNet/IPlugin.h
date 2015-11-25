@@ -57,16 +57,12 @@ namespace JACKIE_INET
 	class JACKIE_EXPORT IPlugin
 	{
 	public:
-		//////////////////////////////////////////////////////////////////////////
 		// Filled automatically in when attached
 		IServerApplication* serverApplication;
 #if JackieNet_SUPPORT_PacketizedTCP==1 && JackieNet_SUPPORT_TCPInterface==1
 		TCPInterface *tcpInterface;
 #endif
-		//////////////////////////////////////////////////////////////////////////
 
-
-		//////////////////////////////////////////////////////////////////////////
 		IPlugin()
 		{
 			serverApplication = 0;
@@ -75,7 +71,6 @@ namespace JACKIE_INET
 #endif
 		}
 		virtual ~IPlugin() { }
-		//////////////////////////////////////////////////////////////////////////
 
 
 		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
@@ -90,6 +85,7 @@ namespace JACKIE_INET
 		{
 			JINFO << "USER THREAD OnAttach()";
 		}
+
 		/// Called when the interface is detached
 		virtual void OnDetach(void)
 		{
@@ -171,30 +167,32 @@ namespace JACKIE_INET
 		virtual void OnPushBackPacket(const char *data, const unsigned int bitsUsed,
 			JackieAddress& remoteSystemAddress) { }
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Queried when attached to RakPeer
 		/// Return true to call OnDirectSocketSend(), OnDirectSocketReceive(), OnReliabilityLayerNotification(), OnInternalPacket(), and OnAck()
 		/// If true, then you cannot call RakPeer::AttachPlugin() or RakPeer::DetachPlugin() for this plugin, while RakPeer is active
 		virtual bool UsesReliabilityLayer(void) const { return false; }
+
 		/// Called on a send to the socket, per datagram, that does not go through the reliability layer
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] data The data being sent
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
 		virtual void OnDirectSocketSend(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+
 		/// Called on a receive from the socket, per datagram, that does not go through the reliability layer
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] data The data being sent
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
 		virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+
 		/// Called when the reliability layer rejects a send or receive
 		/// \pre To be called, UsesReliabilityLayer() must return true
 		/// \param[in] bitsUsed How many bits long \a data is
 		/// \param[in] remoteSystemAddress Which system this message is being sent to
 		virtual void OnReliabilityLayerNotification(const char *errorMessage, const unsigned int
 			bitsUsed, JackieAddress& remoteSystemAddress, bool isError) { }
-		/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	};
 }
 #endif
