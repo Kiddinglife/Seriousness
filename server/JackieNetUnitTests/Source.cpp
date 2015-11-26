@@ -200,7 +200,7 @@ static void test_GetMyIP_Wins_Linux_funcs()
 {
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
 	JackieAddress addr[MAX_COUNT_LOCAL_IP_ADDR];
-	JISBerkley::GetMyIPBerkley(addr);
+	JACKIE_INET::JISBerkley::GetMyIPBerkley(addr);
 	for (int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++)
 	{
 		printf_s("(%s)\n", addr[i].ToString());
@@ -295,7 +295,7 @@ static void test_Queue_funcs()
 		{
 			list.PushElementAtLast(i);
 		}
-		
+
 		list.InsertElementAtIndex(1, 6);
 		list.RemoveElementAtIndex(24);
 		list.ReplaceElementAtIndex(23, 0, 23);
@@ -746,11 +746,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 
-static int testcase = CircularArrayQueueSingleThread;
-static int testfunc = Test_Queue_funcs;
+//static int testcase = CircularArrayQueueSingleThread;
+//static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
+static int testcase = ServerApplication_H;
+static int testfunc = AllFuncs;
 
 //static int testcase = JackieStream_H;
 //static int testfunc = AllFuncs;
