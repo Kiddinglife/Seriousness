@@ -228,6 +228,7 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/ArraryQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
+#include "JackieNet/ArrayList.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
@@ -285,6 +286,25 @@ static void test_Queue_funcs()
 			int t;
 			queuee.PopHead(t);
 		}
+	}
+
+	DataStructures::ArrayList<int, 100001> list;
+	TIMED_BLOCK(ListTimer, "ListTimer")
+	{
+		for (int i = 0; i < 5000; i++)
+		{
+			list.PushElementAtLast(i);
+		}
+		
+		list.InsertElementAtIndex(1, 6);
+		list.RemoveElementAtIndex(24);
+		list.ReplaceElementAtIndex(23, 0, 23);
+
+		for (int i = 4; i < 100; i++)
+		{
+			list.RemoveElementAtIndex(i);
+		}
+		int t = list.PopElementAtLast();
 	}
 }
 
@@ -726,11 +746,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 
-//static int testcase = CircularArrayQueueSingleThread;
-//static int testfunc = Test_Queue_funcs;
+static int testcase = CircularArrayQueueSingleThread;
+static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
+//static int testcase = ServerApplication_H;
+//static int testfunc = AllFuncs;
 
 //static int testcase = JackieStream_H;
 //static int testfunc = AllFuncs;

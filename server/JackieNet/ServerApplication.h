@@ -244,7 +244,6 @@ namespace JACKIE_INET
 
 		UInt32 MaxConnections() const { return maxConnections; }
 
-		///========================================
 		/// @Function CancelConnectionRequest 
 		/// @Brief  
 		/// Cancel a pending connection attempt
@@ -253,7 +252,6 @@ namespace JACKIE_INET
 		/// @Param [in] [const JackieAddress & target] 
 		///  Which remote server the connection being cancelled to
 		/// @Author mengdi[Jackie]
-		///========================================
 		void CancelConnectionRequest(const JackieAddress& target);
 
 	private:
@@ -283,7 +281,6 @@ namespace JACKIE_INET
 		void RunRecvCycleOnce(UInt32 in = 0);
 		Packet* RunGetPacketCycleOnce(void);
 
-		///========================================
 		/// function  CreateRecvPollingThread 
 		/// Access  private  
 		/// Param [in] [int threadPriority]
@@ -291,7 +288,6 @@ namespace JACKIE_INET
 		/// Remarks this function is not used because because , a thread 
 		/// that calls the Start() func plays recv thread
 		/// author mengdi[Jackie]
-		///========================================
 		int CreateRecvPollingThread(int threadPriority, UInt32 index);
 		int CreateNetworkUpdateThread(int threadPriority);
 
@@ -306,8 +302,6 @@ namespace JACKIE_INET
 		Command* AllocCommand();
 		void PostComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
 
-
-		///========================================
 		/// @Function Connect 
 		/// @Brief Connect to a remote host
 		/// @Access  public  
@@ -333,14 +327,13 @@ namespace JACKIE_INET
 		/// when IsConnected() returns true or getting a packet with the type identifier 
 		/// ID_CONNECTION_REQUEST_ACCEPTED. 
 		/// @Author mengdi[Jackie]
-		///========================================
 		ConnectionAttemptResult Connect(const char* host, UInt16 port,
 			const char *pwd = 0, UInt32 pwdLen = 0, JACKIE_Public_Key *publicKey = 0,
 			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 3,
 			UInt32 ConnectionAttemptIntervalMS = 500, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
-		///========================================
+		
 		/// function  StopRecvPollingThread 
 		/// Access  public  
 		/// Param [in] [void]  
@@ -348,7 +341,6 @@ namespace JACKIE_INET
 		/// Remarks: because we use app main thread as recv thread, it 
 		/// will never block so no need to use this
 		/// author mengdi[Jackie]
-		///========================================
 		void StopRecvThread(void);
 		void StopNetworkUpdateThread(void);
 		bool IsActive(void) const { return endThreads == false; }

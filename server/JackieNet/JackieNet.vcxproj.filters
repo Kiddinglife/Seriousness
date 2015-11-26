@@ -187,5 +187,8 @@
     <ClInclude Include="JackieSlidingWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ArrayList.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

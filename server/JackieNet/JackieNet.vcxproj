@@ -204,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="980easylogging++.h" />
+    <ClInclude Include="ArrayList.h" />
     <ClInclude Include="atomic_ops.h" />
     <ClInclude Include="JackieINetVersion.h" />
     <ClInclude Include="JackieSlidingWindows.h" />
