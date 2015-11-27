@@ -77,6 +77,12 @@
     <ClCompile Include="JackieSlidingWindows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JackieString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NetTypes.h">
@@ -188,6 +194,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ArrayList.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="OrderArrayList.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

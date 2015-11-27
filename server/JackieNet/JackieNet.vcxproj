@@ -188,10 +188,12 @@
     <ClCompile Include="JackieBits.cpp" />
     <ClCompile Include="GlobalFunctions.cpp" />
     <ClCompile Include="IPlugin.cpp" />
+    <ClCompile Include="JackieString.cpp" />
     <ClCompile Include="JACKIE_Atomic.cpp" />
     <ClCompile Include="JackieINetSocket.cpp" />
     <ClCompile Include="JackieSimpleMutex.cpp" />
     <ClCompile Include="JACKIE_Thread.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="NetTime.cpp" />
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
@@ -206,11 +208,14 @@
     <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="ArrayList.h" />
     <ClInclude Include="atomic_ops.h" />
+    <ClInclude Include="OrderArrayList.h" />
     <ClInclude Include="JackieINetVersion.h" />
     <ClInclude Include="JackieSlidingWindows.h" />
     <ClInclude Include="JackieSpinLock.h" />
     <ClInclude Include="JackieBits.h" />
     <ClInclude Include="EasyLog.h" />
+    <ClInclude Include="JackieString.h" />
+    <ClInclude Include="Map.h" />
     <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />
     <ClInclude Include="LockFreeQueue.h" />

@@ -158,12 +158,12 @@ namespace DataStructures
 		/// @param[in] input The new element. 
 		inline void PushElementAtLast(const ElementType &input)
 		{
-			InsertElementAtLast(input);
+			InsertAtLast(input);
 		}
 
 		/// @brief Insert at the end of the list.
 		/// @param[in] input The new element. 
-		void InsertElementAtLast(const ElementType &input)
+		void InsertAtLast(const ElementType &input)
 		{
 			// Reallocate list if necessary
 			if (list_size == allocation_size)
@@ -195,7 +195,7 @@ namespace DataStructures
 		/// @brief Insert an element at position @a position in the list.
 		/// @param[in] input The new element. 
 		/// @param[in] position The position of the new element. 		
-		void InsertElementAtIndex(const ElementType &input, const unsigned int position)
+		void InsertAtIndex(const ElementType &input, const unsigned int position)
 		{
 #ifdef _DEBUG
 			if (position > list_size)
@@ -289,7 +289,7 @@ namespace DataStructures
 
 		/// @brief Delete the element at position @a position. 
 		/// @param[in] position The index of the element to delete 
-		void RemoveElementAtIndex(const unsigned int position)
+		void RemoveAtIndex(const unsigned int position)
 		{
 #ifdef _DEBUG
 			if (position >= list_size)
@@ -314,7 +314,7 @@ namespace DataStructures
 		}
 
 		/// @brief Delete the element at the end of the list.
-		inline void RemoveElementAtLast(const unsigned num = 1)
+		inline void RemoveFromLast(const unsigned num = 1)
 		{
 			// Delete the last elements on the list.  No compression needed
 #ifdef _DEBUG
