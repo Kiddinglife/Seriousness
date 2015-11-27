@@ -44,23 +44,26 @@ namespace DataStructures
 		/// operators already defined then you can just use defaultComparison
 		inline bool Exists(const key_type &key, int(*cf)(const key_type&, const data_type&) = default_comparison_function) const
 		{
-			return GetIndexFromKey(key, cf) > -1;
+			bool objectExists;
+			GetIndexFromKey(key, objectExists, cf);
+			return objectExists;
 		}
 
 		/// GetIndexFromKey returns where the insert should go at the 
 		/// same time checks if it is there
-		int GetIndexFromKey(const key_type &key,
+		unsigned int GetIndexFromKey(const key_type &key, bool& objectExists,
 			int(*cf)(const key_type&, const data_type&) = default_comparison_function)
 			const
 		{
 			if (orderedList.Size() == 0)
 			{
-				return -1;
+				objectExists = false;
+				return 0;
 			}
 
 			int res;
 			int index = orderedList.Size() / 2;
-			int upperBound = = orderedList.Size() - 1;
+			int upperBound = orderedList.Size() - 1;
 			int lowerBound = 0;
 
 			while (true)
@@ -72,20 +75,23 @@ namespace DataStructures
 					upperBound = index - 1;
 				else /// if (res == 0)
 				{
-					return index;
+					objectExists = true;
+					return (unsigned)index;
 				}
 
 				index = lowerBound + (upperBound - lowerBound) / 2;
 				if (lowerBound > upperBound)
 				{
-					return -1;
+					objectExists = false;
+					return (unsigned)lowerBound; // No match
 				}
 #ifdef _DEBUG
 				if (index < 0 || index >= (int)orderedList.Size())
 				{
 					// This should never hit unless the comparison function was inconsistent
 					assert(index && 0);
-					return -1;
+					objectExists = false;
+					return 0;
 				}
 #endif // _DEBUG
 			}
@@ -93,77 +99,77 @@ namespace DataStructures
 
 		data_type GetElementFromKey(const key_type &key, int(*cf)(const key_type&, const data_type&) = default_comparison_function) const
 		{
-			int index = GetIndexFromKey(key, cf);
+			bool objectExists;
+			unsigned int index = GetIndexFromKey(key, objectExists, cf);
 #ifdef _DEBUG
-			assert(index > -1);
+			assert(objectExists == true);
 #endif // _DEBUG
 			return orderedList[index];
 		}
 
-		bool GetElementFromKey(const key_type &key, data_type &element, int(*cf)(const key_type&, const data_type&) = default_comparison_function) const
+		bool GetElementFromKey(const key_type &key, data_type &element,
+			int(*cf)(const key_type&, const data_type&) = default_comparison_function) const
 		{
-			int index = GetIndexFromKey(key, cf);
-			if (index > -1)
-			{
-				element = orderedList[index];
-				return true;
-			}
-			else
-				return false;
+			bool objectExists;
+			unsigned int index = GetIndexFromKey(key, objectExists, cf);
+			if (objectExists) element = orderedList[index];
+			return objectExists;
 		}
 
-		int Insert(const key_type &key, const data_type &data, bool assertOnDuplicate,
+		unsigned int Insert(const key_type &key, const data_type &data, bool assertOnDuplicate,
 			int(*cf)(const key_type&, const data_type&) = default_comparison_function)
 		{
 			(void)assertOnDuplicate;
-			int index = GetIndexFromKey(key, cf);
+			bool objectExists;
+			unsigned index = GetIndexFromKey(key, objectExists, cf);
 
 			// Don't allow duplicate insertion.
-			if (index > -1)
+			if (objectExists)
 			{
 				// This is usually a bug!
 				assert(assertOnDuplicate == false);
-				return -1;
+				return (unsigned)-1;
 			}
 
-			if (index >= (int)orderedList.Size())
+			if (index >= orderedList.Size())
 			{
 				orderedList.InsertAtLast(data);
 				return orderedList.Size() - 1;
 			}
 			else
 			{
-				orderedList.InsertAtIndex(data, (unsigned int)index);
+				orderedList.InsertAtIndex(data, index);
 				return index;
 			}
 		}
 
-		int Remove(const key_type &key, int(*cf)(const key_type&, const data_type&) = default_comparison_function)
+		unsigned int Remove(const key_type &key, int(*cf)(const key_type&, const data_type&) = default_comparison_function)
 		{
-			int index = GetIndexFromKey(key, cf);
+			bool objectExists;
+			unsigned int index = GetIndexFromKey(key, objectExists, cf);
 
 			// Can't find the element to remove if this assert hits
-			if (index == -1)
+			if (!objectExists)
 			{
-				assert(index > -1);
-				return -1;
+				assert(objectExists == true);
+				return 0;
 			}
-			orderedList.RemoveAtIndex((unsigned int)index);
+			orderedList.RemoveAtIndex(index);
 			return index;
 		}
 
 		int RemoveIfExists(const key_type &key, int(*cf)(const key_type&, const data_type&) = default_comparison_function)
 		{
-			int index = GetIndexFromKey(key, cf);
+			bool objectExists;
+			unsigned int index = GetIndexFromKey(key, objectExists, cf);
 
 			// Can't find the element to remove if this assert hits
-			if (index == -1)
+			if (!objectExists)
 			{
-				assert(index > -1);
-				return -1;
+				return 0;
 			}
 
-			orderedList.RemoveAtIndex((unsigned int)index);
+			orderedList.RemoveAtIndex(index);
 			return index;
 		}
 

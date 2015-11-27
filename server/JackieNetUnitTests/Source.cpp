@@ -229,6 +229,7 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
 #include "JackieNet/ArrayList.h"
+#include "JackieNet/OrderArrayList.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
@@ -305,6 +306,23 @@ static void test_Queue_funcs()
 			list.RemoveAtIndex(i);
 		}
 		int t = list.PopElementAtLast();
+	}
+
+	DataStructures::OrderArrayList<int, int> olist;
+	TIMED_BLOCK(olistTimer, "olist")
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			olist.Insert(i, i, true);
+		}
+
+		olist.Insert(-3, -3, true);
+		olist.RemoveAtIndex(4);
+
+		for (int i = 0; i < 10; i++)
+		{
+			JINFO << olist[i];
+		}
 	}
 }
 

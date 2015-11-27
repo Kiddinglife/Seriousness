@@ -98,7 +98,8 @@ namespace DataStructures
 			if (allocation_size > MAX_COUNT_ELEMENTS_CLEAR || doNotDeallocateSmallBlocks == false)
 			{
 				JACKIE_INET::OP_DELETE_ARRAY(listArray, TRACE_FILE_AND_LINE_);
-				allocation_size = listArray = 0;
+				allocation_size = 0;
+				listArray = 0;
 			}
 			list_size = 0;
 		}
