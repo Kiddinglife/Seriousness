@@ -296,13 +296,13 @@ static void test_Queue_funcs()
 			list.PushElementAtLast(i);
 		}
 
-		list.InsertElementAtIndex(1, 6);
-		list.RemoveElementAtIndex(24);
+		list.InsertAtIndex(1, 6);
+		list.RemoveAtIndex(24);
 		list.ReplaceElementAtIndex(23, 0, 23);
 
 		for (int i = 4; i < 100; i++)
 		{
-			list.RemoveElementAtIndex(i);
+			list.RemoveAtIndex(i);
 		}
 		int t = list.PopElementAtLast();
 	}
@@ -746,11 +746,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 
-//static int testcase = CircularArrayQueueSingleThread;
-//static int testfunc = Test_Queue_funcs;
+static int testcase = CircularArrayQueueSingleThread;
+static int testfunc = Test_Queue_funcs;
 
-static int testcase = ServerApplication_H;
-static int testfunc = AllFuncs;
+//static int testcase = ServerApplication_H;
+//static int testfunc = AllFuncs;
 
 //static int testcase = JackieStream_H;
 //static int testfunc = AllFuncs;
