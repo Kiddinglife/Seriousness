@@ -13,7 +13,7 @@ namespace DataStructures
 		if (va < vb) return -1; if (va == vb) return 0; if (va > vb) return 1;
 	}
 
-	/// \note IMPORTANT! If you use DefaultOrderArrayListComparsionFunc then call IMPLEMENT_DEFAULT_COMPARISON or you will get an unresolved external linker error.
+	///@note IMPORTANT! If you use DefaultOrderArrayListComparsionFunc then call IMPLEMENT_DEFAULT_COMPARISON or you will get an unresolved external linker error.
 	template <class key_type, class data_type,
 		int(*default_comparison_function)(const key_type&, const data_type&) = DefaultOrderArrayListComparsionFunc<key_type, data_type> >
 	class JACKIE_EXPORT OrderArrayList
