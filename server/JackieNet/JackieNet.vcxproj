@@ -193,7 +193,6 @@
     <ClCompile Include="JackieINetSocket.cpp" />
     <ClCompile Include="JackieSimpleMutex.cpp" />
     <ClCompile Include="JACKIE_Thread.cpp" />
-    <ClCompile Include="Map.cpp" />
     <ClCompile Include="NetTime.cpp" />
     <ClCompile Include="NetTypes.cpp" />
     <ClCompile Include="OverrideMemory.cpp" />
