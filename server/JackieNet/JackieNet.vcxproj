@@ -218,6 +218,7 @@
     <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />
     <ClInclude Include="LockFreeQueue.h" />
+    <ClInclude Include="OrderListMap.h" />
     <ClInclude Include="RandomSeedCreator.h" />
     <ClInclude Include="ArraryQueue.h" />
     <ClInclude Include="BasicTypes.h" />

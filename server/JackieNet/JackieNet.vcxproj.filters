@@ -202,5 +202,8 @@
     <ClInclude Include="OrderArrayList.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
+    <ClInclude Include="OrderListMap.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
