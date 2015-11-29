@@ -196,9 +196,6 @@
     <ClInclude Include="JackieString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Map.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="OrderArrayList.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>

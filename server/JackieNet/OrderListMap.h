@@ -33,6 +33,7 @@ namespace DataStructures
 		static int NodeComparisonFunc(const key_type &a, const MapNode &b)
 		{
 			return key_comparison_func(a, b.nodeKey);
+
 		}
 
 	private:

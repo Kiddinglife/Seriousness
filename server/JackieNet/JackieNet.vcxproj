@@ -214,7 +214,6 @@
     <ClInclude Include="JackieBits.h" />
     <ClInclude Include="EasyLog.h" />
     <ClInclude Include="JackieString.h" />
-    <ClInclude Include="Map.h" />
     <ClInclude Include="MessageID.h" />
     <ClInclude Include="IPlugin.h" />
     <ClInclude Include="LockFreeQueue.h" />
