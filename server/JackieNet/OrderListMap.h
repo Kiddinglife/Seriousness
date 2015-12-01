@@ -87,14 +87,98 @@ namespace DataStructures
 			}
 			return *this;
 		}
-
 		inline void Clear(void)
 		{
 			lastSearchIndexValid = false;
 			mapNodeList.Clear(false);
 		}
 
+		data_type& Get(const key_type &key) const
+		{
+			bool objExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objExists);
+#ifdef _DEBUG
+			assert(objExists == true);
+#endif // _DEBUG
+			return mapNodeList[index].nodeData;
+		}
 
+		data_type Pop(const key_type &key)
+		{
+			bool objextExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objextExists);
+#ifdef _DEBUG
+			assert(objextExists == true);
+#endif // _DEBUG
+			data_type tmp = mapNodeList[index].nodeData;
+			mapNodeList.RemoveAtIndex(index);
+			lastSearchIndexValid = false;
+			return tmp;
+		}
+
+		bool Pop(const key_type &key, data_type& data)
+		{
+			bool objextExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objextExists);
+			if (!objextExists)
+				return false;
+
+			data = mapNodeList[index].nodeData;
+			mapNodeList.RemoveAtIndex(index);
+			lastSearchIndexValid = false;
+			return true;
+		}
+
+		// Add if needed
+		void Set(const key_type &key, const data_type &data)
+		{
+			bool objectExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objectExists);
+
+			objectExists ? mapNodeList[index].nodeData = data :
+				mapNodeList.Insert(key, Node(key, data), true);
+		}
+
+		// Must already exist
+		void SetExisting(const key_type &key, const data_type &data)
+		{
+			bool objectExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objectExists);
+			if (!objectExists) return;
+			mapNodeList[index].nodeData = data;
+		}
+		// Must add
+		void SetNew(const key_type &key, const data_type &data)
+		{
+#ifdef _DEBUG
+			bool objectExists;
+			mapNodeList.GetIndexFromKey(key, objectExists);
+			assert(objectExists == false);
+#endif // _DEBUG
+			mapNodeList.Insert(key, Node(key, data), true);
+		}
+
+		bool Has(const key_type &key) const
+		{
+			bool objectExists;
+			mapNodeList.GetIndexFromKey(key, objectExists);
+			return objectExists;
+		}
+		bool Delete(const key_type &key)
+		{
+			bool objectExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objectExists);
+			if (objectExists)
+			{
+				lastSearchIndexValid = false;
+				mapNodeList.RemoveAtIndex(index);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 	};
 }
 #endif
