@@ -14,26 +14,20 @@ namespace DataStructures
 	/// The default comparison has to be first so it can be called as a default parameter.
 	/// It then is followed by MapNode, followed by NodeComparisonFunc
 	template <class key_type>
-	static int defaultMapKeyComparison(const key_type &a, const key_type &b)
+	extern int defaultMapKeyComparison(const key_type &a, const key_type &b)
 	{
 		if (a < b) return -1; if (a == b) return 0; return 1;
 	}
 
 	/// \note IMPORTANT! If you use defaultMapKeyComparison then call IMPLEMENT_DEFAULT_COMPARISON or you will get an unresolved external linker error.
-	template <class key_type, class data_type, int(*key_comparison_func)(const key_type&, const key_type&) = defaultMapKeyComparison<key_type> >
+	template <class key_type, class data_type,
+		int(*key_comparison_func)(const key_type&, const key_type&) = defaultMapKeyComparison<key_type> >
 	class JACKIE_EXPORT OrderListMap
 	{
 	public:
 		static void IMPLEMENT_DEFAULT_COMPARISON(void)
 		{
-			DataStructures::defaultMapKeyComparison<key_type>(key_type(), key_type());
-		}
-
-		// Has to be a static because the comparison callback for DataStructures::OrderedList is a C function
-		static int NodeComparisonFunc(const key_type &a, const MapNode &b)
-		{
-			return key_comparison_func(a, b.nodeKey);
-
+			defaultMapKeyComparison<key_type>(key_type(), key_type());
 		}
 
 	private:
@@ -59,6 +53,13 @@ namespace DataStructures
 				return *this;
 			}
 		};
+
+		/// Has to be a static because the comparison callback 
+		/// for DataStructures::OrderedList is a C function
+		static int NodeComparisonFunc(const key_type &a, const Node &b)
+		{
+			return key_comparison_func(a, b.nodeKey);
+		}
 
 	protected:
 		OrderArrayList< key_type, Node, &OrderListMap::NodeComparisonFunc > mapNodeList;
@@ -179,6 +180,26 @@ namespace DataStructures
 				return false;
 			}
 		}
+
+		inline data_type& operator[] (const unsigned int position) const
+		{
+			return mapNodeList[position].nodeData;
+		}
+
+		inline key_type GetKeyAtIndex(const unsigned int position) const
+		{
+			return mapNodeList[position].nodeKey;
+		}
+		unsigned int GetIndexAtKey(const key_type &key)
+		{
+			bool objectExists;
+			unsigned index = mapNodeList.GetIndexFromKey(key, objectExists);
+			if (objectExists)
+				return index;
+			else
+				assert(objectExists == true);
+		}
+		void RemoveAtIndex(const unsigned index);
 	};
 }
 #endif
