@@ -199,7 +199,16 @@ namespace DataStructures
 			else
 				assert(objectExists == true);
 		}
-		void RemoveAtIndex(const unsigned index);
+		void RemoveAtIndex(const unsigned index)
+		{
+			mapNodeList.RemoveAtIndex(index);
+			lastSearchIndexValid = false;
+		}
+
+		inline unsigned Size(void) const
+		{
+			return mapNodeList.Size();
+		}
 	};
 }
 #endif
