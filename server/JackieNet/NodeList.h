@@ -46,7 +46,10 @@ namespace DataStructures
 		}
 
 	private:
-		CircularList Merge(CircularList L1, CircularList L2);
+		CircularList Merge(CircularList L1, CircularList L2)
+		{
+
+		}
 		CircularList Mergesort(const CircularList& L);
 
 	public:
@@ -404,7 +407,32 @@ namespace DataStructures
 		{
 			if (this->root != 0) this->position = this->root->previous;
 		}
-		void Concatenate(const CircularList& L);
+		void Concatenate(const CircularList& L)
+		{
+			if (L.list_size == 0) return;
+			if (this->list_size == 0) *this = L;
+
+			ListNode* ptr = L.root;
+			this->position = this->root->previous;
+
+			// Cycle through each element in L and add it to the current list
+			for (unsigned int counter = 0; counter < L.list_size; counter++)
+			{
+				// Add item after the current item pointed to
+				Add(ptr->item);
+
+				// Update pointers.  
+				/// Moving ptr keeps the current pointer at the end of the 
+				/// list since the add function does not move the pointer
+				ptr = ptr->next;
+				this->position = this->position->next;
+			}
+		}
+		inline CircularList& operator<<(const CircularList& L)
+		{
+			Concatenate(L);
+			return *this;
+		}
 	};
 
 	template <class LinkedListType>
