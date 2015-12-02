@@ -230,6 +230,7 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/EasyLog.h"
 #include "JackieNet/ArrayList.h"
 #include "JackieNet/OrderArrayList.h"
+#include "JackieNet/OrderListMap.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
@@ -323,6 +324,19 @@ static void test_Queue_funcs()
 		{
 			JINFO << olist[i];
 		}
+	}
+
+	DataStructures::OrderListMap<std::string, int> omap;
+	TIMED_BLOCK(omapTimer, "omap")
+	{
+		omap.Set("set", 1);
+		omap.SetExisting("set", 2);
+		omap.SetNew("SetNew", 3);
+		int setval = omap.Get("set");
+		JINFO << "set = " << setval;
+		setval = omap.Get("SetNew");
+		JINFO << "set = " << setval;
+		omap.Delete("set");
 	}
 }
 

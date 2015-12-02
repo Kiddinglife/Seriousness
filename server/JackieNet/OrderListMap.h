@@ -14,7 +14,7 @@ namespace DataStructures
 	/// The default comparison has to be first so it can be called as a default parameter.
 	/// It then is followed by MapNode, followed by NodeComparisonFunc
 	template <class key_type>
-	extern int defaultMapKeyComparison(const key_type &a, const key_type &b)
+	 int defaultMapKeyComparison(const key_type &a, const key_type &b)
 	{
 		if (a < b) return -1; if (a == b) return 0; return 1;
 	}
