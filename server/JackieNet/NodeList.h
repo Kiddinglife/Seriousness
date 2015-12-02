@@ -26,15 +26,83 @@ namespace DataStructures
 		ListNode *root;
 		ListNode *position;
 		ListNode* FindPointer(const data_type& input);
-    
+
 	private:
 		CircularList Merge(CircularList L1, CircularList L2);
 		CircularList Mergesort(const CircularList& L);
 
 	public:
-		CircularList();
-		~CircularList();
-		CircularList(const CircularList& original_copy);
+		CircularList()
+		{
+			root = position = 0; list_size = 0;
+		}
+		virtual ~CircularList()
+		{
+			Clear();
+		}
+		CircularList(const CircularList& original_copy)
+		{
+			if (original_copy.list_size == 0)
+			{
+				root = 0;
+				position = 0;
+				list_size = 0;
+			}
+			else if (original_copy.list_size == 1)
+			{
+				root = JACKIE_INET::OP_NEW<ListNode>(TRACE_FILE_AND_LINE_);
+				root->next = root;
+				root->previous = root;
+				list_size = 1;
+				position = root;
+				root->item = original_copy.root->item;
+			}
+			else
+			{
+				ListNode *save_position = 0;
+				ListNode *last;
+
+				/// Setup the first part of the root node
+				ListNode * original_copy_pointer = original_copy.root;
+
+				root = JACKIE_INET::OP_NEW<ListNode>(TRACE_FILE_AND_LINE_);
+				position = root;
+				root->item = original_copy.root->item;
+
+				if (original_copy_pointer == original_copy.position)
+					save_position = position;
+
+				do
+				{
+					/// Save the current element
+					last = position;
+					/// Point to the next node in the source list
+					original_copy_pointer = original_copy_pointer->next;
+					/// Create a new node and point position to it
+					position = JACKIE_INET::OP_NEW<ListNode>(TRACE_FILE_AND_LINE_);
+					/// Copy the item to the new node
+					position->item = original_copy_pointer->item;
+					/// find the current position from original copy
+					if (original_copy_pointer == original_copy.position)
+						save_position = position;
+					/// Set the previous pointer for the new node
+					position->previous = last;
+					/// Set the next pointer for the old node to the new node
+					last->next = position;
+				} while (original_copy_pointer->next != original_copy.root);
+
+				/// Complete the circle.  
+				/// Set the next pointer of the newest node to the root 
+				/// and the previous pointer of the root to the newest node
+				position->next = root;
+				root->previous = position;
+				list_size = original_copy.list_size;
+				position = save_position;
+#ifdef _DEBUG
+				assert(position != 0);
+#endif // _DEBUG
+			}
+		}
 		// CircularLinkedList(LinkedList<CircularLinkedListType> original_copy) {CircularLinkedList(original_copy);}  // Converts linked list to circular type
 		bool operator= (const CircularList& original_copy);
 		CircularList& operator++();  // CircularLinkedList A; ++A;
@@ -44,7 +112,7 @@ namespace DataStructures
 		bool IsIn(const data_type& input);
 		bool Find(const data_type& input);
 		void Insert(const data_type& input);
-		data_type& Add(const data_type& input); 
+		data_type& Add(const data_type& input);
 		// Adds after the current position
 		void Replace(const data_type& input);
 		void Del(void);
@@ -58,6 +126,27 @@ namespace DataStructures
 		void End(void);
 		void Concatenate(const CircularList& L);
 	};
+
+	template <class LinkedListType>
+	class LinkedList : public CircularList<LinkedListType>
+	{
+	public:
+		LinkedList(){}
+
+		LinkedList(const LinkedList& original_copy);
+		virtual ~LinkedList();
+		bool operator= (const LinkedList<LinkedListType>& original_copy);
+		LinkedList& operator++();  // LinkedList A; ++A;
+		LinkedList& operator++(int);  // Linked List A; A++;
+		LinkedList& operator--();  // LinkedList A; --A;
+		LinkedList& operator--(int);  // Linked List A; A--;
+
+	private:
+		LinkedList Merge(LinkedList L1, LinkedList L2);
+		LinkedList Mergesort(const LinkedList& L);
+	};
+
+
 }
 
 #endif 
