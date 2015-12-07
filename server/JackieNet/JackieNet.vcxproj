@@ -207,7 +207,7 @@
     <ClInclude Include="980easylogging++.h" />
     <ClInclude Include="ArrayList.h" />
     <ClInclude Include="atomic_ops.h" />
-    <ClInclude Include="NodeList.h" />
+    <ClInclude Include="DoubleLinkedList.h" />
     <ClInclude Include="OrderArrayList.h" />
     <ClInclude Include="JackieINetVersion.h" />
     <ClInclude Include="JackieSlidingWindows.h" />

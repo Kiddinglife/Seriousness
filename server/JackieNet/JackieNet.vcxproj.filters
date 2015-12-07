@@ -202,7 +202,7 @@
     <ClInclude Include="OrderListMap.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="NodeList.h">
+    <ClInclude Include="DoubleLinkedList.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

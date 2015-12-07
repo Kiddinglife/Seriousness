@@ -1,6 +1,6 @@
 /// circular linked list
-#ifndef __NODE_LIST_H__
-#define __NODE_LIST_H__
+#ifndef __DoubleLinkedList_H__
+#define __DoubleLinkedList_H__
 
 #include "DLLExport.h"
 #include "OverrideMemory.h"
@@ -24,7 +24,7 @@ namespace DataStructures
 	protected:
 		unsigned int list_size;
 		ListNode *root;
-		ListNode *position;
+		ListNode *position; /// cursor
 		ListNode* FindPointer(const data_type& input)
 		{
 			if (list_size == 0)
@@ -46,11 +46,44 @@ namespace DataStructures
 		}
 
 	private:
-		CircularList Merge(CircularList L1, CircularList L2)
+		CircularList Merge(CircularList& L1, CircularList& L2)
 		{
+			CircularList X;
+			data_type element;
+			L1.position = L1.root;
+			L2.position = L2.root;
+
 
 		}
-		CircularList Mergesort(const CircularList& L);
+		CircularList Mergesort(const CircularList& L)
+		{
+			unsigned int counter;
+			unsigned int list_size = L.list_size;
+			ListNode* location = L.root;
+
+			CircularList L1;
+			CircularList L2;
+
+			// Split the list into two equal size sublists, L1 and L2
+			for (counter = 0; counter < list_size / 2; counter++)
+			{
+				L1.Add(location->item);
+				location = location->next;
+			}
+
+			for (; counter < list_size; counter++)
+			{
+				L2.Add(location->item);
+				location = location->next;
+			}
+
+			//Recursively sort the sublists
+			if (L1.list_size > 1) L1 = Mergesort(L1);
+			if (L2.list_size > 1) L2 = Mergesort(L2);
+
+			// Merge the two sublists
+			return Merge(L1, L2);
+		}
 
 	public:
 		CircularList()
@@ -236,7 +269,7 @@ namespace DataStructures
 			else
 				return false; // Can't find the item don't do anything
 		}
-		/// insert new element in front of @position
+		/// insert new element in front of cursor
 		void Insert(const data_type& input)
 		{
 			if (list_size == 0)
@@ -281,7 +314,7 @@ namespace DataStructures
 				list_size++;
 			}
 		}
-		/// Add new element in bebind of @position
+		/// Add new element in bebind of cursor, cursor points to the root node
 		data_type& Add(const data_type& input)
 		{
 			if (this->list_size == 0)
@@ -350,15 +383,16 @@ namespace DataStructures
 				list_size--;
 			}
 		}
-
 		inline unsigned int Size(void)
 		{
 			return list_size;
 		}
+		/// return the cursor item
 		inline data_type& Peek(void)
 		{
 			return position->item;
 		}
+		/// return and del the cursor item
 		data_type Pop(void)
 		{
 			data_type element = Peek();
@@ -370,6 +404,7 @@ namespace DataStructures
 			data = Peek();
 			Del();
 		}
+		/// free memory and reset to empty
 		void Clear(void)
 		{
 			if (list_size == 0)
@@ -399,10 +434,12 @@ namespace DataStructures
 		{
 
 		}
+		/// move cursor to root
 		inline void Beginning(void)
 		{
 			if (this->root != 0) this->position = this->root;
 		}
+		/// move cursor to end
 		inline void End(void)
 		{
 			if (this->root != 0) this->position = this->root->previous;
