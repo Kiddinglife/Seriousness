@@ -231,6 +231,7 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/ArrayList.h"
 #include "JackieNet/OrderArrayList.h"
 #include "JackieNet/OrderListMap.h"
+#include "JackieNet/DoubleLinkedList.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
@@ -272,7 +273,7 @@ static void test_Queue_funcs()
 		}
 		for (unsigned int i = 0; i < lockfree.Size(); i++)
 		{
-			printf_s("%d, ", lockfree[i]);
+			//printf_s("%d, ", lockfree[i]);
 		}
 	}
 
@@ -322,7 +323,7 @@ static void test_Queue_funcs()
 
 		for (int i = 0; i < 10; i++)
 		{
-			JINFO << olist[i];
+			//JINFO << olist[i];
 		}
 	}
 
@@ -333,10 +334,28 @@ static void test_Queue_funcs()
 		omap.SetExisting("set", 2);
 		omap.SetNew("SetNew", 3);
 		int setval = omap.Get("set");
-		JINFO << "set = " << setval;
+		//JINFO << "set = " << setval;
 		setval = omap.Get("SetNew");
-		JINFO << "set = " << setval;
+		//JINFO << "set = " << setval;
 		omap.Delete("set");
+	}
+
+	DataStructures::CircularList<int> linkedlist;
+	TIMED_BLOCK(LinkedlisttIMER, "linkedlist")
+	{
+		linkedlist.Beginning();
+		linkedlist.Add(4);
+		linkedlist.Add(3);
+		linkedlist.Add(2);
+		linkedlist.Add(1);
+		linkedlist.Sort();
+
+		for (size_t i = 0; i < linkedlist.Size(); i++)
+		{
+			printf("%d ", linkedlist.Peek());
+			linkedlist++;
+		}
+		printf("\n");
 	}
 }
 

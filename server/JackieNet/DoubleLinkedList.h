@@ -8,10 +8,10 @@
 namespace DataStructures
 {
 	template <class LinkedListType>
-	class JACKIE_EXPORT LinkedList;
+	class  LinkedList;
 
 	template <class data_type>
-	class CircularList
+	class JACKIE_EXPORT CircularList
 	{
 	private:
 		struct ListNode
@@ -52,8 +52,33 @@ namespace DataStructures
 			data_type element;
 			L1.position = L1.root;
 			L2.position = L2.root;
+			while ((L1.list_size != 0) && (L2.list_size != 0))
+			{
+				// Compare the first items of L1 and L2
+				// Remove the smaller of the two items from the list
+				if (L1.root->item < L2.root->item)
+				{
+					element = L1.root->item;
+					L1.Del();
+				}
+				else
+				{
+					element = L2.root->item;
+					L2.Del();
+				}
 
+				// Add this item to the end of X
+				X.Add(element);
+				X++;
+			}
 
+			// Add the remaining list to X
+			if (L1.list_size != 0)
+				X.Concatenate(L1);
+			else
+				X.Concatenate(L2);
+
+			return X;
 		}
 		CircularList Mergesort(const CircularList& L)
 		{
@@ -85,6 +110,62 @@ namespace DataStructures
 			return Merge(L1, L2);
 		}
 
+		ListNode* MergeFixed(const ListNode* left, const ListNode* right)
+		{
+			// Compare the first items of L1 and L2
+			// change link
+			if (left != right && left->item > right->item)
+			{
+				left->next = right->next;
+				right->next->previous = left;
+
+				left->previous->next = right;
+				right->previous = left->previous;
+
+				left->previous = right;
+				right->next = left;
+
+				left = right;
+			}
+			return left;
+		}
+		void MergeSortFixed(const ListNode* left = 0, const ListNode* right = 0, unsigned int count = 0)
+		{
+			if (left == right && left != 0)
+			{
+				if (left == 0) left = L.root;
+				if (right == 0) right = L.root->next;
+				if (count == 0) count = L.list_size;
+
+				ListNode* r = right;
+
+				// Split the list into two equal size sublists, L1 and L2
+				size_t i;
+				for (i = 0; i < count / 2; i++)
+				{
+					right = right->previous;
+				}
+
+				//Recursively sort the sublists
+				//if (left->next != right || right->previous != left)
+				//	MergeSortFixed(left, right, count - i);
+
+				if (left != right && (count - i) > 1)
+					MergeSortFixed(left, right, count - i);
+
+				//if (right->next->next != r || r->previous != right->next || right->next != r)
+				//	MergeSortFixed(left, right, i);
+				ListNode* l = left;
+				left = right->next;
+				right = r;
+				if (left != right && i > 1)
+				{
+					MergeSortFixed(left, right, i);
+				}
+			}
+			// Merge the two sublists
+			return MergeFixed(l, right);
+		}
 	public:
 		CircularList()
 		{
@@ -432,7 +513,10 @@ namespace DataStructures
 		}
 		void Sort(void)
 		{
-
+			if (this->list_size <= 1) return;
+			// Call equal operator to assign result of mergesort to current object
+			*this = Mergesort(*this);
+			this->position = this->root;
 		}
 		/// move cursor to root
 		inline void Beginning(void)
@@ -473,7 +557,7 @@ namespace DataStructures
 	};
 
 	template <class LinkedListType>
-	class LinkedList : public CircularList<LinkedListType>
+	class JACKIE_EXPORT LinkedList : public CircularList<LinkedListType>
 	{
 	public:
 		LinkedList(){}
