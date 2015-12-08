@@ -356,6 +356,19 @@ static void test_Queue_funcs()
 			linkedlist++;
 		}
 		printf("\n");
+		DCHECK(linkedlist.Has(3));
+		DCHECK(linkedlist.Find(3));
+		linkedlist.Del();
+		DCHECK(linkedlist.Has(3)==false);
+		linkedlist.Find(4);
+		linkedlist.Replace(-1);
+		linkedlist.Beginning();
+		for (size_t i = 0; i < linkedlist.Size(); i++)
+		{
+			printf("%d ", linkedlist.Peek());
+			linkedlist++;
+		}
+		printf("\n");
 	}
 }
 
