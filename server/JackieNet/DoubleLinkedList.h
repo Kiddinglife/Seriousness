@@ -110,61 +110,96 @@ namespace DataStructures
 			return Merge(L1, L2);
 		}
 
-		ListNode* MergeFixed(const ListNode* left, const ListNode* right)
+		void MergeFixed(const ListNode*& left, const ListNode*& right,
+			unsigned int left_size, unsigned int right_size)
 		{
 			// Compare the first items of L1 and L2
 			// change link
-			if (left != right && left->item > right->item)
+			//if (left == mid == right)
+			//	return left;
+			unsigned int count = right_size;
+			ListNode* rightSubListLeft = right;
+			while (count > 1)
 			{
-				left->next = right->next;
-				right->next->previous = left;
-
-				left->previous->next = right;
-				right->previous = left->previous;
-
-				left->previous = right;
-				right->next = left;
-
-				left = right;
+				rightSubListLeft = right->previous;
+				count--;
 			}
-			return left;
+
+			count = left_size;
+			ListNode* leftSubListRight = left;
+			while (count > 1)
+			{
+				leftSubListRight = left->next;
+				count--;
+			}
+
+			if (left_size == right_size == 1 && left->item <= right->item)
+			{
+				return;
+			}
+
+			ListNode* Leftt = left;
+			ListNode* subListLeft = 0;
+			while (left_size != 0 && right_size != 0)
+			{
+				if (left->item >= right->item)
+				{
+					if (subListLeft == 0)
+						subListLeft = right;
+
+					/// update linkages
+					left->previous->next = right;
+					
+
+
+					right = right->next;
+					right_size--;
+				}
+				else
+				{
+					left = left->next;
+					left_size--;
+				}
+			}
+			left = Leftt;
 		}
-		void MergeSortFixed(const ListNode* left = 0, const ListNode* right = 0, unsigned int count = 0)
+
+		void MergeSortFixed(const ListNode* leftSubListLeft = 0,
+			const ListNode* leftSubListRight = 0,
+			unsigned int count = 0)
 		{
-			if (left == right && left != 0)
+			if (leftSubListLeft == 0) leftSubListLeft = L.root;
+			if (leftSubListRight == 0) leftSubListRight = L.root->next;
+			if (count == 0) count = L.list_size;
+
+			ListNode* rightSubListRight = leftSubListRight;
+			// Split the list into two equal size sublists, left and right
+			unsigned int rightSubListSize;
+			for (rightSubListSize = 0; rightSubListSize < count / 2; rightSubListSize++)
 			{
-				if (left == 0) left = L.root;
-				if (right == 0) right = L.root->next;
-				if (count == 0) count = L.list_size;
-
-				ListNode* r = right;
-
-				// Split the list into two equal size sublists, L1 and L2
-				size_t i;
-				for (i = 0; i < count / 2; i++)
-				{
-					right = right->previous;
-				}
-
-				//Recursively sort the sublists
-				//if (left->next != right || right->previous != left)
-				//	MergeSortFixed(left, right, count - i);
-
-				if (left != right && (count - i) > 1)
-					MergeSortFixed(left, right, count - i);
-
-				//if (right->next->next != r || r->previous != right->next || right->next != r)
-				//	MergeSortFixed(left, right, i);
-				ListNode* l = left;
-				left = right->next;
-				right = r;
-				if (left != right && i > 1)
-				{
-					MergeSortFixed(left, right, i);
-				}
+				leftSubListRight = leftSubListRight->previous;
 			}
+
+			//Recursively sort the sublists
+			//if (left->next != right || right->previous != left)
+			//	MergeSortFixed(left, right, count - i);
+			unsigned int leftSubListSize = count - rightSubListSize;
+			if (leftSubListLeft != leftSubListRight && leftSubListSize > 1)
+			{
+				MergeSortFixed(leftSubListLeft, leftSubListRight, leftSubListSize);
+			}
+
+			//if (right->next->next != r || r->previous != right->next || right->next != r)
+			//	MergeSortFixed(left, right, i);
+
+			ListNode* rightSubListLeft = leftSubListRight->next;
+			if (leftSubListLeft != leftSubListRight && rightSubListSize > 1)
+			{
+				MergeSortFixed(rightSubListLeft, rightSubListRight, rightSubListSize);
+			}
+
 			// Merge the two sublists
-			return MergeFixed(l, right);
+			MergeFixed(leftSubListLeft, rightSubListRight, leftSubListSize, rightSubListSize);
 		}
 	public:
 		CircularList()
@@ -554,6 +589,10 @@ namespace DataStructures
 			Concatenate(L);
 			return *this;
 		}
+
+		ListNode * Root() const { return root; }
+		ListNode * Cursor() const { return position; }
+		void Cursor(ListNode * val) { position = val; }
 	};
 
 	template <class LinkedListType>
