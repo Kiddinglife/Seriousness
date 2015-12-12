@@ -1,7 +1,7 @@
 #ifndef __ORDER__LIST_MAP_H__
 #define __ORDER__LIST_MAP_H__
 
-#include "OrderArrayList.h"
+#include "OrderArray.h"
 #include "DLLExport.h"
 #include "OverrideMemory.h"
 
@@ -62,7 +62,7 @@ namespace DataStructures
 		}
 
 	protected:
-		OrderArrayList< key_type, Node, &OrderListMap::NodeComparisonFunc > mapNodeList;
+		OrderArray< key_type, Node, &OrderListMap::NodeComparisonFunc > mapNodeList;
 		unsigned int lastSearchIndex;
 		key_type lastSearchKey;
 		bool lastSearchIndexValid;

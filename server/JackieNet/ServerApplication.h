@@ -24,7 +24,7 @@
 //#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
 #include "ArraryQueue.h"
-#include "ArrayList.h"
+#include "Array.h"
 #include "LockFreeQueue.h"
 #include "MemoryPool.h"
 #include "IPlugin.h"
@@ -200,7 +200,7 @@ namespace JACKIE_INET
 
 		// Threadsafe, and not thread safe
 		LockFreeQueue<IPlugin*> pluginListTS;
-		ArrayList<IPlugin*> pluginListNTS;
+		Array<IPlugin*> pluginListNTS;
 
 	public:
 		/// only user thread pushtail into the queue, other threads only read it so no need lock

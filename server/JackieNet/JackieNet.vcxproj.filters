@@ -190,19 +190,19 @@
     <ClInclude Include="JackieSlidingWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArrayList.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="JackieString.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OrderArrayList.h">
-      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="OrderListMap.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="DoubleLinkedList.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="Array.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="OrderArray.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

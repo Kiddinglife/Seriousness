@@ -1,3 +1,9 @@
+/// \file ArrayList.h
+/// \internal
+/// \brief similar to std::vector
+/// \details Usually the Queue class is used instead,
+/// since it has all the same functionality and is only worse at random access.
+///
 #ifndef __ARRARY_LIST_H__
 #define __ARRARY_LIST_H__
 
@@ -16,8 +22,9 @@ namespace DataStructures
 {
 	/// @brief Array based implementation of a list.
 	/// @note ONLY USE THIS FOR SHALLOW COPIES.  I don't bother with operator= to improve performance.
+	/// Slow Insert and remove middle element but fast to random get the element by index
 	template <class ElementType, unsigned int QUEUE_INIT_SIZE = 32>
-	class JACKIE_EXPORT ArrayList
+	class JACKIE_EXPORT Array
 	{
 	private:
 		/// An array of user values
@@ -28,8 +35,8 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 	public:
-		ArrayList() : allocation_size(0), listArray(0), list_size(0){}
-		~ArrayList()
+		Array() : allocation_size(0), listArray(0), list_size(0){}
+		~Array()
 		{
 			if (allocation_size > 0)
 			{
@@ -38,7 +45,7 @@ namespace DataStructures
 			}
 		}
 
-		ArrayList(const ArrayList& original_copy)
+		Array(const Array& original_copy)
 		{
 			/// allocate memory for copying the elements from @param original_copy
 			if (original_copy.list_size == 0)
@@ -56,7 +63,7 @@ namespace DataStructures
 
 			list_size = allocation_size = original_copy.list_size;
 		}
-		ArrayList<ElementType>& operator= (const ArrayList& originalCopy)
+		Array<ElementType>& operator= (const Array& originalCopy)
 		{
 			if (this == &originalCopy) return *this;
 
@@ -146,7 +153,7 @@ namespace DataStructures
 		/// @brief Pop an element from the end of the stack.
 		/// @pre Size()>0
 		/// @return The element at the end. 
-		inline ElementType& PopElementAtLast(void)
+		inline ElementType& PopAtLast(void)
 		{
 #ifdef _DEBUG
 			assert(list_size > 0);
@@ -157,7 +164,7 @@ namespace DataStructures
 
 		/// @brief Push an element at the end of the stack.
 		/// @param[in] input The new element. 
-		inline void PushElementAtLast(const ElementType &input)
+		inline void PushAtLast(const ElementType &input)
 		{
 			InsertAtLast(input);
 		}
@@ -241,7 +248,7 @@ namespace DataStructures
 		/// @param[in] input The element to replace at position @em position. 
 		/// @param[in] filler The element use to fill new allocated capacity. 
 		/// @param[in] position The position of input in the list. 		
-		void ReplaceElementAtIndex(const ElementType &input, const ElementType filler, const unsigned int position)
+		void ReplaceAtIndex(const ElementType &input, const ElementType filler, const unsigned int position)
 		{
 			if (list_size > 0 && position < list_size)
 			{
@@ -282,7 +289,7 @@ namespace DataStructures
 
 		/// @brief Replace the last element of the list by @a input.
 		/// @param[in] input The element used to replace the last element. 
-		inline void ReplaceElementAtLast(const ElementType &input)
+		inline void ReplaceAtLast(const ElementType &input)
 		{
 			if (list_size > 0)
 				listArray[list_size - 1] = input;

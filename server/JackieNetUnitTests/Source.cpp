@@ -228,8 +228,8 @@ static void test_MemoryPool_funcs()
 #include "JackieNet/ArraryQueue.h"
 #include "JackieNet/LockFreeQueue.h"
 #include "JackieNet/EasyLog.h"
-#include "JackieNet/ArrayList.h"
-#include "JackieNet/OrderArrayList.h"
+#include "JackieNet/Array.h"
+#include "JackieNet/OrderArray.h"
 #include "JackieNet/OrderListMap.h"
 #include "JackieNet/DoubleLinkedList.h"
 
@@ -282,35 +282,35 @@ static void test_Queue_funcs()
 	{
 		for (int i = 0; i < 100000; i++)
 		{
-			queuee.PushTail(i);
+			queuee.Enqueue(i);
 		}
 		for (int i = 0; i < 100000; i++)
 		{
 			int t;
-			queuee.PopHead(t);
+			queuee.Dequeue(t);
 		}
 	}
 
-	DataStructures::ArrayList<int, 100001> list;
+	DataStructures::Array<int, 100001> list;
 	TIMED_BLOCK(ListTimer, "ListTimer")
 	{
 		for (int i = 0; i < 5000; i++)
 		{
-			list.PushElementAtLast(i);
+			list.PushAtLast(i);
 		}
 
 		list.InsertAtIndex(1, 6);
 		list.RemoveAtIndex(24);
-		list.ReplaceElementAtIndex(23, 0, 23);
+		list.ReplaceAtIndex(23, 0, 23);
 
 		for (int i = 4; i < 100; i++)
 		{
 			list.RemoveAtIndex(i);
 		}
-		int t = list.PopElementAtLast();
+		int t = list.PopAtLast();
 	}
 
-	DataStructures::OrderArrayList<int, int> olist;
+	DataStructures::OrderArray<int, int> olist;
 	TIMED_BLOCK(olistTimer, "olist")
 	{
 		for (int i = 0; i < 10; i++)
@@ -359,7 +359,7 @@ static void test_Queue_funcs()
 		DCHECK(linkedlist.Has(3));
 		DCHECK(linkedlist.Find(3));
 		linkedlist.Del();
-		DCHECK(linkedlist.Has(3)==false);
+		DCHECK(linkedlist.Has(3) == false);
 		linkedlist.Find(4);
 		linkedlist.Replace(-1);
 		linkedlist.Beginning();
@@ -367,6 +367,46 @@ static void test_Queue_funcs()
 		{
 			printf("%d ", linkedlist.Peek());
 			linkedlist++;
+		}
+		printf("\n");
+	}
+
+	DataStructures::ArrayCircularList<int, 1000> arrayCircularList;
+	TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
+	{
+		arrayCircularList.Insert(2);
+		arrayCircularList.Insert(3);
+		arrayCircularList.Insert(8);
+
+		bool flag = arrayCircularList.Contains(8);
+		DCHECK(flag == true);
+		flag = arrayCircularList.Contains(13);
+		DCHECK(flag == false);
+
+		arrayCircularList.Remove();
+		flag = arrayCircularList.Contains(8);
+		DCHECK(flag == false);
+
+		arrayCircularList.Remove(2);
+		flag = arrayCircularList.Contains(3);
+		DCHECK(flag == false);
+
+		arrayCircularList.Insert(1, 3);
+		arrayCircularList.Insert(1, 8);
+
+		flag = arrayCircularList.Contains(8);
+		DCHECK(flag == true);
+		flag = arrayCircularList.Contains(3);
+		DCHECK(flag == true);
+
+		printf("ArrayCircularList Elements(%d):\n", arrayCircularList.Size());
+		int j = 0;
+		int i = arrayCircularList.space[1000 - 1].cur;
+		while (i)
+		{
+			printf("%d ", arrayCircularList.space[i]);
+			i = arrayCircularList.space[i].cur;
+			j++;
 		}
 		printf("\n");
 	}

@@ -10,6 +10,7 @@ namespace DataStructures
 	template <class LinkedListType>
 	class  LinkedList;
 
+	/// will dynalically allocate list node by new
 	template <class data_type>
 	class JACKIE_EXPORT CircularList
 	{
@@ -80,11 +81,11 @@ namespace DataStructures
 
 			return X;
 		}
-		CircularList Mergesort(const CircularList& L)
+		CircularList Mergesort(const CircularList& space)
 		{
 			unsigned int counter;
-			unsigned int list_size = L.list_size;
-			ListNode* location = L.root;
+			unsigned int list_size = space.list_size;
+			ListNode* location = space.root;
 
 			CircularList L1;
 			CircularList L2;
@@ -149,7 +150,7 @@ namespace DataStructures
 
 					/// update linkages
 					left->previous->next = right;
-					
+
 
 
 					right = right->next;
@@ -168,9 +169,9 @@ namespace DataStructures
 			const ListNode* leftSubListRight = 0,
 			unsigned int count = 0)
 		{
-			if (leftSubListLeft == 0) leftSubListLeft = L.root;
-			if (leftSubListRight == 0) leftSubListRight = L.root->next;
-			if (count == 0) count = L.list_size;
+			if (leftSubListLeft == 0) leftSubListLeft = space.root;
+			if (leftSubListRight == 0) leftSubListRight = space.root->next;
+			if (count == 0) count = space.list_size;
 
 			ListNode* rightSubListRight = leftSubListRight;
 			// Split the list into two equal size sublists, left and right
@@ -563,16 +564,16 @@ namespace DataStructures
 		{
 			if (this->root != 0) this->position = this->root->previous;
 		}
-		void Concatenate(const CircularList& L)
+		void Concatenate(const CircularList& space)
 		{
-			if (L.list_size == 0) return;
-			if (this->list_size == 0) *this = L;
+			if (space.list_size == 0) return;
+			if (this->list_size == 0) *this = space;
 
-			ListNode* ptr = L.root;
+			ListNode* ptr = space.root;
 			this->position = this->root->previous;
 
-			// Cycle through each element in L and add it to the current list
-			for (unsigned int counter = 0; counter < L.list_size; counter++)
+			// Cycle through each element in space and add it to the current list
+			for (unsigned int counter = 0; counter < space.list_size; counter++)
 			{
 				// Add item after the current item pointed to
 				Add(ptr->item);
@@ -584,9 +585,9 @@ namespace DataStructures
 				this->position = this->position->next;
 			}
 		}
-		inline CircularList& operator<<(const CircularList& L)
+		inline CircularList& operator<<(const CircularList& space)
 		{
-			Concatenate(L);
+			Concatenate(space);
 			return *this;
 		}
 
@@ -611,10 +612,123 @@ namespace DataStructures
 
 	private:
 		LinkedList Merge(LinkedList L1, LinkedList L2);
-		LinkedList Mergesort(const LinkedList& L);
+		LinkedList Mergesort(const LinkedList& space);
 	};
 
+	/// Usually should use this
+	/// have all functions same to CircularList and LinkedList, 
+	///but faster because no need to allocate new node by new call 
+	/// and never free  allocated memory to avoid memory fragments
+	/// on the runtime.
+	template <class ElemType, unsigned int MAXSIZE = 32>
+	class JACKIE_EXPORT ArrayCircularList
+	{
+	private:
+		int size;
 
+		/// 若备用空间链表非空，则返回分配的结点下标，否则返回0 
+		inline int Malloc_SSL(void)
+		{
+			int i = space[0].cur; /// 当前数组第一个元素的cur存的值  就是要返回的第一个备用空闲的下标 
+			if (space[0].cur) space[0].cur = space[i].cur;  /// 由于要拿出一个分量来使用了，所以我们就得把它的下一个 分量用来做备用 
+			return i;
+		}
+
+		/// 将下标为k的空闲结点回收到备用链表 
+		inline void Free_SSL(int k)
+		{
+			space[k].cur = space[0].cur;    /// 把第一个元素的cur值赋给要删除的分量cur */
+			space[0].cur = k;               /// 把要删除的分量下标赋值给第一个元素的cur */
+		}
+
+	public:
+		struct ListNode
+		{
+			ElemType data;
+			int cur; /* 0 means no element to be pointed to */
+		};
+
+		ListNode* space;
+
+		ArrayCircularList()
+		{
+			space = JACKIE_INET::OP_NEW_ARRAY<ListNode>(MAXSIZE,TRACE_FILE_AND_LINE_);
+			for (int i = 0; i < MAXSIZE - 1; i++)
+			{
+				space[i].cur = i + 1;
+			}
+			size = space[MAXSIZE - 1].cur = 0; /// 目前静态链表为空，最后一个元素的cur为0 
+		}
+		virtual ~ArrayCircularList()
+		{
+			JACKIE_INET::OP_DELETE_ARRAY(space, TRACE_FILE_AND_LINE_);
+		}
+
+		/// 初始条件：静态链表space已存在。操作结果：返回space中数据元素个数 */
+		inline int Size(void)
+		{
+			return size;
+		}
+
+		/// 在space中第i个元素之前插入新的数据元素e  
+		bool Insert(int i, const ElemType& e)
+		{
+			int j, k, l;
+			k = MAXSIZE - 1;   /* 注意k首先是最后一个元素的下标 */
+			if (i < 1 || i > Size() + 1) return false;
+
+			j = Malloc_SSL();   /* 获得空闲分量的下标 */
+			if (j)
+			{
+				space[j].data = e;   /* 将数据赋值给此分量的data */
+				for (l = 1; l <= i - 1; l++)   /* 找到第i个元素之前的位置 */
+					k = space[k].cur;
+				space[j].cur = space[k].cur;    /* 把第i个元素之前的cur赋值给新元素的cur */
+				space[k].cur = j;           /* 把新元素的下标赋值给第i个元素之前元素的ur */
+				size++;
+				return true;
+			}
+			return false;
+		}
+
+		/// 在space中最后元素之后插入新的数据元素e  
+		bool Insert(const ElemType& e)
+		{
+			return Insert(size+1, e);
+		}
+
+		/// 删除在space中第i个数据元素 
+		bool Remove(int i)
+		{
+			int j, k;
+			if (i < 1 || i > Size())
+				return false;
+			k = MAXSIZE - 1;
+			for (j = 1; j <= i - 1; j++)
+				k = space[k].cur;
+			j = space[k].cur;
+			space[k].cur = space[j].cur;
+			Free_SSL(j);
+			size--;
+			return true;
+		}
+		/// remove last elment
+		inline bool Remove(void)
+		{
+			return Remove(size);
+		}
+
+		bool Contains(const ElemType& e)
+		{
+			int i = space[MAXSIZE - 1].cur;
+			while (i)
+			{
+				if (space[i].data == e) return true;
+				i = space[i].cur;
+			}
+			return false;
+		}
+	};
 }
 
 #endif 
@@ -646,7 +760,7 @@ namespace DataStructures
 *   on item found, false otherwise
 * - sort: Sorts the elements of the list with a mergesort and sets the
 *   current pointer to the first element
-* - concatenate(list L): This appends L to the current list
+* - concatenate(list space): This appends space to the current list
 * - ++(prefix): moves the pointer one element up in the list and returns the
 *   appropriate copy of the element in the list
 * - --(prefix): moves the pointer one element back in the list and returns

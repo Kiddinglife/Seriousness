@@ -164,7 +164,7 @@ namespace JACKIE_INET
 		for (index = 0; index < bindLocalSocketsCount; index++)
 		{
 			do { sock = JISAllocator::AllocJIS(); } while (sock == 0);
-			DCHECK_EQ(bindedSockets.PushTail(sock), true);
+			DCHECK_EQ(bindedSockets.Enqueue(sock), true);
 
 #if defined(__native_client__)
 			NativeClientBindParameters ncbp;
@@ -1506,7 +1506,7 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "User Thread Cancel Connection Request To " << target.ToString();
 		connReqCancelQLock.Lock();
-		DCHECK_EQ(connReqCancelQ.PushTail(target), true);
+		DCHECK_EQ(connReqCancelQ.Enqueue(target), true);
 		connReqCancelQLock.Unlock();
 	}
 
@@ -1588,7 +1588,7 @@ namespace JACKIE_INET
 				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
 			}
 		}
-		DCHECK_EQ(connReqQ.PushTail(connReq), true);
+		DCHECK_EQ(connReqQ.Enqueue(connReq), true);
 		connReqCancelQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;

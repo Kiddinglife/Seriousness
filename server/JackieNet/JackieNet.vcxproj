@@ -205,10 +205,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="980easylogging++.h" />
-    <ClInclude Include="ArrayList.h" />
+    <ClInclude Include="Array.h" />
     <ClInclude Include="atomic_ops.h" />
     <ClInclude Include="DoubleLinkedList.h" />
-    <ClInclude Include="OrderArrayList.h" />
+    <ClInclude Include="OrderArray.h" />
     <ClInclude Include="JackieINetVersion.h" />
     <ClInclude Include="JackieSlidingWindows.h" />
     <ClInclude Include="JackieSpinLock.h" />

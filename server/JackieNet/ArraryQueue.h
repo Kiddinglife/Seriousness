@@ -82,7 +82,8 @@ namespace DataStructures
 			return true;
 		}
 
-		bool PushTail(const queue_type& input)
+		/// enqueue at tail of queue
+		bool Enqueue(const queue_type& input)
 		{
 			if (allocation_size == 0)
 			{
@@ -131,12 +132,26 @@ namespace DataStructures
 			}
 			return true;
 		}
-		bool PushHead(const queue_type& input, unsigned index)
+		bool Dequeue(queue_type& ele)
+		{
+#ifdef _DEBUG
+			assert(head != tail);
+#endif // _DEBUG
+			if (head == tail) return false;
+
+			if (++head == allocation_size) head = 0;
+			if (head == 0) ele = queueArrary[allocation_size - 1];
+			ele = queueArrary[head - 1];
+			return true;
+		}
+
+		/// enqueue at the front of queue that is slow operation
+		bool InsertAtIndex(const queue_type& input, unsigned index)
 		{
 			assert(index <= Size());
 
 			// Just force a reallocation, will be overwritten
-			if (!PushTail(input)) return false;
+			if (!Enqueue(input)) return false;
 			if (Size() == 1) return false;
 
 			/// move all elments after index
@@ -172,17 +187,8 @@ namespace DataStructures
 			queueArrary[trueWriteIndex] = input;
 			return true;
 		}
-
-		// Not a normal thing you do with a queue but can be used for efficiency
-		queue_type& operator[] (unsigned int position) const
-		{
-			assert(position < Size());
-			return head + position >= allocation_size ?
-				queueArrary[head + position - allocation_size] :
-				queueArrary[head + position];
-		}
-
 		/// Not a normal thing you do with a queue but can be used for efficiency
+		/// will move all elements after the removed elements- slow operation
 		void RemoveAtIndex(unsigned int position)
 		{
 			assert(position < Size());
@@ -214,27 +220,39 @@ namespace DataStructures
 			tail == 0 ? tail = allocation_size - 1 : --tail;
 		}
 
+		// Not a normal thing you do with a queue but can be used for efficiency
+		queue_type& operator[] (unsigned int position) const
+		{
+#ifdef _DEBUG
+			assert(position < Size());
+#endif // _DEBUG
+			return head + position >= allocation_size ?
+				queueArrary[head + position - allocation_size] :
+				queueArrary[head + position];
+		}
+
 		/// pop will update head and tail, overhead of deleting
 		/// but peek only return the value without updating head and tail
-		queue_type PeekHead(void) const { assert(head != tail); return queueArrary[head]; }
-		queue_type PeekTail(void) const
+		queue_type Head(void) const
 		{
+#ifdef _DEBUG
 			assert(head != tail);
+#endif // _DEBUG
+			return queueArrary[head];
+		}
+		queue_type Tail(void) const
+		{
+#ifdef _DEBUG
+			assert(head != tail);
+#endif // _DEBUG
 			return tail != 0 ? queueArrary[tail - 1] : queueArrary[allocation_size - 1];
 		}
-		bool PopHead(queue_type& ele)
-		{
-			assert(head != tail);
-			if (head == tail) return false;
 
-			if (++head == allocation_size) head = 0;
-			if (head == 0) ele = queueArrary[allocation_size - 1];
-			ele = queueArrary[head - 1];
-			return true;
-		}
 		bool PopTail(queue_type& ele)
 		{
+#ifdef _DEBUG
 			assert(head != tail);
+#endif // _DEBUG
 			if (head == tail) return false;
 
 			if (tail != 0)
@@ -250,7 +268,6 @@ namespace DataStructures
 
 			return true;
 		}
-
 		// Debug: Set pointer to 0, for memory leak detection
 		bool PopDeref(queue_type& ele)
 		{
@@ -275,6 +292,8 @@ namespace DataStructures
 		}
 		bool IsEmpty(void) const { return head == tail; }
 		unsigned int AllocationSize(void) const { return allocation_size; }
+
+		/// Free memory if > QUEUE_INIT_SIZE
 		void Clear(void)
 		{
 			if (allocation_size == 0) return;
@@ -327,7 +346,7 @@ namespace DataStructures
 			return false;
 		}
 
-		// Force a memory allocation to a certain larger size
+		/// Force a memory allocation to a certain larger size
 		void Resize(int size)
 		{
 			JACKIE_INET::OP_DELETE_ARRAY(queueArrary, TRACE_FILE_AND_LINE_);
