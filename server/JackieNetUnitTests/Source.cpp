@@ -375,9 +375,9 @@ static void test_Queue_funcs()
 	TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
 	{
 		int val;
-		arrayCircularList.InsertAtLast(2);;
-		arrayCircularList.Insert(3);
-		arrayCircularList.Insert(8);
+		arrayCircularList.Add(2);
+		arrayCircularList.Add(3);
+		arrayCircularList.Add(8);
 
 		arrayCircularList.Print();
 
@@ -397,7 +397,7 @@ static void test_Queue_funcs()
 
 		arrayCircularList.Print();
 
-		arrayCircularList.InsertAtLast(2);
+		arrayCircularList.Add(2);
 		arrayCircularList.Add(8);
 
 		arrayCircularList.Print();

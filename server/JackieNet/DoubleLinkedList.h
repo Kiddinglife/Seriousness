@@ -431,7 +431,7 @@ namespace DataStructures
 				list_size++;
 			}
 		}
-		/// Add new element in bebind of cursor, cursor points to the root node
+		/// Add new element in bebind of cursor, cursor always points to the root node without change
 		data_type& Add(const data_type& input)
 		{
 			if (this->list_size == 0)
@@ -469,7 +469,6 @@ namespace DataStructures
 				(this->position->next) = new_node;
 				// Increase the recorded size of the list by one
 				this->list_size++;
-				// return *(new_node->item);
 				return new_node->item;
 			}
 		}
@@ -726,9 +725,9 @@ namespace DataStructures
 				for (int l = 1; l <= i - 1; l++)  { k = space[k].cur; } /// 找到第i个元素之前的位置 
 				space[j].cur = space[k].cur;  /// 把第i个元素之前的cur赋值给新元素的cur 
 				space[k].cur = j; /// 把新元素的下标赋值给第i个元素之前元素的ur 
+				if (size > 0 && i <= position )
+				position++;
 				size++;
-				//if (i <= position)
-				//	position++;
 				//i = j;
 				return true;
 			}
@@ -737,28 +736,13 @@ namespace DataStructures
 		/// insert new element in front of cursor
 		inline bool Insert(const ElemType& input)
 		{
-			if (Insert(position, input))
-			{
-				position++;
-				return true;
-			}
-			else
-				return false;
+			return Insert(position, input);
 		}
-		/// 在space中最后元素之后插入新的数据元素e  
-		inline bool InsertAtLast(const ElemType& input)
-		{
-			return Insert(size + 1, input);
-		}
+
 		/// Add new element in bebind of cursor
 		inline bool Add(const ElemType& input)
 		{
-			if (Insert(position + 1, input))
-			{
-				return true;
-			}
-			else
-				return false;
+			return Insert(position+1, input);
 		}
 
 		/// 删除在space中第i个数据元素 
