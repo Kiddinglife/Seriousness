@@ -346,7 +346,7 @@ static void test_Queue_funcs()
 		linkedlist.Beginning();
 		linkedlist.Add(4);
 		linkedlist.Add(3);
-		linkedlist.Add(2);
+		linkedlist.Insert(2);
 		linkedlist.Add(1);
 		linkedlist.Sort();
 
@@ -358,7 +358,7 @@ static void test_Queue_funcs()
 		printf("\n");
 		DCHECK(linkedlist.Has(3));
 		DCHECK(linkedlist.Find(3));
-		linkedlist.Del();
+		linkedlist.Remove();
 		DCHECK(linkedlist.Has(3) == false);
 		linkedlist.Find(4);
 		linkedlist.Replace(-1);
@@ -374,41 +374,38 @@ static void test_Queue_funcs()
 	DataStructures::ArrayCircularList<int, 1000> arrayCircularList;
 	TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
 	{
-		arrayCircularList.Insert(2);
+		int val;
+		arrayCircularList.InsertAtLast(2);;
 		arrayCircularList.Insert(3);
 		arrayCircularList.Insert(8);
 
-		bool flag = arrayCircularList.Contains(8);
+		arrayCircularList.Print();
+
+		bool flag = arrayCircularList.Has(8);
 		DCHECK(flag == true);
-		flag = arrayCircularList.Contains(13);
+		flag = arrayCircularList.Has(13);
 		DCHECK(flag == false);
 
-		arrayCircularList.Remove();
-		flag = arrayCircularList.Contains(8);
+		arrayCircularList.Remove(8);
+		flag = arrayCircularList.Has(8);
 		DCHECK(flag == false);
 
-		arrayCircularList.Remove(2);
-		flag = arrayCircularList.Contains(3);
+		val = arrayCircularList.Pop();
+		DCHECK(val == 2);
+		flag = arrayCircularList.Has(2);
 		DCHECK(flag == false);
 
-		arrayCircularList.Insert(1, 3);
-		arrayCircularList.Insert(1, 8);
+		arrayCircularList.Print();
 
-		flag = arrayCircularList.Contains(8);
-		DCHECK(flag == true);
-		flag = arrayCircularList.Contains(3);
-		DCHECK(flag == true);
+		arrayCircularList.InsertAtLast(2);
+		arrayCircularList.Add(8);
 
-		printf("ArrayCircularList Elements(%d):\n", arrayCircularList.Size());
-		int j = 0;
-		int i = arrayCircularList.space[1000 - 1].cur;
-		while (i)
-		{
-			printf("%d ", arrayCircularList.space[i]);
-			i = arrayCircularList.space[i].cur;
-			j++;
-		}
-		printf("\n");
+		arrayCircularList.Print();
+
+		flag = arrayCircularList.Has(8);
+		DCHECK(flag == true);
+		flag = arrayCircularList.Has(3);
+		DCHECK(flag == true);
 	}
 }
 

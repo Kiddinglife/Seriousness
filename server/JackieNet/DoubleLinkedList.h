@@ -60,12 +60,12 @@ namespace DataStructures
 				if (L1.root->item < L2.root->item)
 				{
 					element = L1.root->item;
-					L1.Del();
+					L1.Remove();
 				}
 				else
 				{
 					element = L2.root->item;
-					L2.Del();
+					L2.Remove();
 				}
 
 				// Add this item to the end of X
@@ -478,7 +478,7 @@ namespace DataStructures
 			if (this->list_size > 0)
 				this->position->item = input;
 		}
-		void Del(void)
+		void Remove(void)
 		{
 			if (this->list_size == 0)
 				return;
@@ -499,6 +499,11 @@ namespace DataStructures
 				position = new_position;
 				list_size--;
 			}
+		}
+		/// remove the element if it exists
+		void Remove(const data_type& input)
+		{
+			if (Find(input)) Remove();
 		}
 		inline unsigned int Size(void)
 		{
@@ -615,6 +620,7 @@ namespace DataStructures
 		LinkedList Mergesort(const LinkedList& space);
 	};
 
+
 	/// Usually should use this
 	/// have all functions same to CircularList and LinkedList, 
 	///but faster because no need to allocate new node by new call 
@@ -625,7 +631,8 @@ namespace DataStructures
 	{
 	private:
 		int size;
-
+		int position; /// cursor
+		int position_array_index; /// cursor's array index
 		/// 若备用空间链表非空，则返回分配的结点下标，否则返回0 
 		inline int Malloc_SSL(void)
 		{
@@ -641,6 +648,35 @@ namespace DataStructures
 			space[0].cur = k;               /// 把要删除的分量下标赋值给第一个元素的cur */
 		}
 
+		/// return index of array
+		/// @param [out] linkedIndex the index of linked list
+		/// for example, 
+		/// e =2, A[2]=1 -> A[5]=2 -> A[0]=3, will return 5, 
+		/// linkedIndex will be assigned as 2
+		int FindPointer(const ElemType& e, int& linkedIndex)
+		{
+			/// empty pointer
+			if (size == 0)
+			{
+				linkedIndex = 0;
+				return 0;
+			}
+
+			linkedIndex = 1;
+			int i = space[MAXSIZE - 1].cur;
+			while (i)
+			{
+				if (space[i].data == e)
+				{
+					return i;
+				}
+				i = space[i].cur;
+				linkedIndex++;
+			}
+
+			return 0;
+		}
+
 	public:
 		struct ListNode
 		{
@@ -652,12 +688,14 @@ namespace DataStructures
 
 		ArrayCircularList()
 		{
-			space = JACKIE_INET::OP_NEW_ARRAY<ListNode>(MAXSIZE,TRACE_FILE_AND_LINE_);
+			space = JACKIE_INET::OP_NEW_ARRAY<ListNode>(MAXSIZE, TRACE_FILE_AND_LINE_);
 			for (int i = 0; i < MAXSIZE - 1; i++)
 			{
 				space[i].cur = i + 1;
 			}
 			size = space[MAXSIZE - 1].cur = 0; /// 目前静态链表为空，最后一个元素的cur为0 
+			position = 1;
+			position_array_index = 1;
 		}
 		virtual ~ArrayCircularList()
 		{
@@ -670,63 +708,155 @@ namespace DataStructures
 			return size;
 		}
 
-		/// 在space中第i个元素之前插入新的数据元素e  
+		/// @param [in] int & i is the order of linked elements, 
+		/// not the order they are stored in array, 
+		/// will be reassigned to the inserted element array index
+		/// @param [in] const ElemType & e
+		/// @brief insert @praram e before the element with linked index of @param i
+		//bool Insert(int &i, const ElemType& e)
 		bool Insert(int i, const ElemType& e)
 		{
-			int j, k, l;
-			k = MAXSIZE - 1;   /* 注意k首先是最后一个元素的下标 */
 			if (i < 1 || i > Size() + 1) return false;
 
-			j = Malloc_SSL();   /* 获得空闲分量的下标 */
+			int j = Malloc_SSL();   /// 获得空闲分量的下标 
 			if (j)
 			{
-				space[j].data = e;   /* 将数据赋值给此分量的data */
-				for (l = 1; l <= i - 1; l++)   /* 找到第i个元素之前的位置 */
-					k = space[k].cur;
-				space[j].cur = space[k].cur;    /* 把第i个元素之前的cur赋值给新元素的cur */
-				space[k].cur = j;           /* 把新元素的下标赋值给第i个元素之前元素的ur */
+				int k = MAXSIZE - 1;   /// 注意k首先是最后一个元素的下标 
+				space[j].data = e;   /// 将数据赋值给此分量的data 
+				for (int l = 1; l <= i - 1; l++)  { k = space[k].cur; } /// 找到第i个元素之前的位置 
+				space[j].cur = space[k].cur;  /// 把第i个元素之前的cur赋值给新元素的cur 
+				space[k].cur = j; /// 把新元素的下标赋值给第i个元素之前元素的ur 
 				size++;
+				//if (i <= position)
+				//	position++;
+				//i = j;
 				return true;
 			}
 			return false;
 		}
-
-		/// 在space中最后元素之后插入新的数据元素e  
-		bool Insert(const ElemType& e)
+		/// insert new element in front of cursor
+		inline bool Insert(const ElemType& input)
 		{
-			return Insert(size+1, e);
+			if (Insert(position, input))
+			{
+				position++;
+				return true;
+			}
+			else
+				return false;
+		}
+		/// 在space中最后元素之后插入新的数据元素e  
+		inline bool InsertAtLast(const ElemType& input)
+		{
+			return Insert(size + 1, input);
+		}
+		/// Add new element in bebind of cursor
+		inline bool Add(const ElemType& input)
+		{
+			if (Insert(position + 1, input))
+			{
+				return true;
+			}
+			else
+				return false;
 		}
 
 		/// 删除在space中第i个数据元素 
-		bool Remove(int i)
+		bool RemoveInternal(int i)
 		{
-			int j, k;
-			if (i < 1 || i > Size())
-				return false;
-			k = MAXSIZE - 1;
-			for (j = 1; j <= i - 1; j++)
-				k = space[k].cur;
+			//i++;
+			if (i < 1 || i > Size()) return false;
+
+			int k = MAXSIZE - 1;
+			int j = 1;
+			for (; j <= i - 1; j++){ k = space[k].cur; }
 			j = space[k].cur;
 			space[k].cur = space[j].cur;
-			Free_SSL(j);
 			size--;
+			if (space[j].cur == 0)
+			{
+				position = size;
+				position_array_index = k;
+			}
+			else
+			{
+				position--;
+				position_array_index = space[j].cur;
+			}
+			Free_SSL(j);
 			return true;
 		}
-		/// remove last elment
-		inline bool Remove(void)
+		/// remove the element at position, 
+		/// the  position now points to the elemrnt after the removed one
+		inline bool Remove()
 		{
-			return Remove(size);
+			return RemoveInternal(position);
+		}
+		/// remove last elment
+		inline bool RemoveAtLast(void)
+		{
+			return RemoveInternal(size);
+		}
+		/// remove the element if it exists
+		inline bool Remove(const ElemType& input)
+		{
+			if (Find(input))
+				return Remove();
+			else
+				return false;
+		}
+		bool Has(const ElemType& input)
+		{
+			int i = 0;
+			if (FindPointer(input, i) != 0 && i)
+				return true;
+			else
+				return false;
 		}
 
-		bool Contains(const ElemType& e)
+		/// position will be changed to point to the found element
+		int Find(const ElemType& input)
 		{
+			int pos;
+			int return_value = FindPointer(input, pos);
+			if (return_value != 0 && pos)
+			{
+				position = pos;
+				position_array_index = return_value;
+				return position;
+			}
+			return 0; // Can't find the item don't do anything
+		}
+
+		/// return the cursor item
+		inline ElemType& Peek(void)
+		{
+			return space[position_array_index].data;
+		}
+		/// return and remove the cursor item
+		ElemType Pop(void)
+		{
+			ElemType element = Peek();
+			Remove();
+			return element; // return temporary
+		}
+		bool Pop(ElemType& data)
+		{
+			data = Peek();
+			return Remove();
+		}
+		void Print()
+		{
+			printf("ArrayCircularList Elements(%d):\n", Size());
+			int j = 0;
 			int i = space[MAXSIZE - 1].cur;
 			while (i)
 			{
-				if (space[i].data == e) return true;
+				printf("%d ", space[i]);
 				i = space[i].cur;
+				j++;
 			}
-			return false;
+			printf("\n");
 		}
 	};
 }
