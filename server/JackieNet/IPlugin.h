@@ -76,7 +76,8 @@ namespace JACKIE_INET
 		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
 		JackieGUID GetMyGUIDUnified(void) const
 		{
-			if (serverApplication != 0) return serverApplication->GetMyGUID();
+			if (serverApplication != 0) 
+				return serverApplication->GetMyGUID();
 			return JACKIE_NULL_GUID;
 		}
 

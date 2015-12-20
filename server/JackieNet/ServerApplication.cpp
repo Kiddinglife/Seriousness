@@ -403,12 +403,12 @@ namespace JACKIE_INET
 
 	inline void ServerApplication::ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index)
 	{
-		JDEBUG << "Network Thread Reclaims One JISRecvParams";
+		//JDEBUG << "Network Thread Reclaims One JISRecvParams";
 		DCHECK_EQ(deAllocRecvParamQ[index].PushTail(s), true);
 	}
 	void ServerApplication::ReclaimAllJISRecvParams(UInt32 Index)
 	{
-		JDEBUG << "Recv thread " << Index << " Reclaim All JISRecvParams";
+		//JDEBUG << "Recv thread " << Index << " Reclaim All JISRecvParams";
 
 		JISRecvParams* recvParams = 0;
 		for (UInt32 index = 0; index < deAllocRecvParamQ[Index].Size(); index++)
@@ -419,7 +419,7 @@ namespace JACKIE_INET
 	}
 	inline JISRecvParams * ServerApplication::AllocJISRecvParams(UInt32 Index)
 	{
-		JDEBUG << "Recv Thread" << Index << " Alloc An JISRecvParams";
+		//JDEBUG << "Recv Thread" << Index << " Alloc An JISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool[Index].Allocate(); } while (ptr == 0);
 		return ptr;
@@ -450,7 +450,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::ReclaimAllCommands()
 	{
-		JDEBUG << "User Thread Reclaims All Commands";
+		//JDEBUG << "User Thread Reclaims All Commands";
 
 		Command* bufferedCommand = 0;
 		for (UInt32 index = 0; index < deAllocCommandQ.Size(); index++)
@@ -464,7 +464,7 @@ namespace JACKIE_INET
 	}
 	Command* ServerApplication::AllocCommand()
 	{
-		JDEBUG << "User Thread Alloc An Command";
+		//JDEBUG << "User Thread Alloc An Command";
 		Command* ptr = 0;
 		do { ptr = commandPool.Allocate(); } while (ptr == 0);
 		return ptr;
@@ -537,7 +537,7 @@ namespace JACKIE_INET
 
 	Packet* ServerApplication::AllocPacket(UInt32 dataSize)
 	{
-		JDEBUG << "Network Thread Alloc One Packet";
+		//JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while (p == 0);
 
@@ -553,7 +553,7 @@ namespace JACKIE_INET
 	}
 	Packet* ServerApplication::AllocPacket(UInt32 dataSize, unsigned char *data)
 	{
-		JDEBUG << "Network Thread Alloc One Packet";
+		//JDEBUG << "Network Thread Alloc One Packet";
 		Packet *p = 0;
 		do { p = packetPool.Allocate(); } while (p == 0);
 
@@ -569,7 +569,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ReclaimAllPackets()
 	{
-		JDEBUG << "Network Thread Reclaims All Packets";
+		//JDEBUG << "Network Thread Reclaims All Packets";
 
 		Packet* packet;
 		for (UInt32 index = 0; index < deAllocPacketQ.Size(); index++)
@@ -638,7 +638,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 	{
-		JDEBUG << "Process One RecvParam";
+		//JDEBUG << "Process One RecvParam";
 
 #if LIBCAT_SECURITY==1
 #ifdef CAT_AUDIT
@@ -687,13 +687,15 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessConnectionRequestCancelQ(void)
 	{
-		JDEBUG << "Network Thread Process ConnectionRequest CancelQ";
+		//JDEBUG << "Network Thread Process ConnectionRequest CancelQ";
 
 		if (connReqCancelQ.IsEmpty())
 		{
 			JDEBUG << "ConnectionRequestCancelQ is EMPTY";
 			return;
 		}
+
+		//JDEBUG << "Connection Request CancelQ is NOT EMPTY";
 
 		JackieAddress connReqCancelAddr;
 		ConnectionRequest* connReq = 0;
@@ -724,7 +726,7 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
-		JDEBUG << "Network Thread Process ConnectionRequestQ";
+		//DEBUG << "Network Thread Process ConnectionRequestQ";
 
 		if (connReqQ.IsEmpty())
 		{
@@ -732,7 +734,7 @@ namespace JACKIE_INET
 			return;
 		}
 
-		JDEBUG << "Connection Request Q not EMPTY";
+		//JDEBUG << "Connection Request Q not EMPTY";
 
 		if (timeUS == 0)
 		{
@@ -867,7 +869,7 @@ namespace JACKIE_INET
 
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
-		JDEBUG << "Network Thread Process Alloc CommandQ";
+		//JDEBUG << "Network Thread Process Alloc CommandQ";
 
 		Command* cmd = 0;
 		RemoteEndPoint* remoteEndPoint = 0;
@@ -934,7 +936,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ProcessAllocJISRecvParamsQ(void)
 	{
-		JDEBUG << "Network Thread Process Alloc JISRecvParamsQ";
+		//JDEBUG << "Network Thread Process Alloc JISRecvParamsQ";
 
 		JISRecvParams* recvParams = 0;
 		for (UInt32 outter = 0; outter < bindedSockets.Size(); outter++)
@@ -1292,7 +1294,7 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::UpdatePlugins(void)
 	{
-		JDEBUG << "User Thread Update Plugins";
+		//JDEBUG << "User Thread Update Plugins";
 		UInt32 i;
 		for (i = 0; i < pluginListTS.Size(); i++)
 		{
@@ -1454,7 +1456,7 @@ namespace JACKIE_INET
 		ServerApplication *serv = (ServerApplication*)arguments;
 		serv->isNetworkUpdateThreadActive = true;
 
-		JDEBUG << "Send polling thread is running in backend....";
+		JDEBUG << "Network thread is running in backend....";
 		while (!serv->endThreads)
 		{
 			/// Normally, buffered sending packets go out every other 10 ms.
@@ -1512,6 +1514,8 @@ namespace JACKIE_INET
 
 	JACKIE_INET::ConnectionAttemptResult ServerApplication::Connect(const char* host, UInt16 port, const char *pwd /*= 0*/, UInt32 pwdLen /*= 0*/, JACKIE_Public_Key *publicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, UInt32 ConnectionAttemptTimes /*= 6*/, UInt32 ConnectionAttemptIntervalMS /*= 1000*/, TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
 	{
+		JDEBUG << "User Thread start to Connect() to " << host << ":"<<port;
+
 		if (host == 0)
 		{
 			JERROR << "invalid host adress !";

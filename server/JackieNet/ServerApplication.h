@@ -334,7 +334,7 @@ namespace JACKIE_INET
 			UInt32 ConnectionAttemptIntervalMS = 500, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
-		
+
 		/// function  StopRecvPollingThread 
 		/// Access  public  
 		/// Param [in] [void]  

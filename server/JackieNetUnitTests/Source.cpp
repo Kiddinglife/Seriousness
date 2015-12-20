@@ -536,7 +536,7 @@ static void test_JackieStream__funcs()
 
 	for (int i = 100; i >= 0; i--)
 	{
-		UInt32 looptimes = 10000;
+		UInt32 looptimes = 1000;
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
 			s8.Write(uint24);
@@ -847,11 +847,11 @@ enum
 //static int testcase = MemoryPool_h;
 //static int testfunc = AllFuncs;
 
-static int testcase = CircularArrayQueueSingleThread;
-static int testfunc = Test_Queue_funcs;
+//static int testcase = CircularArrayQueueSingleThread;
+//static int testfunc = Test_Queue_funcs;
 
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
+static int testcase = ServerApplication_H;
+static int testfunc = AllFuncs;
 
 //static int testcase = JackieStream_H;
 //static int testfunc = AllFuncs;
