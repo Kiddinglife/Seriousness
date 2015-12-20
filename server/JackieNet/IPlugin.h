@@ -132,7 +132,10 @@ namespace JACKIE_INET
 		/// @param[in] rakNetGuid The guid of the specified system
 		/// @param[in] isIncoming If true, this is ID_NEW_INCOMING_CONNECTION, or the equivalent
 		virtual void OnNewConnection(const JackieAddress &systemAddress,
-			JackieGUID& guid, bool isIncoming) { }
+			JackieGUID& guid, bool isIncoming) 
+		{
+			JDEBUG << "NEW CONNECTION FROM " << systemAddress.ToString();
+		}
 
 		/// Called when a connection attempt fails
 		/// @param[in] packet Packet to be returned to the user
