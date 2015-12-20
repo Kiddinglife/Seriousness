@@ -218,13 +218,13 @@ namespace JACKIE_INET
 
 	private:
 		void ProcessOneRecvParam(JISRecvParams* recvParams);
-		bool ProcessOneOfflineRecvParam(JISRecvParams* recvParams,
+		bool ProcessOneUnconnectedRecvParams(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
 		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieBits &updateBitStream);
-		void ProcessConnectionRequestCancelQ(void);
+		void ProcessConnectionRequestCancelQ(void); /// @Done
 		void ProcessAllocJISRecvParamsQ(void);
 		void ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS);
-		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);
+		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);	/// @Done
 		void AdjustTimestamp(Packet*& incomePacket) const;
 
 	public:

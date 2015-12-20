@@ -651,29 +651,33 @@ namespace JACKIE_INET
 #endif
 #endif // LIBCAT_SECURITY
 
-		DCHECK_NE(recvParams->senderINetAddress.GetPortHostOrder(), 0);
+		DCHECK(recvParams->senderINetAddress.GetPortHostOrder() != 0);
 
-		bool isOfflinerecvParams = true;
-		if (ProcessOneOfflineRecvParam(recvParams, &isOfflinerecvParams)) return;
-
-		/// See if this datagram came from a connected system
-		RemoteEndPoint* remoteEndPoint =
-			GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
-		if (remoteEndPoint != 0) // if this datagram comes from connected system
+		bool isUnconnectedRecvPrrams;
+		if (!ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams))
 		{
-			if (!isOfflinerecvParams)
+
+			/// See if this datagram came from a connected system
+			RemoteEndPoint* remoteEndPoint =
+				GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
+			if (remoteEndPoint != 0) // if this datagram comes from connected system
 			{
-				remoteEndPoint->reliabilityLayer.ProcessJISRecvParamsFromConnectedEndPoint(this, remoteEndPoint->MTUSize);
+				if (!isUnconnectedRecvPrrams)
+				{
+					remoteEndPoint->reliabilityLayer.ProcessOneConnectedRecvParams(this, recvParams, remoteEndPoint->MTUSize);
+				}
+			}
+			else
+			{
+				char str[256];
+				recvParams->senderINetAddress.ToString(true, str);
+				JWARNING << "Packet from unconnected sender " << str;
 			}
 		}
-		else
-		{
-			char str[256];
-			recvParams->senderINetAddress.ToString(true, str);
-			JWARNING << "Packet from unconnected sender " << str;
-		}
 	}
-	bool ServerApplication::ProcessOneOfflineRecvParam(JISRecvParams* recvParams, bool* isOfflinerecvParams)
+
+	bool ServerApplication::ProcessOneUnconnectedRecvParams(
+		JISRecvParams* recvParams, bool* isOfflinerecvParams)
 	{
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
@@ -716,14 +720,14 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
 					connReqQ.RemoveAtIndex(i);
 					break;
-				}
 			}
-			connReqQLock.Unlock();
 		}
-		connReqCancelQLock.Unlock();
+			connReqQLock.Unlock();
 	}
+		connReqCancelQLock.Unlock();
+}
 
-	/// @TO-DO
+	/// @Done
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 	{
 		//DEBUG << "Network Thread Process ConnectionRequestQ";
@@ -1150,6 +1154,7 @@ namespace JACKIE_INET
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
 		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity " << (int)incomePacket->data[0];
+
 		UInt32 i;
 		for (i = 0; i < pluginListTS.Size(); i++)
 		{
@@ -1514,7 +1519,7 @@ namespace JACKIE_INET
 
 	JACKIE_INET::ConnectionAttemptResult ServerApplication::Connect(const char* host, UInt16 port, const char *pwd /*= 0*/, UInt32 pwdLen /*= 0*/, JACKIE_Public_Key *publicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, UInt32 ConnectionAttemptTimes /*= 6*/, UInt32 ConnectionAttemptIntervalMS /*= 1000*/, TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
 	{
-		JDEBUG << "User Thread start to Connect() to " << host << ":"<<port;
+		JDEBUG << "User Thread start to Connect() to " << host << ":" << port;
 
 		if (host == 0)
 		{

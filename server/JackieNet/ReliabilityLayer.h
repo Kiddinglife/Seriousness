@@ -5,12 +5,16 @@
 
 namespace JACKIE_INET
 {
-
+	class RemoteEndPoint;
+	class JISRecvParams;
 	class ServerApplication;
 	class JackieBits;
 
 	class JACKIE_EXPORT ReliabilityLayer
 	{
+	private:
+		RemoteEndPoint* remoteEndpoint;
+
 		public:
 		ReliabilityLayer();
 		~ReliabilityLayer();
@@ -23,8 +27,8 @@ namespace JACKIE_INET
 		//connected.  The game should not use that data directly
 		// because some data is used internally, such as packet acknowledgment and
 		//split packets
-		bool ProcessJISRecvParamsFromConnectedEndPoint(ServerApplication* serverApp,
-			int MTUSize);
+		bool ProcessOneConnectedRecvParams(ServerApplication* serverApp,
+			JISRecvParams* recvParams, unsigned mtuSize);
 	};
 }
 
