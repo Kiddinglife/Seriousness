@@ -710,13 +710,13 @@ namespace JACKIE_INET
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-						{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+									{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-						{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+									{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -727,7 +727,7 @@ namespace JACKIE_INET
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
 	{
-		JDEBUG << "Process One Unconnected Recv Params";
+		JDEBUG << "Network thread Process One Unconnected Recv Params";
 
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
@@ -782,7 +782,9 @@ namespace JACKIE_INET
 				break;
 			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
 				/// msg layout: MessageID MessageID OFFLINE_MESSAGE_DATA_ID JackieGUID
-				if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
+				if (recvParams->bytesRead > sizeof(MessageID) * 2 +
+					sizeof(OFFLINE_MESSAGE_DATA_ID) &&
+					recvParams->bytesRead <= sizeof(MessageID) * 2 +
 					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
 				{
 					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) * 2,
@@ -845,9 +847,6 @@ namespace JACKIE_INET
 				{
 					unsigned char remote_system_protcol = recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
 
-					JDEBUG << "unconnected ID_OPEN_CONNECTION_REQUEST_1, protocol id "
-						<< (UInt16)remote_system_protcol;
-
 					// see if the protocol is up-to-date
 					if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
 					{
@@ -866,7 +865,11 @@ namespace JACKIE_INET
 						for (index = 0; index < pluginListNTS.Size(); index++)
 							pluginListNTS[index]->OnDirectSocketSend(&bsp);
 
-						recvParams->socket->Send(&bsp, TRACE_FILE_AND_LINE_);
+						JDEBUG << "expected send" << bsp.length << " bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << bsp.receiverINetAddress.ToString();
+
+						JISSendResult len = recvParams->socket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+						JDEBUG << "actually has sent " << len << " bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << bsp.receiverINetAddress.ToString();
 					}
 					else
 					{
@@ -918,7 +921,7 @@ namespace JACKIE_INET
 
 		if (connReqCancelQ.IsEmpty())
 		{
-			JDEBUG << "ConnectionRequestCancelQ is EMPTY";
+			//JDEBUG << "ConnectionRequestCancelQ is EMPTY";
 			return;
 		}
 
@@ -957,7 +960,7 @@ namespace JACKIE_INET
 
 		if (connReqQ.IsEmpty())
 		{
-			JDEBUG << "ConnectionRequestQ is EMPTY";
+			//JDEBUG << "ConnectionRequestQ is EMPTY";
 			return;
 		}
 
@@ -1019,9 +1022,10 @@ namespace JACKIE_INET
 
 					JackieBits bitStream;
 					bitStream.Write(ID_OPEN_CONNECTION_REQUEST_1);
-					bitStream.WriteAlignedBytes(OFFLINE_MESSAGE_DATA_ID,
+					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					//bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					bitStream.Write((MessageID)128);
 					// definitely will not be fragmented because 
 					// UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
@@ -1652,7 +1656,6 @@ namespace JACKIE_INET
 		/// Cancel certain conn req before process Connection Request Q 
 		ProcessConnectionRequestCancelQ();
 		ProcessConnectionRequestQ(timeUS, timeMS);
-
 		return 0;
 	}
 	void ServerApplication::RunRecvCycleOnce(UInt32 index)
@@ -1671,7 +1674,8 @@ namespace JACKIE_INET
 
 			if (incomeDatagramEventHandler != 0)
 			{
-				if (!incomeDatagramEventHandler(recvParams)) JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
+				if (!incomeDatagramEventHandler(recvParams)) 
+					JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 			}
 
 #if USE_SINGLE_THREAD == 0
@@ -1697,7 +1701,7 @@ namespace JACKIE_INET
 		while (!serv->endThreads)
 		{
 			serv->RunRecvCycleOnce(index);
-			JackieSleep(1000);
+			//JackieSleep(1000);
 		}
 		JDEBUG << "Recv polling thread Stops....";
 
@@ -1717,7 +1721,7 @@ namespace JACKIE_INET
 			/// or TriggerEvent() is called by recv thread
 			serv->RunNetworkUpdateCycleOnce();
 			serv->quitAndDataEvents.WaitEvent(5);
-			JackieSleep(1000);
+			//JackieSleep(1000);
 		}
 		JDEBUG << "Send polling thread Stops....";
 

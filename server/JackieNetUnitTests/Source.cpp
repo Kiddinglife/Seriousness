@@ -412,49 +412,61 @@ static void test_Queue_funcs()
 #include "JackieNet/JackieBits.h"
 static bool IncomeDatagramEventHandler(JISRecvParams *param)
 {
-	JINFO << "recv from  " << param->senderINetAddress.ToString() << ", bytes " << param->bytesRead;
-
 	JackieBits jb((UInt8*)param->data, param->bytesRead, false);
-
 	MessageID msgid;
-	jb.ReadMini(msgid);
-	JINFO << "ID_OPEN_CONNECTION_REQUEST_1 = " << (int)msgid;
-
-	jb.ReadSkipBytes(16);
-
-	jb.ReadMini(msgid);
-	JINFO << "JACKIE_INET_PROTOCOL_VERSION = " << (int)msgid;
+	jb.Read(msgid);
+	JINFO << "recv from  " << param->senderINetAddress.ToString() << ", bytes " << param->bytesRead << " with msg id " << (int)msgid;
 
 	return true;
 }
 #include "JackieNet/ServerApplication.h"
+#include "JackieNet/MessageID.h"
+static const unsigned char OFFLINE_MESSAGE_DATA_ID[16] =
+{
+	0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
+	0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56, 0x78
+};
 static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
 	JACKIE_INET::BindSocket socketDescriptor;
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; // USE_NON_BLOBKING_SOCKET; 
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET;
+	//USE_NON_BLOBKING_SOCKET;
 	socketDescriptor.port = 32000;
 	socketDescriptor.socketFamily = AF_INET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
-	//app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
+	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
 	app->Start(4, &socketDescriptor, 1);
 
-	app->Connect("localhost", 32000);
+	//app->Connect("localhost", 32000);
+
 	//int ret;
 	//char* data = "JackieNet";
 	//JISSendParams sendParams;
 	//sendParams.data = data;
 	//sendParams.length = strlen(data) + 1;
 	//sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
-	//do { ret = ( ( JACKIE_INET::JISBerkley* )app->bindedSockets[0] )->Send(&sendParams, TRACE_FILE_AND_LINE_); } while( ret < 0 );
+	//do { ret = ((JACKIE_INET::JISBerkley*)app->bindedSockets[0])->Send(&sendParams, TRACE_FILE_AND_LINE_); } while (ret < 0);
 
 	Packet* packet = 0;
 	//// Loop for input
 	while (1)
 	{
+		JackieBits jb;
+		jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+		jb.Write((MessageID)123);
+		jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
+			sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
+		jb.WriteMini((UInt64)123456);
 
+		JISSendParams bsp;
+		bsp.data = jb.DataInt8();
+		bsp.length = jb.GetWrittenBytesCount();
+		bsp.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
+
+		JISSendResult len = app->bindedSockets[0]->Send(&bsp, TRACE_FILE_AND_LINE_);
 		//Command* c = app->AllocCommand();
 		//c->command = Command::BCS_SEND;
 		//app->PostComand(c);
@@ -463,7 +475,6 @@ static void test_ServerApplication_funcs()
 		for (packet = app->GetPacketOnce(); packet != 0;
 			app->ReclaimPacket(packet), packet = 0)
 		{
-
 			/// user logics goes here
 			//Command* c = app->AllocCommand();
 			//c->command = Command::BCS_SEND;
@@ -478,7 +489,7 @@ static void test_ServerApplication_funcs()
 		//app->ExecuteComand(c);
 		//if( packet != 0 ) app->ReclaimOnePacket(packet);
 
-		JackieSleep(1500);
+		//JackieSleep(1500);
 		//break;
 	}
 
