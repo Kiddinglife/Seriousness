@@ -10,6 +10,7 @@
 namespace JACKIE_INET
 {
 	class TCPInterface;
+	//class JISRecvParams;
 
 	/// For each message that arrives on an instance of RakPeer, the plugins get an 
 	/// opportunity to process them first. This enumeration represents what to do 
@@ -188,7 +189,8 @@ namespace JACKIE_INET
 		/// @param[in] data The data being sent
 		/// @param[in] bitsUsed How many bits long @a data is
 		/// @param[in] remoteSystemAddress Which system this message is being sent to
-		virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+		//virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+		virtual void OnDirectSocketReceive(const JISRecvParams* recvParams) { }
 
 		/// Called when the reliability layer rejects a send or receive
 		/// @pre To be called, UsesReliabilityLayer() must return true

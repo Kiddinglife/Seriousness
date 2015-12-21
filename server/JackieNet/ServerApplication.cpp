@@ -705,14 +705,19 @@ namespace JACKIE_INET
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-	{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+						{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-	{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + sizeof(Time), \
+						{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + sizeof(Time), \
     OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
+
+#define UNCONNECTED_RECVPARAMS_HANDLER2 \
+if (*isUnconnected) {\
+for (index = 0; index < pluginListNTS.Size(); index++)\
+pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
@@ -721,12 +726,12 @@ namespace JACKIE_INET
 
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
-		UInt32 index;
+		unsigned int index;
+
 		// The reason for all this is that the reliability layer has no way to tell between offline
 		// messages that arrived late for a player that is now connected,
 		// and a regular encoding. So I insert OFFLINE_MESSAGE_DATA_ID into the stream,
 		// the encoding of which is essentially impossible to hit by chance 
-		// 
 		if (recvParams->bytesRead <= 2)
 		{
 			*isUnconnected = true;
@@ -736,10 +741,12 @@ namespace JACKIE_INET
 			switch ((MessageID)recvParams->data[0])
 			{
 			case ID_UNCONNECTED_PING:
-				UNCONNETED_RECVPARAMS_HANDLER1
+				UNCONNETED_RECVPARAMS_HANDLER1;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_UNCONNECTED_PING_OPEN_CONNECTIONS:
-				UNCONNETED_RECVPARAMS_HANDLER1
+				UNCONNETED_RECVPARAMS_HANDLER1;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_UNCONNECTED_PONG:
 				if (recvParams->bytesRead >
@@ -756,6 +763,7 @@ namespace JACKIE_INET
 						sizeof(TimeMS) + JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID, sizeof
 						(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_OUT_OF_BAND_INTERNAL:
 				if (recvParams->bytesRead >= sizeof(MessageID) + JackieGUID::size() +
@@ -765,6 +773,7 @@ namespace JACKIE_INET
 						JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
 				/// msg layout: MessageID MessageID OFFLINE_MESSAGE_DATA_ID JackieGUID
@@ -774,6 +783,7 @@ namespace JACKIE_INET
 					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) * 2,
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_OPEN_CONNECTION_REPLY_1:
 				if (recvParams->bytesRead >= sizeof(MessageID) +
@@ -782,30 +792,42 @@ namespace JACKIE_INET
 					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_OPEN_CONNECTION_REPLY_2:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_1:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
+				if (*isUnconnected)
+				{
+				}
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_2:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_CONNECTION_ATTEMPT_FAILED:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_NO_FREE_INCOMING_CONNECTIONS:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_CONNECTION_BANNED:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_ALREADY_CONNECTED:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			case ID_IP_RECENTLY_CONNECTED:
-				UNCONNETED_RECVPARAMS_HANDLER0
+				UNCONNETED_RECVPARAMS_HANDLER0;
+				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			default:
 				*isUnconnected = false;
