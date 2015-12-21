@@ -1724,7 +1724,6 @@ namespace JACKIE_INET
 			//JackieSleep(1000);
 		}
 		JDEBUG << "Send polling thread Stops....";
-
 		serv->isNetworkUpdateThreadActive = false;
 		return 0;
 	}

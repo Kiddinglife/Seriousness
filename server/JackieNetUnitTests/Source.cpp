@@ -433,14 +433,14 @@ static void test_ServerApplication_funcs()
 	JACKIE_INET::BindSocket socketDescriptor;
 	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET;
 	//USE_NON_BLOBKING_SOCKET;
-	socketDescriptor.port = 32000;
+	socketDescriptor.port = 35000;
 	socketDescriptor.socketFamily = AF_INET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
 	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
 	app->Start(4, &socketDescriptor, 1);
 
-	//app->Connect("localhost", 32000);
+	app->Connect("127.0.0.1", 35000);
 
 	//int ret;
 	//char* data = "JackieNet";
@@ -454,19 +454,19 @@ static void test_ServerApplication_funcs()
 	//// Loop for input
 	while (1)
 	{
-		JackieBits jb;
-		jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
-		jb.Write((MessageID)123);
-		jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
-			sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
-		jb.WriteMini((UInt64)123456);
+		//JackieBits jb;
+		//jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+		//jb.Write((MessageID)123);
+		//jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
+		//	sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
+		//jb.WriteMini((UInt64)123456);
 
-		JISSendParams bsp;
-		bsp.data = jb.DataInt8();
-		bsp.length = jb.GetWrittenBytesCount();
-		bsp.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
+		//JISSendParams bsp;
+		//bsp.data = jb.DataInt8();
+		//bsp.length = jb.GetWrittenBytesCount();
+		//bsp.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
 
-		JISSendResult len = app->bindedSockets[0]->Send(&bsp, TRACE_FILE_AND_LINE_);
+		//JISSendResult len = app->bindedSockets[0]->Send(&bsp, TRACE_FILE_AND_LINE_);
 		//Command* c = app->AllocCommand();
 		//c->command = Command::BCS_SEND;
 		//app->PostComand(c);
