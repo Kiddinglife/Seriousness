@@ -651,8 +651,34 @@ namespace JACKIE_INET
 #endif
 #endif // LIBCAT_SECURITY
 
+		/////1.process baned client's recv
+		/*char str1[64];
+		systemAddress.ToString(false, str1);
+		if (rakPeer->IsBanned(str1))
+		{
+		for (i = 0; i < rakPeer->pluginListNTS.Size(); i++)
+		rakPeer->pluginListNTS[i]->OnDirectSocketReceive(data, length * 8, systemAddress);
+
+		RakNet::BitStream bs;
+		bs.WriteFrom((MessageID)ID_CONNECTION_BANNED);
+		bs.WriteAlignedBytesFrom((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+		bs.WriteFrom(rakPeer->GetGuidFromSystemAddress(UNASSIGNED_SYSTEM_ADDRESS));
+
+
+		RNS2_SendParameters bsp;
+		bsp.data = (char*)bs.GetData();
+		bsp.length = bs.GetWrittenBytesCount();
+		bsp.systemAddress = systemAddress;
+		for (i = 0; i < rakPeer->pluginListNTS.Size(); i++)
+		rakPeer->pluginListNTS[i]->OnDirectSocketSend((char*)bs.GetData(), bs.GetNumberOfBitsUsed(), systemAddress);
+		rakNetSocket->Send(&bsp, _FILE_AND_LINE_);
+
+		return true;
+		}*/
+
 		DCHECK(recvParams->senderINetAddress.GetPortHostOrder() != 0);
 
+		///2.process unconneted recv params
 		bool isUnconnectedRecvPrrams;
 		if (!ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams))
 		{
@@ -677,14 +703,26 @@ namespace JACKIE_INET
 	}
 
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
-		JISRecvParams* recvParams, bool* isOfflinerecvParams)
+		JISRecvParams* recvParams, bool* isUnconnected)
 	{
+		JDEBUG << "Process One Unconnected Recv Params";
+
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
 		UInt32 index;
+		// The reason for all this is that the reliability layer has no way to tell between offline
+		// messages that arrived late for a player that is now connected,
+		// and a regular encoding. So I insert OFFLINE_MESSAGE_DATA_ID into the stream,
+		// the encoding of which is essentially impossible to hit by chance 
+		// 
+		if (recvParams->bytesRead <= 2)
+		{
+			*isUnconnected = true;
+		}
+		else
+		{
 
-		const char* strAddr = recvParams->senderINetAddress.ToString();
-
+		}
 		return false;
 	}
 
@@ -720,12 +758,12 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
 					connReqQ.RemoveAtIndex(i);
 					break;
+				}
 			}
-		}
 			connReqQLock.Unlock();
-	}
+		}
 		connReqCancelQLock.Unlock();
-}
+	}
 
 	/// @Done
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
