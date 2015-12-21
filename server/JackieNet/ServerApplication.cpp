@@ -702,6 +702,12 @@ namespace JACKIE_INET
 		}
 	}
 
+#define UNCONNETED_RECVPARAMS_HANDLER \
+	if (recvParams->bytesRead >= sizeof(MessageID) + \
+	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
+	{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
+
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
 	{
@@ -721,7 +727,98 @@ namespace JACKIE_INET
 		}
 		else
 		{
-
+			switch ((MessageID)recvParams->data[0])
+			{
+			case ID_UNCONNECTED_PING:
+				//UNCONNETED_RECVPARAMS_HANDLER_1
+				if (recvParams->bytesRead >=
+					sizeof(MessageID) + sizeof(Time) + sizeof(OFFLINE_MESSAGE_DATA_ID))
+				{
+					*isUnconnected =
+						memcmp(recvParams->data + sizeof(MessageID) + sizeof(Time), OFFLINE_MESSAGE_DATA_ID,
+						sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_UNCONNECTED_PING_OPEN_CONNECTIONS:
+				//UNCONNETED_RECVPARAMS_HANDLER_1
+				if (recvParams->bytesRead >=
+					sizeof(MessageID) + sizeof(Time) + sizeof(OFFLINE_MESSAGE_DATA_ID))
+				{
+					*isUnconnected =
+						memcmp(recvParams->data + sizeof(MessageID) + sizeof(Time), OFFLINE_MESSAGE_DATA_ID,
+						sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_UNCONNECTED_PONG:
+				if (recvParams->bytesRead >
+					sizeof(MessageID) + sizeof(TimeMS) + JackieGUID::size() +
+					sizeof(OFFLINE_MESSAGE_DATA_ID))
+				{
+					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+						sizeof(Time) + JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID, sizeof
+						(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				else
+				{
+					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+						sizeof(TimeMS) + JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID, sizeof
+						(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_OUT_OF_BAND_INTERNAL:
+				if (recvParams->bytesRead >= sizeof(MessageID) + JackieGUID::size() +
+					sizeof(OFFLINE_MESSAGE_DATA_ID))
+				{
+					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+						JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID,
+						sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
+				/// msg layout: MessageID MessageID OFFLINE_MESSAGE_DATA_ID JackieGUID
+				if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
+					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
+				{
+					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) * 2,
+						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_OPEN_CONNECTION_REPLY_1:
+				if (recvParams->bytesRead >= sizeof(MessageID) +
+					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
+				{
+					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),
+						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+				}
+				break;
+			case ID_OPEN_CONNECTION_REPLY_2:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_OPEN_CONNECTION_REQUEST_1:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_OPEN_CONNECTION_REQUEST_2:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_CONNECTION_ATTEMPT_FAILED:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_NO_FREE_INCOMING_CONNECTIONS:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_CONNECTION_BANNED:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_ALREADY_CONNECTED:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			case ID_IP_RECENTLY_CONNECTED:
+				UNCONNETED_RECVPARAMS_HANDLER
+				break;
+			default:
+				*isUnconnected = false;
+				break;
+			}
 		}
 		return false;
 	}
