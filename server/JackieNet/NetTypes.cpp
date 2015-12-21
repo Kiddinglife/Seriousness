@@ -575,7 +575,7 @@ namespace JACKIE_INET
 	{
 		return ((unsigned long)(g.g >> 32)) ^ ((unsigned long)(g.g & 0xFFFFFFFF));
 	}
-	inline int JackieGUID::size() { return (int) sizeof(UInt64); }
+	int JackieGUID::size() { return (int) sizeof(UInt64); }
 	bool JackieGUID::FromString(const char *source)
 	{
 		if (source == 0)

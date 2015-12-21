@@ -438,7 +438,7 @@ static void test_ServerApplication_funcs()
 	socketDescriptor.socketFamily = AF_INET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
-	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
+	//app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
 	app->Start(4, &socketDescriptor, 1);
 
 	app->Connect("localhost", 32000);

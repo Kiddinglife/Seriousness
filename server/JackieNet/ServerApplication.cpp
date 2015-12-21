@@ -651,7 +651,7 @@ namespace JACKIE_INET
 #endif
 #endif // LIBCAT_SECURITY
 
-		/////1.process baned client's recv
+		// 1.process baned client's recv
 		/*char str1[64];
 		systemAddress.ToString(false, str1);
 		if (rakPeer->IsBanned(str1))
@@ -678,26 +678,31 @@ namespace JACKIE_INET
 
 		DCHECK(recvParams->senderINetAddress.GetPortHostOrder() != 0);
 
-		///2.process unconneted recv params
+		// 2. Try to process this recv params as unconnected
 		bool isUnconnectedRecvPrrams;
-		if (!ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams))
-		{
+		ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams);
 
+		/// no need to use return vlue
+		//bool notSend2ReliabilityLayer = ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams);
+		//if (!notSend2ReliabilityLayer)
+
+		if (!isUnconnectedRecvPrrams) //notSend2ReliabilityLayer
+		{
 			/// See if this datagram came from a connected system
 			RemoteEndPoint* remoteEndPoint =
 				GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
 			if (remoteEndPoint != 0) // if this datagram comes from connected system
 			{
-				if (!isUnconnectedRecvPrrams)
-				{
-					remoteEndPoint->reliabilityLayer.ProcessOneConnectedRecvParams(this, recvParams, remoteEndPoint->MTUSize);
-				}
+				//if (!isUnconnectedRecvPrrams)
+				//{
+				remoteEndPoint->reliabilityLayer.ProcessOneConnectedRecvParams(this, recvParams, remoteEndPoint->MTUSize);
+				//}
 			}
 			else
 			{
 				char str[256];
 				recvParams->senderINetAddress.ToString(true, str);
-				JWARNING << "Packet from unconnected sender " << str;
+				JWARNING << "Network Thread Says Packet from unconnected sender " << str;
 			}
 		}
 	}
@@ -711,13 +716,13 @@ namespace JACKIE_INET
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-						{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + sizeof(Time), \
-    OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
+						{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
-if (*isUnconnected) {\
-for (index = 0; index < pluginListNTS.Size(); index++)\
-pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
+   if (*isUnconnected) {\
+   for (index = 0; index < pluginListNTS.Size(); index++)\
+   pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
@@ -784,6 +789,41 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
+				//UNCONNECTED_RECVPARAMS_HANDLER3
+				if (*isUnconnected)
+				{
+					JackieBits reader((UInt8*)recvParams->data, recvParams->bytesRead);
+					MessageID msgid;
+					reader.Read(msgid);
+					JDEBUG << "client receives msg with " << "msgid " << (int)msgid;
+					if ((MessageID)recvParams->data[0] == ID_INCOMPATIBLE_PROTOCOL_VERSION)
+					{
+						MessageID update_protocol_version;
+						reader.Read(update_protocol_version);
+						JDEBUG << "update_protocol_version " << (int)update_protocol_version;
+					}
+					reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+					//unsigned char buf[sizeof(OFFLINE_MESSAGE_DATA_ID)];
+					//reader.ReadBits(buf, sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
+
+					//reader.ReadSkipBytes(sizeof(MessageID));
+					//reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+					//if ((MessageID)recvParams->data[0] ==ID_INCOMPATIBLE_PROTOCOL_VERSION)
+					//	reader.ReadSkipBytes(sizeof(MessageID));
+
+					JackieGUID guid;
+					reader.ReadMini(guid);
+					JDEBUG << "guid " << guid.g;
+
+					ConnectionRequest *rcs;
+					bool connectionAttemptCancelled = false;
+
+					return true;
+				}
+				else
+				{
+					JDEBUG << "CONNECTED ID_INCOMPATIBLE_PROTOCOL_VERSION ";
+				}
 				break;
 			case ID_OPEN_CONNECTION_REPLY_1:
 				if (recvParams->bytesRead >= sizeof(MessageID) +
@@ -803,6 +843,40 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				if (*isUnconnected)
 				{
+					unsigned char remote_system_protcol = recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
+
+					JDEBUG << "unconnected ID_OPEN_CONNECTION_REQUEST_1, protocol id "
+						<< (UInt16)remote_system_protcol;
+
+					// see if the protocol is up-to-date
+					if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
+					{
+						JackieBits jb;
+						jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+						jb.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+						jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
+							sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
+						jb.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+
+						JISSendParams bsp;
+						bsp.data = jb.DataInt8();
+						bsp.length = jb.GetWrittenBytesCount();
+						bsp.receiverINetAddress = recvParams->senderINetAddress;
+
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&bsp);
+
+						recvParams->socket->Send(&bsp, TRACE_FILE_AND_LINE_);
+					}
+					else
+					{
+
+					}
+					return true;
+				}
+				else
+				{
+					JDEBUG << "CONNECTED ID_OPEN_CONNECTION_REQUEST_1 ";
 				}
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_2:
@@ -944,22 +1018,19 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 					connReq->nextRequestTime = timeMS + connReq->connAttemptIntervalMS;
 
 					JackieBits bitStream;
-					bitStream.WriteMini((MessageID)ID_OPEN_CONNECTION_REQUEST_1);
-					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
+					bitStream.Write(ID_OPEN_CONNECTION_REQUEST_1);
+					bitStream.WriteAlignedBytes(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bitStream.WriteMini((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-					/// definitely will not be fragmented because UDP_HEADER_SIZE = 28 > 1+16+1=18
-					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] - UDP_HEADER_SIZE);
+					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					// definitely will not be fragmented because 
+					// UDP_HEADER_SIZE = 28 > 1+16+1=18
+					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
+						UDP_HEADER_SIZE);
 
 					JDEBUG << "The "
 						<< (int)connReq->requestsMade
 						<< " times to try to connect to remote sever ["
 						<< connReq->receiverAddr.ToString() << "]";
-
-					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
-					{
-						pluginListNTS[i]->OnDirectSocketSend(bitStream.DataInt8(), bitStream.GetPayLoadBits(), connReq->receiverAddr);
-					}
 
 					JackieINetSocket* socket2Use;
 					if (connReq->socket == 0)
@@ -977,10 +1048,17 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 						((JISBerkley*)socket2Use)->SetDoNotFragment(1);
 #endif
 					Time sendToStart = GetTimeMS();
+
 					JISSendParams jsp;
 					jsp.data = bitStream.DataInt8();
 					jsp.length = bitStream.GetWrittenBytesCount();
 					jsp.receiverINetAddress = connReq->receiverAddr;
+
+					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
+					{
+						pluginListNTS[i]->OnDirectSocketSend(&jsp);
+					}
+
 					if (socket2Use->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
 					{
 						/// do not use this MTU size again
@@ -1131,6 +1209,27 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 		}
 	}
 
+	const JackieGUID& ServerApplication::GetGuidFromSystemAddress(const JackieAddress
+		input) const
+	{
+		if (input == JACKIE_NULL_ADDRESS) return myGuid;
+
+		if (input.systemIndex != (SystemIndex)-1 &&
+			input.systemIndex < maxConnections &&
+			remoteSystemList[input.systemIndex].systemAddress == input)
+			return remoteSystemList[input.systemIndex].guid;
+
+		for (unsigned int i = 0; i < maxConnections; i++)
+		{
+			if (remoteSystemList[i].systemAddress == input)
+			{
+				// Set the systemIndex so future lookups will be fast
+				remoteSystemList[i].guid.systemIndex = (SystemIndex)i;
+				return remoteSystemList[i].guid;
+			}
+		}
+		return JACKIE_NULL_GUID;
+	}
 
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const JackieAddress&
 		sa, bool neededBySendThread, bool onlyWantActiveEndPoint) const
@@ -1302,12 +1401,13 @@ pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
-		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity " << (int)incomePacket->data[0];
+		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity "
+			<< (int)incomePacket->data[0];
 
 		UInt32 i;
 		for (i = 0; i < pluginListTS.Size(); i++)
 		{
-			switch ((UInt32)incomePacket->data[0])
+			switch ((MessageID)incomePacket->data[0])
 			{
 			case ID_DISCONNECTION_NOTIFICATION:
 				pluginListTS[i]->OnClosedConnection(incomePacket->systemAddress, incomePacket->guid, LCR_DISCONNECTION_NOTIFICATION);

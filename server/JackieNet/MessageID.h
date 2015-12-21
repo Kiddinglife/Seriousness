@@ -20,7 +20,7 @@
 #include "CustomPacketIdentifiers.h"
 #else
 
-enum OutOfBandIdentifiers
+enum OutOfBandIdentifiers : unsigned char
 {
 	ID_NAT_ESTABLISH_UNIDIRECTIONAL,
 	ID_NAT_ESTABLISH_BIDIRECTIONAL,
@@ -48,9 +48,8 @@ enum OutOfBandIdentifiers
 /// \endcode 
 ///
 /// \note All these enumerations should be casted to (unsigned char) before writing them to RakNet::BitStream
-enum DefaultMessageIDTypes
+enum DefaultMessageIDTypes : unsigned char
 {
-	//
 	// RESERVED TYPES - DO NOT CHANGE THESE
 	// All types from RakPeer
 	//

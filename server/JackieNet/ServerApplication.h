@@ -21,7 +21,6 @@
 //#include "RakNetSmartPtr.h"
 #include "ThreadConditionSignalEvent.h"
 #include "CompileFeatures.h"
-//#include "SecureHandshake.h"
 #include "JACKIE_Atomic.h"
 #include "ArraryQueue.h"
 #include "Array.h"
@@ -241,7 +240,7 @@ namespace JACKIE_INET
 		/// you can't have multiple connections from the same system
 		UInt64 CreateUniqueRandness(void);
 		UInt32 GetSystemIndexFromGuid(const JackieGUID& input) const;
-
+		const JackieGUID& GetGuidFromSystemAddress(const JackieAddress input) const;
 
 		UInt32 MaxConnections() const { return maxConnections; }
 

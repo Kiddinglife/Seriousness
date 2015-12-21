@@ -144,7 +144,7 @@ namespace JACKIE_INET
 		virtual void OnFailedConnectionAttempt(Packet *packet,
 			ConnectionAttemptFailReason failedConnectionAttemptReason)
 		{
-			JINFO << "User Thread Plugin CB On Failed Connection Attempt";
+			JINFO << "User Thread calls Plugin CB of OnFailedConnectionAttempt()";
 		}
 
 
@@ -182,7 +182,13 @@ namespace JACKIE_INET
 		/// @param[in] data The data being sent
 		/// @param[in] bitsUsed How many bits long @a data is
 		/// @param[in] remoteSystemAddress Which system this message is being sent to
-		virtual void OnDirectSocketSend(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+		//virtual void OnDirectSocketSend(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
+		virtual void OnDirectSocketSend(const JISSendParams* param)
+		{
+			JINFO << "OnDirectSocketSend():: send " << param->bytesWritten
+				<<" bytes to " << param->receiverINetAddress.ToString()  
+				<< ", msg id = " << (int)param->data[0];
+		}
 
 		/// Called on a receive from the socket, per datagram, that does not go through the reliability layer
 		/// @pre To be called, UsesReliabilityLayer() must return true
@@ -190,7 +196,11 @@ namespace JACKIE_INET
 		/// @param[in] bitsUsed How many bits long @a data is
 		/// @param[in] remoteSystemAddress Which system this message is being sent to
 		//virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
-		virtual void OnDirectSocketReceive(const JISRecvParams* recvParams) { }
+		virtual void OnDirectSocketReceive(const JISRecvParams* param) 
+		{
+			JINFO << "OnDirectSocketReceive()::recv from  " << param->senderINetAddress.ToString() << ", bytes "
+				<< param->bytesRead << ", msg id = " << (int)param->data[0];
+		}
 
 		/// Called when the reliability layer rejects a send or receive
 		/// @pre To be called, UsesReliabilityLayer() must return true
