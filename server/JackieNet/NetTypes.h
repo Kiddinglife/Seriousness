@@ -48,6 +48,7 @@ namespace JACKIE_INET
 	/// The largest value for an UDP datagram
 	//////////////////////////////////////////////////////////////////////////
 #define MAXIMUM_MTU_SIZE 1492
+#define Token_Ring_MAX_MTU_SIZE 17914
 #define MINIMUM_MTU_SIZE 400
 
 	/// try inginitely when pushtail operation return false if memory out
@@ -73,10 +74,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #define PRINTF_64BITS_MODIFIER "ll"
 #endif
 
-#define SEND_10040_ERR(sock, sendParams)\
-if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
-sendParams.bytesWritten == 10040)\
-{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+//#define SEND_10040_ERR(sock, sendParams)\
+//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
+//sendParams.bytesWritten == 10040)\
+//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+
 
 	/// \sa NetworkIDObject.h
 	typedef UInt8   UniqueIDType;

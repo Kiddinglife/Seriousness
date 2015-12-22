@@ -19,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																				{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																				{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -867,19 +867,145 @@ namespace JACKIE_INET
 					}
 					return true;
 				}
-				else
-				{
-					JDEBUG << "CONNECTED ID_INCOMPATIBLE_PROTOCOL_VERSION ";
-				}
 				break;
 			case ID_OPEN_CONNECTION_REPLY_1:
-				if (recvParams->bytesRead >= sizeof(MessageID) +
-					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
+				if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
+					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size() + sizeof(UInt16))
 				{
 					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
+				if (*isUnconnected)
+				{
+					JackieBits bsIn((UInt8*)recvParams->data, recvParams->bytesRead);
+					bsIn.ReadSkipBytes(sizeof(MessageID));
+					bsIn.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+					JackieGUID serverGuid;
+					bsIn.ReadMini(serverGuid);
+					bool serverHasSecurity;
+					bsIn.ReadMini(serverHasSecurity);
+					UInt32 cookie;
+					// Even if the server has security,
+					// it may not be required of us if we are in the security exception list
+					if (serverHasSecurity)
+					{
+						bsIn.Read(cookie);
+					}
+
+					JackieBits bsOut;
+					bsOut.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_2);
+					bsOut.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+					if (serverHasSecurity)
+						bsOut.Write(cookie);
+
+					ConnectionRequest *rcs;
+					connReqQLock.Lock();
+					for (unsigned int index = 0; index < connReqQ.Size(); index++)
+					{
+						rcs = connReqQ[index];
+						if (rcs->actionToTake == ConnectionRequest::CONNECT &&
+							rcs->receiverAddr == recvParams->senderINetAddress)
+						{
+							/// we can  unlock now 
+							connReqQLock.Unlock();
+
+							if (serverHasSecurity)
+							{
+#if LIBCAT_SECURITY==1
+								unsigned char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+								bsIn.ReadAlignedBytes(public_key, sizeof(public_key));
+
+								if (rcs->publicKeyMode==PKM_ACCEPT_ANY_PUBLIC_KEY)
+								{
+									memcpy(rcs->remote_public_key, public_key, cat::EasyHandshake::PUBLIC_KEY_BYTES);
+									if (!rcs->client_handshake->Initialize(public_key) ||
+										!rcs->client_handshake->GenerateChallenge(rcs->handshakeChallenge))
+									{
+										CAT_AUDIT_PRINTF("AUDIT: Server passed a bad public key with PKM_ACCEPT_ANY_PUBLIC_KEY");
+										return true;
+									}
+								}
+
+								if (cat::SecureEqual(public_key,
+									rcs->remote_public_key,
+									cat::EasyHandshake::PUBLIC_KEY_BYTES) == false)
+								{
+									rakPeer->requestedConnectionQueueMutex.Unlock();
+									CAT_AUDIT_PRINTF("AUDIT: Expected public key does not match what was sent by server -- Reporting back ID_PUBLIC_KEY_MISMATCH to user\n");
+
+									packet = rakPeer->AllocPacket(sizeof(char), _FILE_AND_LINE_);
+									packet->data[0] = ID_PUBLIC_KEY_MISMATCH; // Attempted a connection and couldn't
+									packet->bitSize = (sizeof(char) * 8);
+									packet->systemAddress = rcs->systemAddress;
+									packet->guid = serverGuid;
+									rakPeer->AddPacketToProducer(packet);
+									return true;
+								}
+
+								if (rcs->client_handshake == 0)
+								{
+									// Message does not contain a challenge
+									// We might still pass if we are in the security exception list
+									bsOut.WriteFrom((unsigned char)0);
+								}
+								else
+								{
+									// Message contains a challenge
+									bsOut.WriteFrom((unsigned char)1);
+									// challenge
+									CAT_AUDIT_PRINTF("AUDIT: Sending challenge\n");
+									bsOut.WriteAlignedBytesFrom((const unsigned char*)rcs->handshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
+								}
+#else // LIBCAT_SECURITY
+								// Message does not contain a challenge
+								bsOut.WriteMini(false);
+#endif // LIBCAT_SECURITY
+							}
+							else
+							{
+								// Server does not need security
+#if LIBCAT_SECURITY==1
+								if (rcs->client_handshake != 0)
+								{
+									rakPeer->requestedConnectionQueueMutex.Unlock();
+									CAT_AUDIT_PRINTF("AUDIT: Security disabled by server but we expected security (indicated by client_handshake not null) so failing!\n");
+
+									packet = rakPeer->AllocPacket(sizeof(char), _FILE_AND_LINE_);
+									packet->data[0] = ID_OUR_SYSTEM_REQUIRES_SECURITY; // Attempted a connection and couldn't
+									packet->bitSize = (sizeof(char) * 8);
+									packet->systemAddress = rcs->systemAddress;
+									packet->guid = serverGuid;
+									rakPeer->AddPacketToProducer(packet);
+									return true;
+								}
+#endif // LIBCAT_SECURITY
+							}
+
+							UInt16 mtu;
+							bsIn.ReadMini(mtu);
+
+							// bound address
+							bsOut.Write(rcs->receiverAddr);
+							// echo MTU
+							bsOut.Write(mtu);
+							// echo Our guid
+							bsOut.Write(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+
+							JISSendParams bsp;
+							bsp.data = bsOut.DataInt8();
+							bsp.length = bsOut.GetWrittenBytesCount();
+							bsp.receiverINetAddress = recvParams->senderINetAddress;
+							recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+							for (index = 0; index < pluginListNTS.Size(); index++)
+								pluginListNTS[index]->OnDirectSocketSend(&bsp);
+
+							return true;
+						}
+					}
+					connReqQLock.Unlock();
+				}
 				break;
 			case ID_OPEN_CONNECTION_REPLY_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -915,6 +1041,10 @@ namespace JACKIE_INET
 					}
 					else
 					{
+#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
+						if (recvParams->localBoundSocket->IsBerkleySocket())
+							((JISBerkley*)recvParams->localBoundSocket)->SetDoNotFragment(1);
+#endif
 						writer.Write(ID_OPEN_CONNECTION_REPLY_1);
 						writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 							sizeof(OFFLINE_MESSAGE_DATA_ID));
@@ -923,7 +1053,7 @@ namespace JACKIE_INET
 #if LIBCAT_SECURITY==1
 						if (_using_security)
 						{
-							writer.WriteBitOne();  // HasCookie on
+							writer.WriteMini(true);  // HasCookie on
 							// Write cookie
 							UInt32 cookie = _cookie_jar->Generate(&systemAddress.address, sizeof(systemAddress.address));
 							CAT_AUDIT_PRINTF("AUDIT: Writing cookie %i to %i:%i\n", cookie, systemAddress);
@@ -933,18 +1063,36 @@ namespace JACKIE_INET
 						}
 						else
 #endif // LIBCAT_SECURITY
-							writer.WriteBitZero();  // HasCookie off
+							writer.WriteMini(false);  // HasCookie off
 
+						// MTU. Lower MTU if it exceeds our own limit.
+						// because the size clients send us is hardcoded as 
+						// bitStream.PadZero2LengthOf(mtuSizes[MTUSizeIndex] -
+						// UDP_HEADER_SIZE);  see connect() for details
+						UInt16 client_max_mtu = (recvParams->bytesRead + UDP_HEADER_SIZE >= MAXIMUM_MTU_SIZE) ? MAXIMUM_MTU_SIZE : recvParams->bytesRead + UDP_HEADER_SIZE;
+						writer.WriteMini(client_max_mtu);
+						// Pad response with zeros to MTU size
+						// so the connection's MTU will be tested in both directions
+						writer.PadZero2LengthOf(client_max_mtu - writer.GetWrittenBytesCount());
 
+						JISSendParams bsp;
+						bsp.data = writer.DataInt8();
+						bsp.length = writer.GetWrittenBytesCount();
+						bsp.receiverINetAddress = recvParams->senderINetAddress;
+
+						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&bsp);
+
+#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
+						if (recvParams->localBoundSocket->IsBerkleySocket())
+							((JISBerkley*)recvParams->localBoundSocket)->SetDoNotFragment(0);
+#endif
 					}
 
 					return true;
 				}
-				else
-				{
-					JDEBUG << "CONNECTED ID_OPEN_CONNECTION_REQUEST_1 ";
-				}
-
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1089,8 +1237,8 @@ namespace JACKIE_INET
 					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
 					bitStream.PadZero2LengthOf(mtuSizes[MTUSizeIndex] -
 						UDP_HEADER_SIZE);
-					//bitStream.PadZero2LengthOf(5000 -
-					//	UDP_HEADER_SIZE);
+					//bitStream.PadZero2LengthOf(3000 -
+					//	UDP_HEADER_SIZE); //will trigger 10040 recvfrom 
 
 					connReq->receiverAddr.FixForIPVersion(connReq->socket->GetBoundAddress());
 
@@ -1112,7 +1260,7 @@ namespace JACKIE_INET
 						// A message sent on a datagram socket was larger than the internal message 
 						// buffer or some other network limit, or the buffer used to receive a datagram
 						// into was smaller than the datagram itself.
-						JINFO << "10040";
+						JWARNING << "Send return 10040 error!!!";
 						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
 						connReq->nextRequestTime = timeMS;
 					}
@@ -1784,7 +1932,7 @@ namespace JACKIE_INET
 			}
 			JISRecvParamsPool[index].Reclaim(recvParams);
 		}
-		}
+	}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
@@ -1827,7 +1975,7 @@ namespace JACKIE_INET
 		JDEBUG << "Send polling thread Stops....";
 		serv->isNetworkUpdateThreadActive = false;
 		return 0;
-		}
+	}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::UDTConnect) { return 0; }
 	//STATIC_FACTORY_DEFINITIONS(IServerApplication, ServerApplication);
@@ -1961,4 +2109,4 @@ namespace JACKIE_INET
 		return CONNECTION_ATTEMPT_POSTED;
 	}
 
-	}
+}

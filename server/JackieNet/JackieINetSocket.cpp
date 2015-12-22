@@ -358,6 +358,7 @@ namespace JACKIE_INET
 	TRY_ONE_MORE_TIME:
 		recvFromStruct->bytesRead = recvfrom__(this->rns2Socket, recvFromStruct->data, MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
 
+
 		/// there are only two resons for UDP recvfrom() return 0 :
 		/// 1. Socket has been soft closed by shutdown() or setting up linear attribute
 		/// 2. Receives an empty (0 size) message from remote endpoint 
@@ -392,6 +393,8 @@ namespace JACKIE_INET
 				/// here i only handle WSAEMSGSIZE error in
 				/// line 1784 void ServerApplication::RunRecvCycleOnce(UInt32 index)
 				// other errors will be ignored and retry recvfrom(0 until it succeeds
+				// when you recv a datagram that is bigger than recv buffer size you passed to
+				/// recvfrom() third paramater, thsi will trigger wsamsgszie error
 				if (GetLastError() == WSAEMSGSIZE)
 				{
 					recvFromStruct->bytesRead = (int)WSAEMSGSIZE;
@@ -421,7 +424,7 @@ namespace JACKIE_INET
 			}
 #endif
 			return val; 	/// read failed
-			}
+		}
 
 		/// fill out the remote endpoint address
 		recvFromStruct->timeRead = Get64BitsTimeUS();
@@ -488,13 +491,13 @@ namespace JACKIE_INET
 		{
 			memcpy(&recvFromStruct->senderINetAddress.address.addr6, (sockaddr_in6 *)&sa, sizeof(sockaddr_in6));
 			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr6.sin6_port);
-		}
+	}
 
 		return recvFromStruct->bytesRead;
 #else
 		return RecvFromIPV4(recvFromStruct);
 #endif
-			}
+}
 	//////////////////////////////////////////////////////////////////////////
 
 	JACKIE_INET::JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
@@ -604,7 +607,7 @@ namespace JACKIE_INET
 		/// send succeeds
 		sendParameters->bytesWritten = len;
 		return len;
-	}
+		}
 
 
 	void JISBerkley::GetSystemAddressViaJISSocket(JISSocket rns2Socket, JackieAddress *systemAddressOut)
@@ -629,7 +632,7 @@ namespace JACKIE_INET
 #endif
 			*systemAddressOut = JACKIE_NULL_ADDRESS;
 			return;
-		}
+	}
 
 		systemAddressOut->SetPortNetworkOrder(sa.sin_port);
 		systemAddressOut->address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
@@ -668,7 +671,7 @@ namespace JACKIE_INET
 			if( memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
 				sizeof(zero)) == 0 )
 				systemAddressOut->SetToLoopBack(4);
-	}
+		}
 		else
 		{
 			memcpy(&systemAddressOut->address.addr6, (sockaddr_in6 *)&ss, sizeof(sockaddr_in6));
@@ -678,7 +681,7 @@ namespace JACKIE_INET
 			if (memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
 				sizeof(zero)) == 0)
 				systemAddressOut->SetToLoopBack(6);
-		}
+	}
 
 #else
 		GetSystemAddressViaJISSocketIPV4(rns2Socket, systemAddressOut);
