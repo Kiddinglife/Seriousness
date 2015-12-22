@@ -1055,28 +1055,33 @@ namespace JACKIE_INET
 					// UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
 						UDP_HEADER_SIZE);
+
 					connReq->receiverAddr.FixForIPVersion(connReq->socket->GetBoundAddress());
+
 					JISSendParams jsp;
 					jsp.data = bitStream.DataInt8();
 					jsp.length = bitStream.GetWrittenBytesCount();
 					jsp.receiverINetAddress = connReq->receiverAddr;
-
-					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
-					{
-						pluginListNTS[i]->OnDirectSocketSend(&jsp);
-					}
 
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
 					if (connReq->socket->IsBerkleySocket())
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(1);
 #endif
 					Time sendToStart = GetTimeMS();
-					if (connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
+					JISSendResult ret = connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_); 
+					if (ret == 10040)
 					{
 						/// do not use this MTU size again
 						JINFO << "10040";
 						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
 						connReq->nextRequestTime = timeMS;
+					}
+					else if (ret > 0)
+					{
+						for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
+						{
+							pluginListNTS[i]->OnDirectSocketSend(&jsp);
+						}
 					}
 					else
 					{

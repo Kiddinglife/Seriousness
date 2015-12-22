@@ -464,7 +464,7 @@ namespace JACKIE_INET
 #else
 		return RecvFromIPV4(recvFromStruct);
 #endif
-}
+	}
 	//////////////////////////////////////////////////////////////////////////
 
 	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
@@ -486,15 +486,16 @@ namespace JACKIE_INET
 		{
 			ret = SendWithoutVDP(rns2Socket, sendParameters, file, line);
 		}
-
 		return ret;
 	}
+
 	JISSendResult JISBerkley::SendWithoutVDP(JISSocket rns2Socket,
 		JISSendParams *sendParameters,
 		const char *file, unsigned int line)
 	{
 		int len = 0;
-		do{
+		do
+		{
 			int oldTTL = -1;
 			int newTTL = -1;
 			socklen_t opLen = sizeof(oldTTL);
@@ -520,12 +521,12 @@ namespace JACKIE_INET
 #if NET_SUPPORT_IPV6 ==1
 				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*)& sendParameters->receiverINetAddress.address.addr6, sizeof(sockaddr_in6));
 #endif
-		}
+			}
 
 			/// only when sendParameters->length == 0, sendto() will return 0;
 			/// otherwise it will return > 0, or error code of -1
 			/// we forbid to send o length data
-			assert(len != 0);
+			///assert(len != 0);
 
 			if (len < 0)
 			{
@@ -555,10 +556,11 @@ namespace JACKIE_INET
 			{
 				setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& oldTTL, sizeof(oldTTL));
 			}
+		} while (len <= 0); // only one case that the send buffer is full and so we just try  again and warn the administrator as error
+		// so no mater you are using nonblocking or blocking we must handle this
 
-			sendParameters->bytesWritten = len;
-	} while (len == 0);
-	return len;
+		sendParameters->bytesWritten = len;
+		return len;
 	}
 
 
@@ -603,7 +605,7 @@ namespace JACKIE_INET
 		sockaddr_storage ss;
 		slen = sizeof(ss);
 
-		if( getsockname__(rns2Socket, ( struct sockaddr * )&ss, &slen) == SOCKET_ERROR )
+		if (getsockname__(rns2Socket, (struct sockaddr *)&ss, &slen) == SOCKET_ERROR)
 		{
 #if defined(_WIN32)
 			fprintf_s(stderr, "JISBerkley::GetSystemAddressViaJISSocketIPV4And6()::getsockname__()::failed with errno code (%s)\n", strerror(WSAGetLastError()));
@@ -638,7 +640,7 @@ namespace JACKIE_INET
 #else
 		GetSystemAddressViaJISSocketIPV4(rns2Socket, systemAddressOut);
 #endif
-	}
+}
 
 	void JISBerkley::GetMyIPBerkley(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
@@ -720,4 +722,4 @@ namespace JACKIE_INET
 
 #endif
 
-}
+	}
