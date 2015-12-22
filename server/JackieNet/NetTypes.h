@@ -273,7 +273,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		bool operator!=(const JackieAddress& right) const;
 		bool operator > (const JackieAddress& right) const;
 		bool operator < (const JackieAddress& right) const;
-
+		bool EqualsExcludingPort(const JackieAddress& right) const;
 		/// @internal Return the size to write to a bitStream
 		static Int32 size(void);
 

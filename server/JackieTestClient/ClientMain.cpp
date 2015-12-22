@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
 	app->Start(4, &socketDescriptor, 1);
 
-	app->Connect("127.0.0.1", 35000);
+	app->Connect("127.0.0.1", 38000);
 
 	Packet* packet = 0;
 	//// Loop for input

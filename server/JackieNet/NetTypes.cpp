@@ -100,14 +100,18 @@ namespace JACKIE_INET
 
 	bool JackieAddress::operator==(const JackieAddress& right) const
 	{
-		return address.addr4.sin_port == right.address.addr4.sin_port &&
-			(address.addr4.sin_family == AF_INET &&
-			address.addr4.sin_addr.s_addr == right.address.addr4.sin_addr.s_addr)
-#if NET_SUPPORT_IPV6 == 1
-			|| ( address.addr4.sin_family == AF_INET6 && memcmp(address.addr6.sin6_addr.s6_addr, right.address.addr6.sin6_addr.s6_addr, sizeof(address.addr6.sin6_addr.s6_addr)) == 0 )
+		return (address.addr4.sin_port == right.address.addr4.sin_port) && EqualsExcludingPort(right);
+	}
+
+	bool JackieAddress::EqualsExcludingPort(const JackieAddress& right) const
+	{
+		return (address.addr4.sin_family == AF_INET && address.addr4.sin_addr.s_addr == right.address.addr4.sin_addr.s_addr)
+#if NET_SUPPORT_IPV6==1
+			|| (address.addr4.sin_family == AF_INET6 && memcmp(address.addr6.sin6_addr.s6_addr, right.address.addr6.sin6_addr.s6_addr, sizeof(address.addr6.sin6_addr.s6_addr)) == 0)
 #endif
 			;
 	}
+
 	bool JackieAddress::operator!=(const JackieAddress& right) const
 	{
 		return (*this == right) == false;
@@ -117,29 +121,29 @@ namespace JACKIE_INET
 		if (address.addr4.sin_port == right.address.addr4.sin_port)
 		{
 #if NET_SUPPORT_IPV6 ==1
-			if( address.addr4.sin_family == AF_INET )
-				return address.addr4.sin_addr.s_addr>right.address.addr4.sin_addr.s_addr;
+			if (address.addr4.sin_family == AF_INET)
+				return address.addr4.sin_addr.s_addr > right.address.addr4.sin_addr.s_addr;
 			return memcmp(address.addr6.sin6_addr.s6_addr, right.address.addr6.sin6_addr.s6_addr, sizeof(address.addr6.sin6_addr.s6_addr)) > 0;
 #else
 			return address.addr4.sin_addr.s_addr > right.address.addr4.sin_addr.s_addr;
 #endif
 		}
 		return address.addr4.sin_port > right.address.addr4.sin_port;
-	}
+		}
 	bool JackieAddress::operator<(const JackieAddress& right) const
 	{
 		if (address.addr4.sin_port == right.address.addr4.sin_port)
 		{
 #if NET_SUPPORT_IPV6==1
-			if( address.addr4.sin_family == AF_INET )
-				return address.addr4.sin_addr.s_addr<right.address.addr4.sin_addr.s_addr;
+			if (address.addr4.sin_family == AF_INET)
+				return address.addr4.sin_addr.s_addr < right.address.addr4.sin_addr.s_addr;
 			return memcmp(address.addr6.sin6_addr.s6_addr, right.address.addr6.sin6_addr.s6_addr, sizeof(address.addr6.sin6_addr.s6_addr))>0;
 #else
 			return address.addr4.sin_addr.s_addr < right.address.addr4.sin_addr.s_addr;
 #endif
 		}
 		return address.addr4.sin_port < right.address.addr4.sin_port;
-	}
+		}
 
 	unsigned char JackieAddress::GetIPVersion(void) const
 	{
@@ -155,7 +159,7 @@ namespace JACKIE_INET
 	unsigned char JackieAddress::GetIPProtocol(void) const
 	{
 #if NET_SUPPORT_IPV6==1
-		if( address.addr4.sin_family == AF_INET )
+		if (address.addr4.sin_family == AF_INET)
 			return IPPROTO_IP;
 		return IPPROTO_IPV6;
 #else
@@ -238,7 +242,7 @@ namespace JACKIE_INET
 #if defined(_WIN32)
 			if (_strnicmp(str, "localhost", 9) == 0)
 #else
-			if( strncasecmp(str, "localhost", 9) == 0 )
+			if (strncasecmp(str, "localhost", 9) == 0)
 #endif
 			{
 				address.addr4.sin_addr.s_addr = inet_addr__("127.0.0.1");
@@ -310,7 +314,7 @@ namespace JACKIE_INET
 #if NET_SUPPORT_IPV6 != 1
 		return SetIP4Address(str, portDelineator);
 #else
-		if( str == 0 )
+		if (str == 0)
 		{
 			memset(&address, 0, sizeof(address));
 			address.addr4.sin_family = AF_INET;
@@ -502,13 +506,13 @@ namespace JACKIE_INET
 		else
 		{
 #if NET_SUPPORT_IPV6 ==1
-			ret = getnameinfo(( struct sockaddr * ) &address.addr6, sizeof(struct sockaddr_in6), dest, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
+			ret = getnameinfo((struct sockaddr *) &address.addr6, sizeof(struct sockaddr_in6), dest, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST);
 #endif
 		}
 		if (ret != 0)
 		{
 			dest[0] = 0;
-		}
+	}
 
 		if (writePort)
 		{
@@ -518,7 +522,7 @@ namespace JACKIE_INET
 			strcat(dest, (const char*)ch);
 			Itoa(ntohs(address.addr4.sin_port), dest + strlen(dest), 10);
 		}
-	}
+		}
 
 	JackieGUID::JackieGUID(UInt64 _g)
 	{
@@ -587,7 +591,7 @@ namespace JACKIE_INET
 		g = _strtoui64(source, NULL, 10);
 #else
 		// Changed from g=strtoull(source,0,10); for android
-		g = strtoull(source, (char **) NULL, 10);
+		g = strtoull(source, (char **)NULL, 10);
 #endif
 
 		return true;
@@ -711,4 +715,4 @@ namespace JACKIE_INET
 		}
 		return false;
 	}
-}
+	}

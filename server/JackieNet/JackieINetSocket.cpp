@@ -349,25 +349,27 @@ namespace JACKIE_INET
 
 	JISRecvResult JISBerkley::RecvFromIPV4(JISRecvParams *recvFromStruct)
 	{
-		static  sockaddr_in sa = { 0 };
+		static sockaddr_in sa = { AF_INET, 0, 0 };
 		static socklen_t sockLen = sizeof(sa);
 		static socklen_t* socketlenPtr = (socklen_t*)&sockLen;
 		static sockaddr* sockAddrPtr = (sockaddr*)&sa;
 		static const int flag = 0;
 
-		recvFromStruct->bytesRead = recvfrom__(this->GetSocket(), recvFromStruct->data, MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
-		//////////////////////////////////////////////////////////////////////////
+		recvFromStruct->bytesRead = recvfrom__(this->rns2Socket, recvFromStruct->data, MAXIMUM_MTU_SIZE, flag, sockAddrPtr, socketlenPtr);
+
 		/// there are only two resons for UDP recvfrom() return 0 :
 		/// 1. Socket has been soft closed by shutdown() or setting up linear attribute
 		/// 2. Receives an empty (0 size) message from remote endpoint 
 		/// However, we cannot expect temote endpoint  will never sends 0 length mesage
 		/// to us. So, the following lines are commented 
-		//JACKIE_ASSERT(recvFromStruct->bytesRead != 0);
-		//if( recvFromStruct->bytesRead == 0 )
-		//{
-		//	fprintf_s(stderr, "ERROR::JISBerkley::RecvFromBlockingIPV4()::recvfrom__()::Got %i bytes from %s\n", recvFromStruct->bytesRead, recvFromStruct->systemAddress.ToString());
-		//}
-		//////////////////////////////////////////////////////////////////////////
+		assert(recvFromStruct->bytesRead != 0);
+		if (recvFromStruct->bytesRead == 0)
+		{
+			char buf[128];
+			recvFromStruct->senderINetAddress.ToString(true, buf);
+			JERROR << "RecvFromIPV4():: recv 0 length data from " << buf;
+			//fprintf_s(stderr, "ERROR::JISBerkley::RecvFromBlockingIPV4()::recvfrom__()::Got %i bytes from %s\n", recvFromStruct->bytesRead, recvFromStruct->senderINetAddress.ToString().c_str());
+		}
 
 		if (recvFromStruct->bytesRead < 0)
 		{
@@ -384,7 +386,7 @@ namespace JACKIE_INET
 				LocalFree(messageBuffer);
 			}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-			if( ( binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.isBlocKing )
+			if ((binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK) || !binding.isBlocKing)
 			{
 				fprintf_s(stderr, "JISBerkley::RecvFromNonBlockingIPV4()::recvfrom__()::failed with errno code (%d-%s)\n", errno, strerror(errno));
 			}
@@ -394,11 +396,15 @@ namespace JACKIE_INET
 
 		/// fill out the remote endpoint address
 		recvFromStruct->timeRead = Get64BitsTimeUS();
-		recvFromStruct->senderINetAddress.SetPortNetworkOrder(sa.sin_port);
-		recvFromStruct->senderINetAddress.address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
+
+		recvFromStruct->senderINetAddress.address.addr4 = sa;
+#ifdef _DEBUG
+		recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr4.sin_port);
+#endif // _DEBUG
+
 		return recvFromStruct->bytesRead;
 	}
-	JISRecvResult JISBerkley::RecvFromIPV4And6(JISRecvParams *recvFromStruct)
+	inline JISRecvResult JISBerkley::RecvFromIPV4And6(JISRecvParams *recvFromStruct)
 	{
 #if  NET_SUPPORT_IPV6==1
 		static sockaddr_storage sa = { 0 };
@@ -443,13 +449,14 @@ namespace JACKIE_INET
 
 		recvFromStruct->timeRead = Get64BitsTimeUS();
 
-		if( sa.ss_family == AF_INET )
+		if (sa.ss_family == AF_INET)
 		{
-			memcpy(&recvFromStruct->senderINetAddress.address.addr4, (sockaddr_in *) &sa, sizeof(sockaddr_in));
+			memcpy(&recvFromStruct->senderINetAddress.address.addr4, (sockaddr_in *)&sa, sizeof(sockaddr_in));
 			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr4.sin_port);
-		} else
+		}
+		else
 		{
-			memcpy(&recvFromStruct->senderINetAddress.address.addr6, (sockaddr_in6 *) &sa, sizeof(sockaddr_in6));
+			memcpy(&recvFromStruct->senderINetAddress.address.addr6, (sockaddr_in6 *)&sa, sizeof(sockaddr_in6));
 			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr6.sin6_port);
 		}
 
@@ -457,7 +464,7 @@ namespace JACKIE_INET
 #else
 		return RecvFromIPV4(recvFromStruct);
 #endif
-	}
+}
 	//////////////////////////////////////////////////////////////////////////
 
 	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
@@ -487,69 +494,71 @@ namespace JACKIE_INET
 		const char *file, unsigned int line)
 	{
 		int len = 0;
-		int oldTTL = -1;
-		int newTTL = -1;
-		socklen_t opLen = sizeof(oldTTL);
+		do{
+			int oldTTL = -1;
+			int newTTL = -1;
+			socklen_t opLen = sizeof(oldTTL);
 
-		oldTTL = -1;
-		if (sendParameters->ttl > 0)
-		{
-			// Get the current TTL
-			if (getsockopt__(rns2Socket,
-				sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& oldTTL, &opLen) != -1)
+			oldTTL = -1;
+			if (sendParameters->ttl > 0)
 			{
-				newTTL = sendParameters->ttl;
-				setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& newTTL, sizeof(newTTL));
+				// Get the current TTL
+				if (getsockopt__(rns2Socket,
+					sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& oldTTL, &opLen) != -1)
+				{
+					newTTL = sendParameters->ttl;
+					setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& newTTL, sizeof(newTTL));
+				}
 			}
-		}
 
-		if (sendParameters->receiverINetAddress.address.addr4.sin_family == AF_INET)
-		{
-			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*)& sendParameters->receiverINetAddress.address.addr4, sizeof(sockaddr_in));
-		}
-		else
-		{
+			if (sendParameters->receiverINetAddress.address.addr4.sin_family == AF_INET)
+			{
+				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*)& sendParameters->receiverINetAddress.address.addr4, sizeof(sockaddr_in));
+			}
+			else
+			{
 #if NET_SUPPORT_IPV6 ==1
-			len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*) & sendParameters->receiverINetAddress.address.addr6, sizeof(sockaddr_in6));
+				len = sendto__(rns2Socket, sendParameters->data, sendParameters->length, 0, (const sockaddr*)& sendParameters->receiverINetAddress.address.addr6, sizeof(sockaddr_in6));
 #endif
 		}
 
-		/// only when sendParameters->length == 0, sendto() will return 0;
-		/// otherwise it will return > 0, or error code of -1
-		/// we forbid to send o length data
-		//JACKIE_ASSERT(len != 0);
+			/// only when sendParameters->length == 0, sendto() will return 0;
+			/// otherwise it will return > 0, or error code of -1
+			/// we forbid to send o length data
+			assert(len != 0);
 
-		if (len < 0)
-		{
+			if (len < 0)
+			{
 #if defined(_WIN32)
-			if ((binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK) || !binding.isBlocKing)
-			{
-				HLOCAL messageBuffer = 0;
-				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-					NULL, GetLastError(),
-					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
-					(PTSTR)& messageBuffer, 0, 0);
-				// I see this hit on XP with IPV6 for some reason
-				fwprintf(stderr, L"JISBerkley::RecvFromNonBlockingIPV4()::sendto__()::failed with errno code (%d, %ls)\n",
-					GetLastError(), (PCTSTR)LocalLock(messageBuffer));
-				LocalFree(messageBuffer);
-			}
+				if ((binding.isBlocKing && GetLastError() != WSAEWOULDBLOCK) || !binding.isBlocKing)
+				{
+					HLOCAL messageBuffer = 0;
+					FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+						NULL, GetLastError(),
+						MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
+						(PTSTR)& messageBuffer, 0, 0);
+					// I see this hit on XP with IPV6 for some reason
+					fwprintf(stderr, L"JISBerkley::RecvFromNonBlockingIPV4()::sendto__()::failed with errno code (%d, %ls)\n",
+						GetLastError(), (PCTSTR)LocalLock(messageBuffer));
+					LocalFree(messageBuffer);
+				}
 #elif (defined(__GNUC__) || defined(__GCCXML__) )
-			if( ( binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK ) || !binding.isBlocKing )
-			{
-				fprintf_s(stderr, "JISBerkley::SendWithoutVDP()::sendto__() failed with errno %i(%s) for char %i and length %i.\n",
-					errno, strerror(errno), sendParameters->data[0], sendParameters->length);
-			}
+				if ((binding.isBlocKing && errno != EAGAIN && errno != EWOULDBLOCK) || !binding.isBlocKing)
+				{
+					fprintf_s(stderr, "JISBerkley::SendWithoutVDP()::sendto__() failed with errno %i(%s) for char %i and length %i.\n",
+						errno, strerror(errno), sendParameters->data[0], sendParameters->length);
+				}
 #endif
-		}
+			}
 
-		if (oldTTL != -1)
-		{
-			setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& oldTTL, sizeof(oldTTL));
-		}
+			if (oldTTL != -1)
+			{
+				setsockopt__(rns2Socket, sendParameters->receiverINetAddress.GetIPProtocol(), IP_TTL, (char *)& oldTTL, sizeof(oldTTL));
+			}
 
-		sendParameters->bytesWritten = len;
-		return len;
+			sendParameters->bytesWritten = len;
+	} while (len == 0);
+	return len;
 	}
 
 
@@ -614,9 +623,10 @@ namespace JACKIE_INET
 			if( memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
 				sizeof(zero)) == 0 )
 				systemAddressOut->SetToLoopBack(4);
-		} else
+		}
+		else
 		{
-			memcpy(&systemAddressOut->address.addr6, (sockaddr_in6 *) &ss, sizeof(sockaddr_in6));
+			memcpy(&systemAddressOut->address.addr6, (sockaddr_in6 *)&ss, sizeof(sockaddr_in6));
 			systemAddressOut->debugPort = ntohs(systemAddressOut->address.addr6.sin6_port);
 
 			char zero[16] = { 0 };

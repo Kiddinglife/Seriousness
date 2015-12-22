@@ -230,11 +230,9 @@ namespace JACKIE_INET
 			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_SNDBUF, (char *)& returnVal, sizeof(returnVal));
 			JACKIE_ASSERT(returnVal == 0);
 
-			//////////////////////////////////////////////////////////////////////////
-			/// Immediate fore-close with ignoring the buffered sending data. 
-			/// voice, xbox and windows's SOCK_DGRAM does not support 
-			/// SO_DONTLINGER, SO_KEEPALIVE, SO_LINGER and SO_OOBINLINE
-			//////////////////////////////////////////////////////////////////////////
+			// Immediate fore-close with ignoring the buffered sending data. 
+			// voice, xbox and windows's SOCK_DGRAM does not support 
+			// SO_DONTLINGER, SO_KEEPALIVE, SO_LINGER and SO_OOBINLINE
 			returnVal = 0;
 			returnVal = setsockopt__(rns2Socket, SOL_SOCKET, SO_LINGER,
 				(char *)& returnVal, sizeof(returnVal));
@@ -264,9 +262,9 @@ namespace JACKIE_INET
 		}
 		inline void SetIPHdrIncl(int ipHdrIncl)
 		{
-			//int val = setsockopt__(rns2Socket, IPPROTO_IP, IP_HDRINCL,
-			//(char*) &ipHdrIncl, sizeof(ipHdrIncl));
-			int val = setsockopt__(rns2Socket, IPPROTO_IP, SO_DONTLINGER,
+			int val = setsockopt__(rns2Socket, IPPROTO_IP, IP_HDRINCL,
+			(char*) &ipHdrIncl, sizeof(ipHdrIncl));
+			 val = setsockopt__(rns2Socket, IPPROTO_IP, SO_DONTLINGER,
 				(const char*)&ipHdrIncl, sizeof(ipHdrIncl));
 			/// this assert always fail maybe need admin permission
 			/// JACKIE_ASSERT(val == 0);

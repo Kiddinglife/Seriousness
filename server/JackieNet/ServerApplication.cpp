@@ -15,6 +15,23 @@
 #define CAT_AUDIT_PRINTF(...)
 #endif
 
+#define UNCONNETED_RECVPARAMS_HANDLER0 \
+	if (recvParams->bytesRead >= sizeof(MessageID) + \
+	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
+																					{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
+
+#define UNCONNETED_RECVPARAMS_HANDLER1 \
+	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
+	(OFFLINE_MESSAGE_DATA_ID))\
+																					{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
+
+#define UNCONNECTED_RECVPARAMS_HANDLER2 \
+   if (*isUnconnected) {\
+   for (index = 0; index < pluginListNTS.Size(); index++)\
+   pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
+
 namespace JACKIE_INET
 {
 	////////////////////////////////////////////////// STATICS /////////////////////////////////////
@@ -34,7 +51,24 @@ namespace JACKIE_INET
 		0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56, 0x78
 	};
 	//////////////////////////////////////////////////////////////////////////////////////////////////
+	static void test_sendto(ServerApplication& sp)
+	{
+		JackieBits writer;
+		writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+		writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+		writer.Write(OFFLINE_MESSAGE_DATA_ID,
+			sizeof(OFFLINE_MESSAGE_DATA_ID));
+		writer.WriteMini(sp.GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
 
+		JISSendParams data2send;
+		data2send.data = writer.DataInt8();
+		data2send.length = writer.GetWrittenBytesCount();
+		data2send.receiverINetAddress = sp.bindedSockets[0]->GetBoundAddress();
+
+		JISSendResult len = sp.bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
+		JDEBUG << "actually has sent " << len << " bytes ";
+		Sleep(1000);
+	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	ServerApplication::ServerApplication() : sendBitStream(MAXIMUM_MTU_SIZE
@@ -708,23 +742,6 @@ namespace JACKIE_INET
 		}
 	}
 
-#define UNCONNETED_RECVPARAMS_HANDLER0 \
-	if (recvParams->bytesRead >= sizeof(MessageID) + \
-	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-										{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
-	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
-
-#define UNCONNETED_RECVPARAMS_HANDLER1 \
-	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
-	(OFFLINE_MESSAGE_DATA_ID))\
-										{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
-	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
-
-#define UNCONNECTED_RECVPARAMS_HANDLER2 \
-   if (*isUnconnected) {\
-   for (index = 0; index < pluginListNTS.Size(); index++)\
-   pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
-
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
 	{
@@ -792,7 +809,6 @@ namespace JACKIE_INET
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
-				//UNCONNECTED_RECVPARAMS_HANDLER3
 				if (*isUnconnected)
 				{
 					JackieBits reader((UInt8*)recvParams->data, recvParams->bytesRead);
@@ -820,7 +836,6 @@ namespace JACKIE_INET
 
 					ConnectionRequest *rcs;
 					bool connectionAttemptCancelled = false;
-
 					return true;
 				}
 				else
@@ -851,6 +866,7 @@ namespace JACKIE_INET
 					// see if the protocol is up-to-date
 					if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
 					{
+						//test_sendto(*this);
 						JackieBits writer;
 						writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
 						writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
@@ -861,14 +877,23 @@ namespace JACKIE_INET
 						JISSendParams data2send;
 						data2send.data = writer.DataInt8();
 						data2send.length = writer.GetWrittenBytesCount();
+						//data2send.receiverINetAddress = bindedSockets[0]->GetBoundAddress();
 						data2send.receiverINetAddress = recvParams->senderINetAddress;
 
-						for (index = 0; index < pluginListNTS.Size(); index++)
-						pluginListNTS[index]->OnDirectSocketSend(&data2send);
+						JackieAddress& bound = bindedSockets[0]->GetBoundAddress();
+						JackieAddress& recvaddr = recvParams->senderINetAddress;
 
-						JDEBUG << "expected send" << data2send.length << " from local socket " << recvParams->localBoundSocket << "bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << data2send.receiverINetAddress.ToString();
+						//JDEBUG << (int)bound.GetIPProtocol() << (int)bound.GetIPVersion() << bound.GetPortHostOrder() << bound.ToString(false);
+						//JDEBUG << (int)recvaddr.GetIPProtocol() << (int)recvaddr.GetIPVersion() << recvaddr.GetPortHostOrder() << recvaddr.ToString(false);
+						if (recvaddr != bound)
+						{
+							JERROR << "wrong";
+						}
+
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&data2send);
+
 						JISSendResult len = recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
-						JDEBUG << "actually has sent " << len << " bytes ";
 					}
 					else
 					{
@@ -880,6 +905,7 @@ namespace JACKIE_INET
 				{
 					JDEBUG << "CONNECTED ID_OPEN_CONNECTION_REQUEST_1 ";
 				}
+
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1029,11 +1055,7 @@ namespace JACKIE_INET
 					// UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
 						UDP_HEADER_SIZE);
-
 					connReq->receiverAddr.FixForIPVersion(connReq->socket->GetBoundAddress());
-
-					Time sendToStart = GetTimeMS();
-
 					JISSendParams jsp;
 					jsp.data = bitStream.DataInt8();
 					jsp.length = bitStream.GetWrittenBytesCount();
@@ -1048,6 +1070,7 @@ namespace JACKIE_INET
 					if (connReq->socket->IsBerkleySocket())
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(1);
 #endif
+					Time sendToStart = GetTimeMS();
 					if (connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
 					{
 						/// do not use this MTU size again
@@ -1160,7 +1183,28 @@ namespace JACKIE_INET
 	}
 	void ServerApplication::ProcessAllocJISRecvParamsQ(void)
 	{
-		//JDEBUG << "Network Thread Process Alloc JISRecvParamsQ";
+		//static bool oneshot = false;
+		//if (!oneshot)
+		//{
+		//	JackieBits bitStream;
+		//	bitStream.Write(ID_OPEN_CONNECTION_REQUEST_1);
+		//	bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
+		//		sizeof(OFFLINE_MESSAGE_DATA_ID));
+		//	//bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+		//	bitStream.Write((MessageID)12);
+		//	// definitely will not be fragmented because 
+		//	// UDP_HEADER_SIZE = 28 > 1+16+1=18
+		//	bitStream.PadZeroAfterAlignedWRPos(mtuSizes[0] -
+		//		UDP_HEADER_SIZE);
+		//	JISSendParams jsp;
+		//	jsp.data = bitStream.DataInt8();
+		//	jsp.length = bitStream.GetWrittenBytesCount();
+		//	jsp.receiverINetAddress = bindedSockets[0]->GetBoundAddress();
+		//	JISSendResult len = bindedSockets[0]->Send(&jsp, TRACE_FILE_AND_LINE_);
+		//	JDEBUG << "actually has sent " << len << " bytes ";
+		//	Sleep(1000);
+		//	oneshot = true;
+		//}
 
 		JISRecvParams* recvParams = 0;
 		for (UInt32 outter = 0; outter < bindedSockets.Size(); outter++)
@@ -1597,6 +1641,7 @@ namespace JACKIE_INET
 
 		return 0;
 	}
+
 	void ServerApplication::RunNetworkUpdateCycleOnce(void)
 	{
 		//TIMED_FUNC();
@@ -1630,6 +1675,7 @@ namespace JACKIE_INET
 		//		}
 		//#endif
 
+
 		/// who alloc who dealloc
 		ReclaimAllPackets();
 
@@ -1645,23 +1691,8 @@ namespace JACKIE_INET
 		/// Cancel certain conn req before process Connection Request Q 
 		ProcessConnectionRequestCancelQ();
 		ProcessConnectionRequestQ(timeUS, timeMS);
-
-		//JackieBits writer;
-		//writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
-		//writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-		//writer.Write(OFFLINE_MESSAGE_DATA_ID,
-		//	sizeof(OFFLINE_MESSAGE_DATA_ID));
-		//writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
-
-		//JISSendParams data2send;
-		//data2send.data = writer.DataInt8();
-		//data2send.length = writer.GetWrittenBytesCount();
-		//data2send.receiverINetAddress = bindedSockets[0]->GetBoundAddress();
-
-		//JISSendResult len = bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
-		//JDEBUG << "actually has sent " << len << " bytes ";
-		//Sleep(100);
 	}
+
 	void ServerApplication::RunRecvCycleOnce(UInt32 index)
 	{
 		//TIMED_FUNC();
@@ -1700,6 +1731,9 @@ namespace JACKIE_INET
 		while (!serv->endThreads)
 		{
 			serv->RunRecvCycleOnce(index);
+#if USE_SINGLE_THREAD == 1
+			JackieSleep(10);
+#endif
 			//JackieSleep(1000);
 		}
 		JDEBUG << "Recv polling thread Stops....";
@@ -1719,7 +1753,9 @@ namespace JACKIE_INET
 			/// Normally, buffered sending packets go out every other 10 ms.
 			/// or TriggerEvent() is called by recv thread
 			serv->RunNetworkUpdateCycleOnce();
+#if USE_SINGLE_THREAD == 0
 			serv->quitAndDataEvents.WaitEvent(10);
+#endif
 			//JackieSleep(1000);
 		}
 		JDEBUG << "Send polling thread Stops....";
@@ -1857,6 +1893,6 @@ namespace JACKIE_INET
 		connReqQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;
-		}
-
 	}
+
+}
