@@ -40,10 +40,10 @@ using namespace cat;
 #include <cat/time/Clock.hpp>
 
 // Include and link to various Windows libraries needed to collect system info
-#include <Psapi.h>
-#include <Lmcons.h>   // LAN-MAN constants for "UNLEN" username max length
-#include <Iphlpapi.h> // GetAdaptersInfo()
-#include <Process.h>  // _beginthreadex()
+#include <psapi.h>
+#include <lmcons.h>   // LAN-MAN constants for "UNLEN" username max length
+#include <iphlpapi.h> // GetAdaptersInfo()
+#include <process.h>  // _beginthreadex()
 
 #pragma comment(lib, "iphlpapi")
 #pragma comment(lib, "advapi32")
@@ -139,7 +139,7 @@ void FortunaFactory::PollInvariantSources(int pool_index)
 	    u8 system_prng[32];
 	    SYSTEM_INFO sys_info;
 	    TCHAR computer_name[MAX_COMPUTERNAME_LENGTH + 1];
-		LPHW_PROFILE_INFOA hw_profile;
+	    HW_PROFILE_INFO hw_profile;
 		DWORD win_ver;
 	    DWORD reg_quota[2];
 	    STARTUPINFO startup_info;
@@ -179,7 +179,7 @@ void FortunaFactory::PollInvariantSources(int pool_index)
 		pool.Crunch(user_name, user_len * sizeof(TCHAR));
 
     // Hardware profile
-    GetCurrentHwProfileA(Sources.hw_profile);
+    GetCurrentHwProfile(&Sources.hw_profile);
 
     // Windows version
     Sources.win_ver = GetVersion();

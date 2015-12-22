@@ -159,7 +159,13 @@ bool Thread::WaitForThread(int ms)
 #else
 
 	// TODO: No way to specify a wait timeout for POSIX threads?
-	if (pthread_join(_thread, 0) == 0)
+
+    //
+    // Compiling with mingw64+winpthread library causes a crash here if a reference to
+    // a dummy void * is not passed.
+    //
+	void *winpthreadworkaround;
+	if (pthread_join(_thread, &winpthreadworkaround) == 0)
 		success = true;
 
 #endif

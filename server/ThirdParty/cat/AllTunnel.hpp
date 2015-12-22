@@ -28,10 +28,14 @@
 
 // Include all libcat Tunnel headers
 
-#include "../cat/AllCrypt.hpp"
-#include "../cat/crypt/tunnel/KeyMaker.hpp"
-#include "../cat/crypt/tunnel/KeyAgreement.hpp"
-#include "../cat/crypt/tunnel/KeyAgreementInitiator.hpp"
-#include "../cat/crypt/tunnel/KeyAgreementResponder.hpp"
-#include "../cat/crypt/tunnel/AuthenticatedEncryption.hpp"
-#include "../cat/crypt/tunnel/EasyHandshake.hpp"
+#include <cat/AllCrypt.hpp>
+
+#include <cat/crypt/tunnel/KeyMaker.hpp>
+
+#include <cat/crypt/tunnel/KeyAgreement.hpp>
+#include <cat/crypt/tunnel/KeyAgreementInitiator.hpp>
+#include <cat/crypt/tunnel/KeyAgreementResponder.hpp>
+
+#include <cat/crypt/tunnel/AuthenticatedEncryption.hpp>
+
+#include <cat/crypt/tunnel/EasyHandshake.hpp>
