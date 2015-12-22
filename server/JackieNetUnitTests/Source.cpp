@@ -1,9 +1,9 @@
 ﻿#include <iostream>
 #define _ELPP_STRICT_ROLLOUT
-#define ELPP_DISABLE_DEBUG_LOGS
+//#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
 #define ELPP_FORCE_USE_STD_THREAD
-#define ELPP_DISABLE_INFO_LOGS
+//#define ELPP_DISABLE_INFO_LOGS
 #include "980easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
@@ -421,6 +421,7 @@ static bool IncomeDatagramEventHandler(JISRecvParams *param)
 }
 #include "JackieNet/ServerApplication.h"
 #include "JackieNet/MessageID.h"
+#include "JackieNet/IPlugin.h"
 static const unsigned char OFFLINE_MESSAGE_DATA_ID[16] =
 {
 	0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
@@ -430,44 +431,21 @@ static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
-	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; //USE_NON_BLOBKING_SOCKET;
-
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
-	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
-	app->Start(100, &socketDescriptor, 1);
+	IPlugin plugin;
+	app->AttachOnePlugin(&plugin);
 
-	app->Connect("localhost", 38000);
+	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; 
+	//USE_NON_BLOBKING_SOCKET;
+	app->Start(1000, &socketDescriptor, 1);
 
-	//int ret;
-	//char* data = "JackieNet";
-	//JISSendParams sendParams;
-	//sendParams.data = data;
-	//sendParams.length = strlen(data) + 1;
-	//sendParams.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
-	//do { ret = ((JACKIE_INET::JISBerkley*)app->bindedSockets[0])->Send(&sendParams, TRACE_FILE_AND_LINE_); } while (ret < 0);
+	//app->Connect("localhost", 38000);
+
 
 	Packet* packet = 0;
-	//// Loop for input
 	while (1)
 	{
-		//JackieBits jb;
-		//jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
-		//jb.Write((MessageID)123);
-		//jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
-		//	sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
-		//jb.WriteMini((UInt64)123456);
-
-		//JISSendParams bsp;
-		//bsp.data = jb.DataInt8();
-		//bsp.length = jb.GetWrittenBytesCount();
-		//bsp.receiverINetAddress = app->bindedSockets[0]->GetBoundAddress();
-
-		//JISSendResult len = app->bindedSockets[0]->Send(&bsp, TRACE_FILE_AND_LINE_);
-		//Command* c = app->AllocCommand();
-		//c->command = Command::BCS_SEND;
-		//app->PostComand(c);
-
 		// This sleep keeps RakNet responsive
 		for (packet = app->GetPacketOnce(); packet != 0;
 			app->ReclaimPacket(packet), packet = 0)
@@ -476,25 +454,11 @@ static void test_ServerApplication_funcs()
 			//Command* c = app->AllocCommand();
 			//c->command = Command::BCS_SEND;
 			//app->ExecuteComand(c);
-
 		}
-
-		/// another way to use
-		//packet = app->GetPacketOnce();
-		//Command* c = app->AllocCommand();
-		//c->command = Command::BCS_SEND;
-		//app->ExecuteComand(c);
-		//if( packet != 0 ) app->ReclaimOnePacket(packet);
-
-		//JackieSleep(1500);
-		//break;
 	}
 
-	Sleep(1001);
 	app->StopRecvThread();
-	Sleep(1001);
 	app->StopNetworkUpdateThread();
-	Sleep(1001);
 }
 
 #include "JackieNet/JackieBits.h"

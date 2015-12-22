@@ -26,7 +26,6 @@
 #include "Array.h"
 #include "LockFreeQueue.h"
 #include "MemoryPool.h"
-#include "IPlugin.h"
 #include "RandomSeedCreator.h"
 #include "JackieINetSocket.h"
 #include "SecurityHandShake.h"
@@ -35,6 +34,8 @@ using namespace DataStructures;
 
 namespace JACKIE_INET
 {
+	struct JACKIE_EXPORT IPlugin;
+
 	class JACKIE_EXPORT ServerApplication  //: public IServerApplication
 	{
 	private:
@@ -198,7 +199,7 @@ namespace JACKIE_INET
 		JackieSimpleMutex connReqQLock;
 
 		// Threadsafe, and not thread safe
-		LockFreeQueue<IPlugin*> pluginListTS;
+		Array<IPlugin*> pluginListTS;
 		Array<IPlugin*> pluginListNTS;
 
 	public:
@@ -367,6 +368,11 @@ namespace JACKIE_INET
 
 		void CloseConnectionInternally(bool sendDisconnectionNotification,
 			bool performImmediate, Command* bufferedCommand);
+
+		/// \brief Attaches a Plugin interface to an instance of the base class (RakPeer or PacketizedTCP) to run code automatically on message receipt in the Receive call.
+		/// If the plugin returns false from PluginInterface::UsesReliabilityLayer(), which is the case for all plugins except PacketLogger, you can call AttachPlugin() and DetachPlugin() for this plugin while RakPeer is active.
+		/// \param[in] messageHandler Pointer to the plugin to attach.
+		void AttachOnePlugin(IPlugin *plugin);
 
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);

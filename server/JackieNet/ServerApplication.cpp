@@ -4,6 +4,7 @@
 #include "MessageID.h"
 #include "JackieINetVersion.h"
 #include "JackieSlidingWindows.h"
+#include "IPlugin.h"
 
 #if !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ )
 #include <stdlib.h> // malloc
@@ -18,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																												{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																																	{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																												{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																																	{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -904,23 +905,12 @@ namespace JACKIE_INET
 						JISSendParams data2send;
 						data2send.data = writer.DataInt8();
 						data2send.length = writer.GetWrittenBytesCount();
-						//data2send.receiverINetAddress = bindedSockets[0]->GetBoundAddress();
 						data2send.receiverINetAddress = recvParams->senderINetAddress;
 
-						JackieAddress& bound = bindedSockets[0]->GetBoundAddress();
-						JackieAddress& recvaddr = recvParams->senderINetAddress;
-
-						//JDEBUG << (int)bound.GetIPProtocol() << (int)bound.GetIPVersion() << bound.GetPortHostOrder() << bound.ToString(false);
-						//JDEBUG << (int)recvaddr.GetIPProtocol() << (int)recvaddr.GetIPVersion() << recvaddr.GetPortHostOrder() << recvaddr.ToString(false);
-						if (recvaddr != bound)
-						{
-							JERROR << "wrong";
-						}
+						recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
 
 						for (index = 0; index < pluginListNTS.Size(); index++)
 							pluginListNTS[index]->OnDirectSocketSend(&data2send);
-
-						recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
 					}
 					else
 					{
@@ -1136,9 +1126,9 @@ namespace JACKIE_INET
 					if (connReq->socket->IsBerkleySocket())
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(0);
 #endif
-				}
 			}
 		}
+	}
 		connReqQLock.Unlock();
 	}
 
@@ -1462,12 +1452,33 @@ namespace JACKIE_INET
 		JDEBUG << "@TO-DO::CloseConnectionInternally()";
 	}
 
-
+	// Attatches a Plugin interface to run code automatically 
+	// on message receipt in the Receive call
+	void ServerApplication::AttachOnePlugin(IPlugin *plugin)
+	{
+		bool isNotThreadsafe = plugin->UsesReliabilityLayer();
+		if (isNotThreadsafe)
+		{
+			if (pluginListNTS.GetIndexOf(plugin) == MAX_UNSIGNED_LONG)
+			{
+				plugin->serverApplication = this;
+				plugin->OnAttach();
+				pluginListNTS.InsertAtLast(plugin);
+			}
+		}
+		else
+		{
+			if (pluginListTS.GetIndexOf(plugin) == MAX_UNSIGNED_LONG)
+			{
+				plugin->serverApplication = this;
+				plugin->OnAttach();
+				pluginListTS.InsertAtLast(plugin);
+			}
+		}
+	}
 
 	void ServerApplication::PacketGoThroughPluginCBs(Packet*& incomePacket)
 	{
-		JDEBUG << "User Thread Packet Go Through PluginCBs with packet indentity "
-			<< (int)incomePacket->data[0];
 
 		UInt32 i;
 		for (i = 0; i < pluginListTS.Size(); i++)
@@ -1668,7 +1679,7 @@ namespace JACKIE_INET
 		}
 
 		return 0;
-	}
+}
 
 	void ServerApplication::RunNetworkUpdateCycleOnce(void)
 	{
@@ -1915,8 +1926,8 @@ namespace JACKIE_INET
 				connReqQLock.Unlock();
 				JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
 				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
-			}
 		}
+	}
 		DCHECK_EQ(connReqQ.PushTail(connReq), true);
 		connReqQLock.Unlock();
 

@@ -4,7 +4,7 @@
 #include "DLLExport.h"
 #include "NetTypes.h"
 #include "CompileFeatures.h"
-#include "IServerApplication.h"
+#include "ServerApplication.h"
 #include "EasyLog.h"
 
 namespace JACKIE_INET
@@ -55,11 +55,11 @@ namespace JACKIE_INET
 		CAFR_PUBLIC_KEY_MISMATCH
 	};
 
-	class JACKIE_EXPORT IPlugin
+	struct JACKIE_EXPORT IPlugin
 	{
-	public:
 		// Filled automatically in when attached
-		IServerApplication* serverApplication;
+		ServerApplication* serverApplication;
+
 #if JackieNet_SUPPORT_PacketizedTCP==1 && JackieNet_SUPPORT_TCPInterface==1
 		TCPInterface *tcpInterface;
 #endif
@@ -74,10 +74,10 @@ namespace JACKIE_INET
 		virtual ~IPlugin() { }
 
 
-		IServerApplication *GetIServerApplication(void) const { return serverApplication; }
+		ServerApplication *GetServerApplication(void) const { return serverApplication; }
 		JackieGUID GetMyGUIDUnified(void) const
 		{
-			if (serverApplication != 0) 
+			if (serverApplication != 0)
 				return serverApplication->GetMyGUID();
 			return JACKIE_NULL_GUID;
 		}
@@ -133,7 +133,7 @@ namespace JACKIE_INET
 		/// @param[in] rakNetGuid The guid of the specified system
 		/// @param[in] isIncoming If true, this is ID_NEW_INCOMING_CONNECTION, or the equivalent
 		virtual void OnNewConnection(const JackieAddress &systemAddress,
-			JackieGUID& guid, bool isIncoming) 
+			JackieGUID& guid, bool isIncoming)
 		{
 			JDEBUG << "NEW CONNECTION FROM " << systemAddress.ToString();
 		}
@@ -175,7 +175,7 @@ namespace JACKIE_INET
 		/// Queried when attached to RakPeer
 		/// Return true to call OnDirectSocketSend(), OnDirectSocketReceive(), OnReliabilityLayerNotification(), OnInternalPacket(), and OnAck()
 		/// If true, then you cannot call RakPeer::AttachPlugin() or RakPeer::DetachPlugin() for this plugin, while RakPeer is active
-		virtual bool UsesReliabilityLayer(void) const { return false; }
+		virtual bool UsesReliabilityLayer(void) const { return true; }
 
 		/// Called on a send to the socket, per datagram, that does not go through the reliability layer
 		/// @pre To be called, UsesReliabilityLayer() must return true
@@ -186,7 +186,7 @@ namespace JACKIE_INET
 		virtual void OnDirectSocketSend(const JISSendParams* param)
 		{
 			JINFO << "OnDirectSocketSend():: send " << param->bytesWritten
-				<<" bytes to " << param->receiverINetAddress.ToString()  
+				<< " bytes to " << param->receiverINetAddress.ToString()
 				<< ", msg id = " << (int)param->data[0];
 		}
 
@@ -196,7 +196,7 @@ namespace JACKIE_INET
 		/// @param[in] bitsUsed How many bits long @a data is
 		/// @param[in] remoteSystemAddress Which system this message is being sent to
 		//virtual void OnDirectSocketReceive(const char *data, const unsigned int bitsUsed, JackieAddress& remoteSystemAddress) { }
-		virtual void OnDirectSocketReceive(const JISRecvParams* param) 
+		virtual void OnDirectSocketReceive(const JISRecvParams* param)
 		{
 			JINFO << "OnDirectSocketReceive()::recv from  " << param->senderINetAddress.ToString() << ", bytes "
 				<< param->bytesRead << ", msg id = " << (int)param->data[0];
