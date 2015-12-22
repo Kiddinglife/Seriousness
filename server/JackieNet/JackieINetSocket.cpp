@@ -176,16 +176,16 @@ namespace JACKIE_INET
 
 		if (br != JISBindResult_SUCCESS) return br;
 
-		char zero = 0;
+		char zero[128] = { 0 };
 		JISSendParams sendParams = { (char*)&zero, sizeof(zero), 0, boundAddress, 0 };
 
-		JISSendResult sr = Send(&sendParams, TRACE_FILE_AND_LINE_);
+		Send(&sendParams, TRACE_FILE_AND_LINE_);
 		JackieSleep(10); // make sure data has been delivered into us
 		JISRecvParams recvParams;
 		recvParams.localBoundSocket = this;
 		JISRecvResult rr = RecvFrom(&recvParams);
 
-		if (sr <= 0 || rr <= 0 || sr != rr) return JISBindResult_FAILED_SEND_RECV_TEST;
+		if (rr <= 0 || sendParams.bytesWritten != rr) return JISBindResult_FAILED_SEND_RECV_TEST;
 
 		/// deep-copy @param bindParameters into @mem this->binding
 		memcpy(&this->binding, bindParameters, sizeof(JISBerkleyBindParams));
@@ -467,29 +467,26 @@ namespace JACKIE_INET
 	}
 	//////////////////////////////////////////////////////////////////////////
 
-	JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
+	void JISBerkley::Send(JISSendParams *sendParameters,
 		const char *file, unsigned int line)
 	{
 		/// we will nevwer send o len data
 		assert(sendParameters->data != 0);
 		assert(sendParameters->length > 0);
 
-		JISSendResult ret;
-
 		if (jst != 0)
 		{
-			ret = jst->JackieINetSendTo(sendParameters->data,
+			jst->JackieINetSendTo(sendParameters->data,
 				sendParameters->length,
 				sendParameters->receiverINetAddress);
 		}
 		else
 		{
-			ret = SendWithoutVDP(rns2Socket, sendParameters, file, line);
+			SendWithoutVDP(rns2Socket, sendParameters, file, line);
 		}
-		return ret;
 	}
 
-	JISSendResult JISBerkley::SendWithoutVDP(JISSocket rns2Socket,
+	void JISBerkley::SendWithoutVDP(JISSocket rns2Socket,
 		JISSendParams *sendParameters,
 		const char *file, unsigned int line)
 	{
@@ -558,9 +555,7 @@ namespace JACKIE_INET
 			}
 		} while (len <= 0); // only one case that the send buffer is full and so we just try  again and warn the administrator as error
 		// so no mater you are using nonblocking or blocking we must handle this
-
 		sendParameters->bytesWritten = len;
-		return len;
 	}
 
 
@@ -640,7 +635,7 @@ namespace JACKIE_INET
 #else
 		GetSystemAddressViaJISSocketIPV4(rns2Socket, systemAddressOut);
 #endif
-}
+	}
 
 	void JISBerkley::GetMyIPBerkley(JackieAddress addresses[MAX_COUNT_LOCAL_IP_ADDR])
 	{
@@ -722,4 +717,4 @@ namespace JACKIE_INET
 
 #endif
 
-	}
+}

@@ -18,13 +18,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																					{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																												{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																					{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																												{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -65,8 +65,8 @@ namespace JACKIE_INET
 		data2send.length = writer.GetWrittenBytesCount();
 		data2send.receiverINetAddress = sp.bindedSockets[0]->GetBoundAddress();
 
-		JISSendResult len = sp.bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
-		JDEBUG << "actually has sent " << len << " bytes ";
+		sp.bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
+		JDEBUG << "actually has sent " << data2send.bytesWritten << " bytes ";
 		Sleep(1000);
 	}
 
@@ -745,7 +745,7 @@ namespace JACKIE_INET
 	bool ServerApplication::ProcessOneUnconnectedRecvParams(
 		JISRecvParams* recvParams, bool* isUnconnected)
 	{
-		JDEBUG << "Network thread Process One Unconnected Recv Params";
+		//JDEBUG << "Network thread Process One Unconnected Recv Params";
 
 		RemoteEndPoint* remoteEndPoint;
 		Packet* packet;
@@ -822,13 +822,6 @@ namespace JACKIE_INET
 						JDEBUG << "update_protocol_version " << (int)update_protocol_version;
 					}
 					reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
-					//unsigned char buf[sizeof(OFFLINE_MESSAGE_DATA_ID)];
-					//reader.ReadBits(buf, sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
-
-					//reader.ReadSkipBytes(sizeof(MessageID));
-					//reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
-					//if ((MessageID)recvParams->data[0] ==ID_INCOMPATIBLE_PROTOCOL_VERSION)
-					//	reader.ReadSkipBytes(sizeof(MessageID));
 
 					JackieGUID guid;
 					reader.ReadMini(guid);
@@ -836,6 +829,40 @@ namespace JACKIE_INET
 
 					ConnectionRequest *rcs;
 					bool connectionAttemptCancelled = false;
+					unsigned int index;
+
+					connReqQLock.Lock();
+					for (index = 0; index < connReqQ.Size(); index++)
+					{
+						rcs = connReqQ[index];
+						if (rcs->actionToTake == ConnectionRequest::CONNECT &&
+							rcs->receiverAddr == recvParams->senderINetAddress)
+						{
+							connectionAttemptCancelled = true;
+							connReqQ.RemoveAtIndex(index);
+
+#if LIBCAT_SECURITY==1
+							CAT_AUDIT_PRINTF("AUDIT: Connection attempt canceled so deleting rcs->client_handshake object %x\n", rcs->client_handshake);
+							JACKIE_INET::OP_DELETE(rcs->client_handshake, _FILE_AND_LINE_);
+#endif // LIBCAT_SECURITY
+
+							JACKIE_INET::OP_DELETE(rcs, TRACE_FILE_AND_LINE_);
+							break;
+						}
+					}
+					connReqQLock.Unlock();
+
+					if (connectionAttemptCancelled)
+					{
+
+						/// Tell USER connection attempt failed
+						Packet* packet = AllocPacket(sizeof(unsigned char),
+							(unsigned char*)recvParams->data);
+						packet->systemAddress = recvParams->senderINetAddress;
+						packet->freeInternalData = false;
+						packet->guid = guid;
+						DCHECK_EQ(allocPacketQ.PushTail(packet), true);
+					}
 					return true;
 				}
 				else
@@ -893,7 +920,7 @@ namespace JACKIE_INET
 						for (index = 0; index < pluginListNTS.Size(); index++)
 							pluginListNTS[index]->OnDirectSocketSend(&data2send);
 
-						JISSendResult len = recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
+						recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
 					}
 					else
 					{
@@ -1068,51 +1095,47 @@ namespace JACKIE_INET
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(1);
 #endif
 					Time sendToStart = GetTimeMS();
-					JISSendResult ret = connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_); 
-					if (ret == 10040)
+					connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_);
+					////if (ret == 10040)
+					////{
+					//	/// do not use this MTU size again
+					//	JINFO << "10040";
+					//	connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
+					//	connReq->nextRequestTime = timeMS;
+					////}
+					//else if (ret > 0)
+					//{
+					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
 					{
-						/// do not use this MTU size again
-						JINFO << "10040";
-						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
-						connReq->nextRequestTime = timeMS;
+						pluginListNTS[i]->OnDirectSocketSend(&jsp);
 					}
-					else if (ret > 0)
+					//}
+					//else
+					//{
+					Time sendToEnd = GetTimeMS();
+					if (sendToEnd - sendToStart > 100)
 					{
-						for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
+						JINFO << "> 100";
+						/// Drop to lowest MTU
+						int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
+							* (mtuSizesCount - 1);
+						if (lowestMtuIndex > connReq->requestsMade)
 						{
-							pluginListNTS[i]->OnDirectSocketSend(&jsp);
+							connReq->requestsMade = (unsigned char)lowestMtuIndex;
+							connReq->nextRequestTime = timeMS;
+						}
+						else
+						{
+							connReq->requestsMade = (unsigned char)(connReq->connAttemptTimes + 1);
 						}
 					}
-					else
-					{
-						Time sendToEnd = GetTimeMS();
-						if (sendToEnd - sendToStart > 100)
-						{
-							JINFO << "> 100";
-							/// Drop to lowest MTU
-							int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
-								* (mtuSizesCount - 1);
-							if (lowestMtuIndex > connReq->requestsMade)
-							{
-								connReq->requestsMade = (unsigned char)lowestMtuIndex;
-								connReq->nextRequestTime = timeMS;
-							}
-							else
-							{
-								connReq->requestsMade = (unsigned char)(connReq->connAttemptTimes + 1);
-							}
-						}
-					}
+					//}
 
 					/// set back  the SetDoNotFragment to allowed fragment
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
 					if (connReq->socket->IsBerkleySocket())
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(0);
 #endif
-					JDEBUG << "The "
-						<< (int)connReq->requestsMade
-						<< " times to try to connect to remote sever ["
-						<< connReq->receiverAddr.ToString() << "]" << "from local socket " << connReq->socket;
 				}
 			}
 		}

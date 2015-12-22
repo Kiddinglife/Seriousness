@@ -156,7 +156,7 @@ namespace JACKIE_INET
 		virtual ~JACKIE_ISocketTransceiver() { }
 
 		/// Called when SendTo would otherwise occur.
-		virtual int JackieINetSendTo(const char *data, int length, const JackieAddress &systemAddress) = 0;
+		virtual void JackieINetSendTo(const char *data, int length, const JackieAddress &systemAddress) = 0;
 
 		/// Called when RecvFrom would otherwise occur. 
 		/// Return number of bytes read and Write data into dataOut
@@ -303,8 +303,8 @@ namespace JACKIE_INET
 		/// 2. Returns value is either > 0(send succeeds) or <0 (send error)
 		/// 3. ! WILL NEVER return 0 because we never send empty msg to the receiver
 		//////////////////////////////////////////////////////////////////////////
-		JISSendResult Send(JISSendParams *sendParameters, const char *file, unsigned int line);
-		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
+		void Send(JISSendParams *sendParameters, const char *file, unsigned int line);
+		void SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
 
 		/// Constructor not called at this monment !
 		static JACKIE_THREAD_DECLARATION(RecvFromLoop);
