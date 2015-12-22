@@ -678,7 +678,7 @@ namespace JACKIE_INET
 		bytes2Write : maxBytes2Write);
 	}
 
-	void JackieBits::PadZeroAfterAlignedWRPos(UInt32 bytes)
+	void JackieBits::PadZero2LengthOf(UInt32 bytes)
 	{
 		Int32 numWrite = bytes - GetWrittenBytesCount();
 		if (numWrite > 0)

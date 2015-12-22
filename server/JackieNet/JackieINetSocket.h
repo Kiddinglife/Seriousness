@@ -96,7 +96,7 @@ namespace JACKIE_INET
 		JackieINetSocket() : eventHandler(0) { }
 		virtual ~JackieINetSocket() { }
 
-		virtual  void Send(JISSendParams *sendParameters,
+		virtual  JISSendResult Send(JISSendParams *sendParameters,
 			const char *file, unsigned int line) = 0;
 
 		// In order for the handler to trigger, some platforms must call PollRecvFrom, 
@@ -140,7 +140,7 @@ namespace JACKIE_INET
 		unsigned short addressFamily; // AF_INET or AF_INET6
 		int type; // SOCK_DGRAM
 		int protocol; // 0
-		bool isBlocKing;
+		bool isNonBlocking;
 		int isBroadcast;
 		int setIPHdrIncl;
 		int doNotFragment;
@@ -298,8 +298,8 @@ namespace JACKIE_INET
 		/// 2. Returns value is either > 0(send succeeds) or <0 (send error)
 		/// 3. ! WILL NEVER return 0 because we never send empty msg to the receiver
 		//////////////////////////////////////////////////////////////////////////
-		virtual void Send(JISSendParams *sendParameters, const char *file, unsigned int line) override;
-		void SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
+		virtual JISSendResult Send(JISSendParams *sendParameters, const char *file, unsigned int line) override;
+		JISSendResult SendWithoutVDP(JISSocket rns2Socket, JISSendParams *sendParameters, const char *file, unsigned int line);
 
 		/// Constructor not called at this monment !
 		//friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);

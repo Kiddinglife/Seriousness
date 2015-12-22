@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	IPlugin plugin;
 	app->AttachOnePlugin(&plugin);
 
-	JACKIE_INET::BindSocket socketDescriptor;
+	JACKIE_INET::BindSocket socketDescriptor("", 0);
 	app->Start(4, &socketDescriptor, 1);
 
 	app->Connect("127.0.0.1", 38000);

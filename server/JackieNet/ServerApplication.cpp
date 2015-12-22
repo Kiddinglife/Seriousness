@@ -19,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																	{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																																																				{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																	{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																				{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -239,10 +239,10 @@ namespace JACKIE_INET
 #if USE_SINGLE_THREAD == 0
 				/// multi-threads app can use either non-blobk or blobk socket
 				/// false = blobking, true = non-blocking
-				berkleyBindParams.isBlocKing = bindLocalSockets[index].blockingSocket;
+				berkleyBindParams.isNonBlocking = bindLocalSockets[index].blockingSocket;
 #else
 				///  single thread app will always use non-blobking socket 
-				berkleyBindParams.isBlocKing = true;
+				berkleyBindParams.isNonBlocking = true;
 #endif
 
 				bindResult = ((JISBerkley*)sock)->Bind(&berkleyBindParams,
@@ -587,6 +587,8 @@ namespace JACKIE_INET
 
 		return p;
 	}
+
+	/// default 	p->freeInternalData = false;
 	Packet* ServerApplication::AllocPacket(UInt32 dataSize, unsigned char *data)
 	{
 		//JDEBUG << "Network Thread Alloc One Packet";
@@ -597,7 +599,7 @@ namespace JACKIE_INET
 		p->data = (unsigned char*)data;
 		p->length = dataSize;
 		p->bitSize = BYTES_TO_BITS(dataSize);
-		p->freeInternalData = true;
+		p->freeInternalData = false;
 		p->guid = JACKIE_NULL_GUID;
 		p->wasGeneratedLocally = false;
 
@@ -647,17 +649,18 @@ namespace JACKIE_INET
 			if (bindedSockets[i]->IsBerkleySocket())
 			{
 				JISBerkley* sock = (JISBerkley*)bindedSockets[i];
-				if (sock->GetBindingParams()->isBlocKing == USE_BLOBKING_SOCKET)
+				if (sock->GetBindingParams()->isNonBlocking == USE_BLOBKING_SOCKET)
 				{
 					/// try to send 0 data to let recv thread keep running
 					/// to detect the isRecvPollingThreadActive === false so that stop the thread
 					char zero[] = "This is used to Stop Recv Thread";
-					JISSendParams sendParams = { zero, sizeof(zero), 0, sock->GetBoundAddress(), 0 };
-					sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
+					JISSendParams sendParams =
+					{ zero, sizeof(zero), 0, sock->GetBoundAddress(), 0 };
+					SEND_10040_ERR(sock, sendParams);
 					TimeMS timeout = Get32BitsTimeMS() + 1000;
 					while (isRecvPollingThreadActive.GetValue() > 0 && Get32BitsTimeMS() < timeout)
 					{
-						sock->Send(&sendParams, TRACE_FILE_AND_LINE_);
+						SEND_10040_ERR(sock, sendParams);
 						JackieSleep(100);
 					}
 				}
@@ -855,12 +858,10 @@ namespace JACKIE_INET
 
 					if (connectionAttemptCancelled)
 					{
-
-						/// Tell USER connection attempt failed
+						/// Tell user connection attempt failed
 						Packet* packet = AllocPacket(sizeof(unsigned char),
 							(unsigned char*)recvParams->data);
 						packet->systemAddress = recvParams->senderINetAddress;
-						packet->freeInternalData = false;
 						packet->guid = guid;
 						DCHECK_EQ(allocPacketQ.PushTail(packet), true);
 					}
@@ -891,11 +892,11 @@ namespace JACKIE_INET
 				{
 					unsigned char remote_system_protcol = recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
 
+					JackieBits writer;
 					// see if the protocol is up-to-date
 					if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
 					{
 						//test_sendto(*this);
-						JackieBits writer;
 						writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
 						writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
 						writer.Write(OFFLINE_MESSAGE_DATA_ID,
@@ -914,8 +915,29 @@ namespace JACKIE_INET
 					}
 					else
 					{
+						writer.Write(ID_OPEN_CONNECTION_REPLY_1);
+						writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+							sizeof(OFFLINE_MESSAGE_DATA_ID));
+						writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+
+#if LIBCAT_SECURITY==1
+						if (_using_security)
+						{
+							writer.WriteBitOne();  // HasCookie on
+							// Write cookie
+							UInt32 cookie = _cookie_jar->Generate(&systemAddress.address, sizeof(systemAddress.address));
+							CAT_AUDIT_PRINTF("AUDIT: Writing cookie %i to %i:%i\n", cookie, systemAddress);
+							writer.Write(cookie);
+							// Write my public key
+							writer.Write((const unsigned char *)my_public_key, sizeof(my_public_key));
+						}
+						else
+#endif // LIBCAT_SECURITY
+							writer.WriteBitZero();  // HasCookie off
+
 
 					}
+
 					return true;
 				}
 				else
@@ -1034,11 +1056,9 @@ namespace JACKIE_INET
 					}
 
 					/// Tell USER connection attempt failed
-					static UInt8 msgid;
-					Packet* packet = AllocPacket(sizeof(unsigned char), &msgid);
-					packet->data[0] = ID_CONNECTION_ATTEMPT_FAILED;
+					MessageID msgid = ID_CONNECTION_ATTEMPT_FAILED;
+					Packet* packet = AllocPacket(sizeof(MessageID), &msgid);
 					packet->systemAddress = connReq->receiverAddr;
-					packet->freeInternalData = false;
 					DCHECK_EQ(allocPacketQ.PushTail(packet), true);
 
 #if LIBCAT_SECURITY==1
@@ -1066,12 +1086,11 @@ namespace JACKIE_INET
 					bitStream.Write(ID_OPEN_CONNECTION_REQUEST_1);
 					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					//bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-					bitStream.Write((MessageID)12);
-					// definitely will not be fragmented because 
-					// UDP_HEADER_SIZE = 28 > 1+16+1=18
-					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
+					bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+					bitStream.PadZero2LengthOf(mtuSizes[MTUSizeIndex] -
 						UDP_HEADER_SIZE);
+					//bitStream.PadZero2LengthOf(5000 -
+					//	UDP_HEADER_SIZE);
 
 					connReq->receiverAddr.FixForIPVersion(connReq->socket->GetBoundAddress());
 
@@ -1085,51 +1104,49 @@ namespace JACKIE_INET
 						((JISBerkley*)connReq->socket)->SetDoNotFragment(1);
 #endif
 					Time sendToStart = GetTimeMS();
-					connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_);
-					////if (ret == 10040)
-					////{
-					//	/// do not use this MTU size again
-					//	JINFO << "10040";
-					//	connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
-					//	connReq->nextRequestTime = timeMS;
-					////}
-					//else if (ret > 0)
-					//{
-					for (UInt32 i = 0; i < pluginListNTS.Size(); i++)
+					if (connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_) < 0 &&
+						jsp.bytesWritten == 10040)
 					{
-						pluginListNTS[i]->OnDirectSocketSend(&jsp);
+						// MessageId: WSAEMSGSIZE
+						// MessageText:
+						// A message sent on a datagram socket was larger than the internal message 
+						// buffer or some other network limit, or the buffer used to receive a datagram
+						// into was smaller than the datagram itself.
+						JINFO << "10040";
+						connReq->requestsMade = (unsigned char)((MTUSizeIndex + 1) * (connReq->connAttemptTimes / mtuSizesCount));
+						connReq->nextRequestTime = timeMS;
 					}
-					//}
-					//else
-					//{
-					Time sendToEnd = GetTimeMS();
-					if (sendToEnd - sendToStart > 100)
+					else
 					{
-						JINFO << "> 100";
-						/// Drop to lowest MTU
-						int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
-							* (mtuSizesCount - 1);
-						if (lowestMtuIndex > connReq->requestsMade)
+						Time sendToEnd = GetTimeMS();
+						if (sendToEnd - sendToStart > 100)
 						{
-							connReq->requestsMade = (unsigned char)lowestMtuIndex;
-							connReq->nextRequestTime = timeMS;
+							JINFO << "> 100";
+							/// Drop to lowest MTU
+							int lowestMtuIndex = connReq->connAttemptTimes / mtuSizesCount
+								* (mtuSizesCount - 1);
+							if (lowestMtuIndex > connReq->requestsMade)
+							{
+								connReq->requestsMade = (unsigned char)lowestMtuIndex;
+								connReq->nextRequestTime = timeMS;
+							}
+							else
+							{
+								connReq->requestsMade = (unsigned char)(connReq->connAttemptTimes + 1);
+							}
 						}
-						else
-						{
-							connReq->requestsMade = (unsigned char)(connReq->connAttemptTimes + 1);
-						}
-					}
-					//}
+						//}
 
-					/// set back  the SetDoNotFragment to allowed fragment
+						/// set back  the SetDoNotFragment to allowed fragment
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-					if (connReq->socket->IsBerkleySocket())
-						((JISBerkley*)connReq->socket)->SetDoNotFragment(0);
+						if (connReq->socket->IsBerkleySocket())
+							((JISBerkley*)connReq->socket)->SetDoNotFragment(0);
 #endif
+					}
+				}
 			}
+			connReqQLock.Unlock();
 		}
-	}
-		connReqQLock.Unlock();
 	}
 
 	void ServerApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
@@ -1679,7 +1696,7 @@ namespace JACKIE_INET
 		}
 
 		return 0;
-}
+	}
 
 	void ServerApplication::RunNetworkUpdateCycleOnce(void)
 	{
@@ -1737,27 +1754,37 @@ namespace JACKIE_INET
 		//TIMED_FUNC();
 		ReclaimAllJISRecvParams(index);
 		JISRecvParams* recvParams = AllocJISRecvParams(index);
-
-		if (((JISBerkley*)bindedSockets[index])->RecvFrom(recvParams) > 0)
+		int result = ((JISBerkley*)bindedSockets[index])->RecvFrom(recvParams);
+		if (result > 0)
 		{
 			DCHECK_EQ(allocRecvParamQ[index].PushTail(recvParams), true);
-
 			if (incomeDatagramEventHandler != 0)
 			{
 				if (!incomeDatagramEventHandler(recvParams))
 					JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 			}
-
 #if USE_SINGLE_THREAD == 0
 			if (allocRecvParamQ[index].Size() > 0) quitAndDataEvents.TriggerEvent();
 #endif
-
 		}
 		else
 		{
+			//@ Remember myself
+			// this hsould not happen because we have hard coded the max MTU is 1500
+			// so client who uses this library will send not datagram bigger than that, 
+			// so this error will not trigger. Hoever, for the clients 
+			/// who uses other library sneds us a datagram that is bigger than our max MTU,
+			/// 10040 error  will happend n such case.
+			/// in this case, we have nothing to do with such case only way is to tell this guy in realistic world "man, please send smaller datagram to me"
+			/// i put it here is just reminding myself and 
+			if (recvParams->bytesRead == 10040)
+			{
+				JWARNING <<
+					"recvfrom() return 10040 error, the remote send a bigger datagram than our  max mtu";
+			}
 			JISRecvParamsPool[index].Reclaim(recvParams);
 		}
-	}
+		}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
@@ -1800,7 +1827,7 @@ namespace JACKIE_INET
 		JDEBUG << "Send polling thread Stops....";
 		serv->isNetworkUpdateThreadActive = false;
 		return 0;
-	}
+		}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::UDTConnect) { return 0; }
 	//STATIC_FACTORY_DEFINITIONS(IServerApplication, ServerApplication);
@@ -1926,12 +1953,12 @@ namespace JACKIE_INET
 				connReqQLock.Unlock();
 				JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
 				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
+			}
 		}
-	}
 		DCHECK_EQ(connReqQ.PushTail(connReq), true);
 		connReqQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;
 	}
 
-}
+	}

@@ -435,13 +435,12 @@ static void test_ServerApplication_funcs()
 	IPlugin plugin;
 	app->AttachOnePlugin(&plugin);
 
-	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; 
-	//USE_NON_BLOBKING_SOCKET;
+	JACKIE_INET::BindSocket socketDescriptor("", 38000);
+	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET ;
+	//USE_BLOBKING_SOCKET;
 	app->Start(1000, &socketDescriptor, 1);
 
 	//app->Connect("localhost", 38000);
-
 
 	Packet* packet = 0;
 	while (1)

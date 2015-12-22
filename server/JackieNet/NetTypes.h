@@ -73,6 +73,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #define PRINTF_64BITS_MODIFIER "ll"
 #endif
 
+#define SEND_10040_ERR(sock, sendParams)\
+if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
+sendParams.bytesWritten == 10040)\
+{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+
 	/// \sa NetworkIDObject.h
 	typedef UInt8   UniqueIDType;
 	typedef UInt8   RPCIndex;

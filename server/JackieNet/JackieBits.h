@@ -1979,7 +1979,7 @@ namespace JACKIE_INET
 		/// @brief  Write zeros until the bitstream is filled up to @param bytes
 		/// @notice will internally align write pos and then reallocate if necessary
 		///  the @mWritePosBits will be byte aligned
-		void PadZeroAfterAlignedWRPos(UInt32 bytes);
+		void PadZero2LengthOf(UInt32 bytes);
 
 		/// @brief swao bytes starting from @data with offset given
 		inline void EndianSwapBytes(UInt32 byteOffset, UInt32 length)
