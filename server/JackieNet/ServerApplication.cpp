@@ -164,7 +164,7 @@ namespace JACKIE_INET
 		for (index = 0; index < bindLocalSocketsCount; index++)
 		{
 			do { sock = JISAllocator::AllocJIS(); } while (sock == 0);
-			DCHECK_EQ(bindedSockets.Enqueue(sock), true);
+			DCHECK_EQ(bindedSockets.PushTail(sock), true);
 
 #if defined(__native_client__)
 			NativeClientBindParameters ncbp;
@@ -422,6 +422,7 @@ namespace JACKIE_INET
 		//JDEBUG << "Recv Thread" << Index << " Alloc An JISRecvParams";
 		JISRecvParams* ptr = 0;
 		do { ptr = JISRecvParamsPool[Index].Allocate(); } while (ptr == 0);
+		ptr->localBoundSocket = bindedSockets[Index];
 		return ptr;
 	}
 	void ServerApplication::ClearAllRecvParamsQs()
@@ -710,13 +711,13 @@ namespace JACKIE_INET
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-									{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+										{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-									{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+										{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -850,26 +851,24 @@ namespace JACKIE_INET
 					// see if the protocol is up-to-date
 					if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
 					{
-						JackieBits jb;
-						jb.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
-						jb.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-						jb.WriteBits(OFFLINE_MESSAGE_DATA_ID,
-							sizeof(OFFLINE_MESSAGE_DATA_ID) * 8);
-						jb.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+						JackieBits writer;
+						writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+						writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+						writer.Write(OFFLINE_MESSAGE_DATA_ID,
+							sizeof(OFFLINE_MESSAGE_DATA_ID));
+						writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
 
-						JISSendParams bsp;
-						bsp.data = jb.DataInt8();
-						bsp.length = jb.GetWrittenBytesCount();
-						bsp.receiverINetAddress = recvParams->senderINetAddress;
+						JISSendParams data2send;
+						data2send.data = writer.DataInt8();
+						data2send.length = writer.GetWrittenBytesCount();
+						data2send.receiverINetAddress = recvParams->senderINetAddress;
 
 						for (index = 0; index < pluginListNTS.Size(); index++)
-							pluginListNTS[index]->OnDirectSocketSend(&bsp);
+						pluginListNTS[index]->OnDirectSocketSend(&data2send);
 
-						JDEBUG << "expected send" << bsp.length << " bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << bsp.receiverINetAddress.ToString();
-
-						JISSendResult len = recvParams->socket->Send(&bsp, TRACE_FILE_AND_LINE_);
-
-						JDEBUG << "actually has sent " << len << " bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << bsp.receiverINetAddress.ToString();
+						JDEBUG << "expected send" << data2send.length << " from local socket " << recvParams->localBoundSocket << "bytes msg with ID_INCOMPATIBLE_PROTOCOL_VERSION to receiver  " << data2send.receiverINetAddress.ToString();
+						JISSendResult len = recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
+						JDEBUG << "actually has sent " << len << " bytes ";
 					}
 					else
 					{
@@ -1025,32 +1024,14 @@ namespace JACKIE_INET
 					bitStream.Write(OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
 					//bitStream.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-					bitStream.Write((MessageID)128);
+					bitStream.Write((MessageID)12);
 					// definitely will not be fragmented because 
 					// UDP_HEADER_SIZE = 28 > 1+16+1=18
 					bitStream.PadZeroAfterAlignedWRPos(mtuSizes[MTUSizeIndex] -
 						UDP_HEADER_SIZE);
 
-					JDEBUG << "The "
-						<< (int)connReq->requestsMade
-						<< " times to try to connect to remote sever ["
-						<< connReq->receiverAddr.ToString() << "]";
+					connReq->receiverAddr.FixForIPVersion(connReq->socket->GetBoundAddress());
 
-					JackieINetSocket* socket2Use;
-					if (connReq->socket == 0)
-					{
-						socket2Use = this->bindedSockets[connReq->socketIndex];
-					}
-					else
-					{
-						socket2Use = connReq->socket;
-					}
-
-					connReq->receiverAddr.FixForIPVersion(socket2Use->GetBoundAddress());
-#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-					if (socket2Use->IsBerkleySocket())
-						((JISBerkley*)socket2Use)->SetDoNotFragment(1);
-#endif
 					Time sendToStart = GetTimeMS();
 
 					JISSendParams jsp;
@@ -1063,7 +1044,11 @@ namespace JACKIE_INET
 						pluginListNTS[i]->OnDirectSocketSend(&jsp);
 					}
 
-					if (socket2Use->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
+#if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
+					if (connReq->socket->IsBerkleySocket())
+						((JISBerkley*)connReq->socket)->SetDoNotFragment(1);
+#endif
+					if (connReq->socket->Send(&jsp, TRACE_FILE_AND_LINE_) == 10040)
 					{
 						/// do not use this MTU size again
 						JINFO << "10040";
@@ -1093,9 +1078,13 @@ namespace JACKIE_INET
 
 					/// set back  the SetDoNotFragment to allowed fragment
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
-					if (socket2Use->IsBerkleySocket())
-						((JISBerkley*)socket2Use)->SetDoNotFragment(0);
+					if (connReq->socket->IsBerkleySocket())
+						((JISBerkley*)connReq->socket)->SetDoNotFragment(0);
 #endif
+					JDEBUG << "The "
+						<< (int)connReq->requestsMade
+						<< " times to try to connect to remote sever ["
+						<< connReq->receiverAddr.ToString() << "]" << "from local socket " << connReq->socket;
 				}
 			}
 		}
@@ -1189,7 +1178,7 @@ namespace JACKIE_INET
 	/// @TO-DO
 	void ServerApplication::AdjustTimestamp(Packet*& incomePacket) const
 	{
-		JDEBUG << "@TO-DO AdjustTimestamp()";
+		//JDEBUG << "@TO-DO AdjustTimestamp()";
 
 		if ((unsigned char)incomePacket->data[0] == ID_TIMESTAMP)
 		{
@@ -1589,26 +1578,26 @@ namespace JACKIE_INET
 		/// Pop out one Packet from queue
 		if (allocPacketQ.Size() > 0)
 		{
-			//////////////////////////////////////////////////////////////////////////
 			Packet *incomePacket = 0;
+
 			/// Get one income packet from bufferedPacketsQueue
 			DCHECK_EQ(allocPacketQ.PopHead(incomePacket), true);
 			DCHECK_NOTNULL(incomePacket->data);
-			//////////////////////////////////////////////////////////////////////////
+
 			AdjustTimestamp(incomePacket);
-			//////////////////////////////////////////////////////////////////////////
+
 			/// Some locally generated packets need to be processed by plugins,
 			/// for example ID_FCM2_NEW_HOST. The plugin itself should intercept
 			/// these messages generated remotely
 			PacketGoThroughPluginCBs(incomePacket);
 			PacketGoThroughPlugins(incomePacket);
+
 			return incomePacket;
-			//////////////////////////////////////////////////////////////////////////
 		}
 
 		return 0;
 	}
-	bool ServerApplication::RunNetworkUpdateCycleOnce()
+	void ServerApplication::RunNetworkUpdateCycleOnce(void)
 	{
 		//TIMED_FUNC();
 		//// @NOTICE I moved this code to JISbEKELY::RecvFrom()
@@ -1656,17 +1645,28 @@ namespace JACKIE_INET
 		/// Cancel certain conn req before process Connection Request Q 
 		ProcessConnectionRequestCancelQ();
 		ProcessConnectionRequestQ(timeUS, timeMS);
-		return 0;
+
+		//JackieBits writer;
+		//writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
+		//writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
+		//writer.Write(OFFLINE_MESSAGE_DATA_ID,
+		//	sizeof(OFFLINE_MESSAGE_DATA_ID));
+		//writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+
+		//JISSendParams data2send;
+		//data2send.data = writer.DataInt8();
+		//data2send.length = writer.GetWrittenBytesCount();
+		//data2send.receiverINetAddress = bindedSockets[0]->GetBoundAddress();
+
+		//JISSendResult len = bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
+		//JDEBUG << "actually has sent " << len << " bytes ";
+		//Sleep(100);
 	}
 	void ServerApplication::RunRecvCycleOnce(UInt32 index)
 	{
 		//TIMED_FUNC();
-
 		ReclaimAllJISRecvParams(index);
-
-		//do { recvParams = JISRecvParamsPool[index].Allocate(); } while( recvParams == 0 );
 		JISRecvParams* recvParams = AllocJISRecvParams(index);
-		recvParams->socket = bindedSockets[index];
 
 		if (((JISBerkley*)bindedSockets[index])->RecvFrom(recvParams) > 0)
 		{
@@ -1674,7 +1674,7 @@ namespace JACKIE_INET
 
 			if (incomeDatagramEventHandler != 0)
 			{
-				if (!incomeDatagramEventHandler(recvParams)) 
+				if (!incomeDatagramEventHandler(recvParams))
 					JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 			}
 
@@ -1687,7 +1687,6 @@ namespace JACKIE_INET
 		{
 			JISRecvParamsPool[index].Reclaim(recvParams);
 		}
-
 	}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
@@ -1720,13 +1719,14 @@ namespace JACKIE_INET
 			/// Normally, buffered sending packets go out every other 10 ms.
 			/// or TriggerEvent() is called by recv thread
 			serv->RunNetworkUpdateCycleOnce();
-			serv->quitAndDataEvents.WaitEvent(5);
+			serv->quitAndDataEvents.WaitEvent(10);
 			//JackieSleep(1000);
 		}
 		JDEBUG << "Send polling thread Stops....";
 		serv->isNetworkUpdateThreadActive = false;
 		return 0;
 	}
+
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::UDTConnect) { return 0; }
 	//STATIC_FACTORY_DEFINITIONS(IServerApplication, ServerApplication);
 	STATIC_FACTORY_DEFINITIONS(ServerApplication, ServerApplication);
@@ -1738,6 +1738,7 @@ namespace JACKIE_INET
 		sendReceiptSerial = 1;
 		sendReceiptSerialMutex.Unlock();
 	}
+
 	UInt64 ServerApplication::CreateUniqueRandness(void)
 	{
 		UInt64 g = Get64BitsTimeUS();
@@ -1765,7 +1766,7 @@ namespace JACKIE_INET
 	{
 		JDEBUG << "User Thread Cancel Connection Request To " << target.ToString();
 		connReqCancelQLock.Lock();
-		DCHECK_EQ(connReqCancelQ.Enqueue(target), true);
+		DCHECK_EQ(connReqCancelQ.PushTail(target), true);
 		connReqCancelQLock.Unlock();
 	}
 
@@ -1821,15 +1822,18 @@ namespace JACKIE_INET
 		connReq->nextRequestTime = GetTimeMS();
 		connReq->requestsMade = 0;
 		connReq->data = 0;
-		connReq->socket = 0;
 		connReq->extraData = extraData;
 		connReq->socketIndex = ConnectionSocketIndex;
+		connReq->socket = bindedSockets[ConnectionSocketIndex];
 		connReq->actionToTake = ConnectionRequest::CONNECT;
 		connReq->connAttemptTimes = ConnectionAttemptTimes;
 		connReq->connAttemptIntervalMS = ConnectionAttemptIntervalMS;
 		connReq->timeout = timeout;
 		connReq->pwdLen = pwdLen;
-		memcpy(connReq->pwd, pwd, pwdLen);
+		if (pwdLen > 0 && pwd != 0)
+		{
+			memcpy(connReq->pwd, pwd, pwdLen);
+		}
 
 #if LIBCAT_SECURITY ==1
 		CAT_AUDIT_PRINTF("AUDIT: In SendConnectionRequest()\n");
@@ -1839,20 +1843,20 @@ namespace JACKIE_INET
 		(void)publicKey;
 #endif
 
-		connReqCancelQLock.Lock();
+		connReqQLock.Lock();
 		for (UInt32 Index = 0; Index < connReqQ.Size(); Index++)
 		{
 			if (connReqQ[Index]->receiverAddr == addr)
 			{
-				connReqCancelQLock.Unlock();
+				connReqQLock.Unlock();
 				JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
 				return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
 			}
 		}
-		DCHECK_EQ(connReqQ.Enqueue(connReq), true);
-		connReqCancelQLock.Unlock();
+		DCHECK_EQ(connReqQ.PushTail(connReq), true);
+		connReqQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;
-	}
+		}
 
-}
+	}

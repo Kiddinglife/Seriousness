@@ -83,7 +83,7 @@ namespace DataStructures
 		}
 
 		/// enqueue at tail of queue
-		bool Enqueue(const queue_type& input)
+		bool PushTail(const queue_type& input)
 		{
 			if (allocation_size == 0)
 			{
@@ -132,7 +132,7 @@ namespace DataStructures
 			}
 			return true;
 		}
-		bool Dequeue(queue_type& ele)
+		bool PopHead(queue_type& ele)
 		{
 #ifdef _DEBUG
 			assert(head != tail);
@@ -151,7 +151,7 @@ namespace DataStructures
 			assert(index <= Size());
 
 			// Just force a reallocation, will be overwritten
-			if (!Enqueue(input)) return false;
+			if (!PushTail(input)) return false;
 			if (Size() == 1) return false;
 
 			/// move all elments after index

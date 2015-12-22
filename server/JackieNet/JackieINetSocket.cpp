@@ -182,7 +182,7 @@ namespace JACKIE_INET
 		JISSendResult sr = Send(&sendParams, TRACE_FILE_AND_LINE_);
 		JackieSleep(10); // make sure data has been delivered into us
 		JISRecvParams recvParams;
-		recvParams.socket = this;
+		recvParams.localBoundSocket = this;
 		JISRecvResult rr = RecvFrom(&recvParams);
 
 		if (sr <= 0 || rr <= 0 || sr != rr) return JISBindResult_FAILED_SEND_RECV_TEST;
@@ -464,7 +464,8 @@ namespace JACKIE_INET
 		const char *file, unsigned int line)
 	{
 		/// we will nevwer send o len data
-		JACKIE_ASSERT(sendParameters->length > 0);
+		assert(sendParameters->data != 0);
+		assert(sendParameters->length > 0);
 
 		JISSendResult ret;
 
@@ -516,9 +517,7 @@ namespace JACKIE_INET
 		/// only when sendParameters->length == 0, sendto() will return 0;
 		/// otherwise it will return > 0, or error code of -1
 		/// we forbid to send o length data
-#ifdef _DEBUG
-		JACKIE_ASSERT(len != 0);
-#endif // _DEBUG
+		//JACKIE_ASSERT(len != 0);
 
 		if (len < 0)
 		{

@@ -194,6 +194,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	{
 		BindSocket();
 		BindSocket(const char *_hostAddress, UInt16 _port);
+
 		/// The local port to bind to.  Pass 0 to have an OS auto-assigned port.
 		UInt16 port;
 
@@ -221,7 +222,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Required for Google chrome
 		_PP_Instance_ chromeInstance;
 
-		/// USE_BLOBKING_SOCKET or USE_NON_BLOBKING_SOCKET
+		/// default is USE_BLOBKING_SOCKET
 		bool blockingSocket;
 
 		/// XBOX only: set IPPROTO_VDP if you want to use VDP.

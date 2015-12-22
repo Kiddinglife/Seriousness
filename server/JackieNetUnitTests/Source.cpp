@@ -1,9 +1,9 @@
 ﻿#include <iostream>
-//#define _ELPP_STRICT_ROLLOUT
-//#define ELPP_DISABLE_DEBUG_LOGS
+#define _ELPP_STRICT_ROLLOUT
+#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
-//#define ELPP_FORCE_USE_STD_THREAD
-//#define ELPP_DISABLE_INFO_LOGS
+#define ELPP_FORCE_USE_STD_THREAD
+#define ELPP_DISABLE_INFO_LOGS
 #include "980easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
@@ -282,12 +282,12 @@ static void test_Queue_funcs()
 	{
 		for (int i = 0; i < 100000; i++)
 		{
-			queuee.Enqueue(i);
+			queuee.PushTail(i);
 		}
 		for (int i = 0; i < 100000; i++)
 		{
 			int t;
-			queuee.Dequeue(t);
+			queuee.PopHead(t);
 		}
 	}
 
@@ -430,17 +430,14 @@ static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
-	JACKIE_INET::BindSocket socketDescriptor;
-	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET;
-	//USE_NON_BLOBKING_SOCKET;
-	socketDescriptor.port = 35000;
-	socketDescriptor.socketFamily = AF_INET;
+	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
+	socketDescriptor.blockingSocket = USE_BLOBKING_SOCKET; //USE_NON_BLOBKING_SOCKET;
 
 	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
 	app->incomeDatagramEventHandler = IncomeDatagramEventHandler;
-	app->Start(4, &socketDescriptor, 1);
+	app->Start(100, &socketDescriptor, 1);
 
-	app->Connect("127.0.0.1", 35000);
+	app->Connect("localhost", 38000);
 
 	//int ret;
 	//char* data = "JackieNet";

@@ -277,7 +277,7 @@ namespace JACKIE_INET
 		/// recv thread will reclaim all commands  into command pool in multi-threads env
 		void ReclaimAllCommands();
 
-		bool RunNetworkUpdateCycleOnce(void);
+		void RunNetworkUpdateCycleOnce(void);
 		void RunRecvCycleOnce(UInt32 in = 0);
 		Packet* RunGetPacketCycleOnce(void);
 
@@ -329,7 +329,7 @@ namespace JACKIE_INET
 		/// @Author mengdi[Jackie]
 		ConnectionAttemptResult Connect(const char* host, UInt16 port,
 			const char *pwd = 0, UInt32 pwdLen = 0, JACKIE_Public_Key *publicKey = 0,
-			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 3,
+			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 6,
 			UInt32 ConnectionAttemptIntervalMS = 1000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 

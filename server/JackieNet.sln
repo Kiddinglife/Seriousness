@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{999960B8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JackieNetDLLTest", "JackieNetDLLTest\JackieNetDLLTest.vcxproj", "{7393D6A9-EADE-4732-B95F-8F0F5A756729}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JackieTestClient", "JackieTestClient\JackieTestClient.vcxproj", "{5A6456F4-F64A-4137-983D-FD49E87CB450}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -70,6 +72,16 @@ Global
 		{7393D6A9-EADE-4732-B95F-8F0F5A756729}.Release|Win32.ActiveCfg = Release|Win32
 		{7393D6A9-EADE-4732-B95F-8F0F5A756729}.Release|Win32.Build.0 = Release|Win32
 		{7393D6A9-EADE-4732-B95F-8F0F5A756729}.Release|x64.ActiveCfg = Release|x64
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Debug|Win32.Build.0 = Debug|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Debug|x64.ActiveCfg = Debug|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Release|Win32.ActiveCfg = Release|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Release|Win32.Build.0 = Release|Win32
+		{5A6456F4-F64A-4137-983D-FD49E87CB450}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -77,5 +89,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{08A602FA-93CD-4CA7-B190-0BD5C3933DE8} = {999960B8-E4D1-4726-A2A5-ADF0A6A3E727}
 		{7393D6A9-EADE-4732-B95F-8F0F5A756729} = {999960B8-E4D1-4726-A2A5-ADF0A6A3E727}
+		{5A6456F4-F64A-4137-983D-FD49E87CB450} = {999960B8-E4D1-4726-A2A5-ADF0A6A3E727}
 	EndGlobalSection
 EndGlobal

@@ -66,7 +66,7 @@ namespace JACKIE_INET
 		JISRecvResult bytesRead;
 		JackieAddress senderINetAddress;
 		TimeUS timeRead;
-		JackieINetSocket *socket;
+		JackieINetSocket *localBoundSocket;
 	};
 
 	class JACKIE_EXPORT JISEventHandler

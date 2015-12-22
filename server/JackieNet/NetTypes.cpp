@@ -26,6 +26,7 @@ namespace JACKIE_INET
 		remotePortWasStartedOn_PS3_PSP2 = 0;
 		extraSocketOptions = 0;
 		socketFamily = AF_INET;
+		blockingSocket = USE_BLOBKING_SOCKET;
 	}
 	BindSocket::BindSocket(const char *_hostAddress, UInt16 _port)
 	{
@@ -40,6 +41,7 @@ namespace JACKIE_INET
 		hostAddress[0] = 0;
 		extraSocketOptions = 0;
 		socketFamily = AF_INET;
+		blockingSocket = USE_BLOBKING_SOCKET;
 	}
 
 	Int32 JackieAddress::size(void)
