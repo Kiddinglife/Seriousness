@@ -19,17 +19,17 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																		{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																			{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																		{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																			{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
-   if (*isUnconnected) {\
+   if (*isOfflinerecvParams) {\
    for (index = 0; index < pluginListNTS.Size(); index++)\
    pluginListNTS[index]->OnDirectSocketReceive(recvParams);}
 
@@ -719,7 +719,7 @@ namespace JACKIE_INET
 
 		// 2. Try to process this recv params as unconnected
 		bool isUnconnectedRecvPrrams;
-		ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams);
+		IsOfflineRecvParams(recvParams, &isUnconnectedRecvPrrams);
 
 		/// no need to use return vlue
 		//bool notSend2ReliabilityLayer = ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams);
@@ -746,8 +746,8 @@ namespace JACKIE_INET
 		}
 	}
 
-	bool ServerApplication::ProcessOneUnconnectedRecvParams(
-		JISRecvParams* recvParams, bool* isUnconnected)
+	void ServerApplication::IsOfflineRecvParams(
+		JISRecvParams* recvParams, bool* isOfflinerecvParams)
 	{
 		//JDEBUG << "Network thread Process One Unconnected Recv Params";
 
@@ -761,7 +761,7 @@ namespace JACKIE_INET
 		// the encoding of which is essentially impossible to hit by chance 
 		if (recvParams->bytesRead <= 2)
 		{
-			*isUnconnected = true;
+			*isOfflinerecvParams = true;
 		}
 		else
 		{
@@ -780,13 +780,13 @@ namespace JACKIE_INET
 					sizeof(MessageID) + sizeof(TimeMS) + JackieGUID::size() +
 					sizeof(OFFLINE_MESSAGE_DATA_ID))
 				{
-					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+					*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID) +
 						sizeof(Time) + JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID, sizeof
 						(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				else
 				{
-					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+					*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID) +
 						sizeof(TimeMS) + JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID, sizeof
 						(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
@@ -796,7 +796,7 @@ namespace JACKIE_INET
 				if (recvParams->bytesRead >= sizeof(MessageID) + JackieGUID::size() +
 					sizeof(OFFLINE_MESSAGE_DATA_ID))
 				{
-					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) +
+					*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID) +
 						JackieGUID::size(), OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
@@ -809,11 +809,11 @@ namespace JACKIE_INET
 					recvParams->bytesRead <= sizeof(MessageID) * 2 +
 					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
 				{
-					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID) * 2,
+					*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID) * 2,
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
-				if (*isUnconnected)
+				if (*isOfflinerecvParams)
 				{
 					JackieBits reader((UInt8*)recvParams->data, recvParams->bytesRead);
 					MessageID msgid;
@@ -865,18 +865,18 @@ namespace JACKIE_INET
 						packet->guid = guid;
 						DCHECK_EQ(allocPacketQ.PushTail(packet), true);
 					}
-					return true;
+					//return true;
 				}
 				break;
 			case ID_OPEN_CONNECTION_REPLY_1:
 				if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
 					sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size() + sizeof(UInt16))
 				{
-					*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),
+					*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
 						OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 				}
 				UNCONNECTED_RECVPARAMS_HANDLER2;
-				if (*isUnconnected)
+				if (*isOfflinerecvParams)
 				{
 					JackieBits fromClientReader((UInt8*)recvParams->data, recvParams->bytesRead);
 					fromClientReader.ReadSkipBytes(sizeof(MessageID));
@@ -987,11 +987,11 @@ namespace JACKIE_INET
 							}
 
 							// bound address
-							toServerWriter.Write(rcs->receiverAddr);
+							toServerWriter.WriteMini(rcs->receiverAddr);
 							// echo MTU
-							toServerWriter.Write(mtu);
+							toServerWriter.WriteMini(mtu);
 							// echo Our guid
-							toServerWriter.Write(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+							toServerWriter.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
 
 							JISSendParams outcome_data;
 							outcome_data.data = toServerWriter.DataInt8();
@@ -1002,7 +1002,7 @@ namespace JACKIE_INET
 							for (index = 0; index < pluginListNTS.Size(); index++)
 								pluginListNTS[index]->OnDirectSocketSend(&outcome_data);
 
-							return true;
+							//return true;
 						}
 					}
 					connReqQLock.Unlock();
@@ -1015,7 +1015,7 @@ namespace JACKIE_INET
 			case ID_OPEN_CONNECTION_REQUEST_1:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
-				if (*isUnconnected)
+				if (*isOfflinerecvParams)
 				{
 					unsigned char remote_system_protcol = recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
 
@@ -1092,19 +1092,20 @@ namespace JACKIE_INET
 #endif
 					}
 
-					return true;
+					//return true;
 				}
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
-				if (*isUnconnected)
+				if (*isOfflinerecvParams)
 				{
 					JDEBUG << "ID_OPEN_CONNECTION_REQUEST_2";
-					JackieBits fromClientReader;
+					JackieBits fromClientReader((UInt8*)recvParams->data, 
+						recvParams->bytesRead);
 					MessageID msgid;
 					fromClientReader.Read(msgid);
-					JDEBUG << "recv msg id " << msgid;
+					JDEBUG << "recv msg id " << (int)msgid;
 					fromClientReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
 					bool client_has_security = false;
 #if LIBCAT_SECURITY==1
@@ -1148,13 +1149,17 @@ namespace JACKIE_INET
 						}
 					}
 #endif // LIBCAT_SECURITY
+					JDEBUG << "client_has_security " << (int)client_has_security;
 
 					JackieAddress bound_addr;
-					fromClientReader.Read(bound_addr);
+					fromClientReader.ReadMini(bound_addr);
+					JDEBUG << "bound_addr " << bound_addr.ToString();
 					UInt16 mtu;
-					fromClientReader.Read(mtu);
+					fromClientReader.ReadMini(mtu);
+					JDEBUG << "mtu " << mtu;
 					JackieGUID guid;
-					fromClientReader.Read(guid);
+					fromClientReader.ReadMini(guid);
+					JDEBUG << "guid " << guid.g;
 
 					// addr_in_use, guid_in_use, outcome
 					// TRUE,	  , TRUE	 , ID_OPEN_CONNECTION_REPLY if they are the same, else ID_ALREADY_CONNECTED
@@ -1204,6 +1209,7 @@ namespace JACKIE_INET
 					{
 						// this client is totally new client and  new connection is allowed
 						outcome = 0;
+						JDEBUG << " new connection is allowed ";
 					}
 
 					JackieBits bsAnswer;
@@ -1232,13 +1238,16 @@ namespace JACKIE_INET
 						bsp.length = bsAnswer.GetWrittenBytesCount();
 						bsp.receiverINetAddress = recvParams->senderINetAddress;
 						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&bsp);
 					}
 					else if (outcome != 0)
 					{
 					}
 					JackieBits toClientWriter;
 				}
-				return true;
+				//return true;
 				break;
 			case ID_CONNECTION_ATTEMPT_FAILED:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1261,11 +1270,11 @@ namespace JACKIE_INET
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
 			default:
-				*isUnconnected = false;
+				*isOfflinerecvParams = false;
 				break;
 			}
 		}
-		return false;
+		//return false;
 	}
 
 
@@ -2055,7 +2064,7 @@ namespace JACKIE_INET
 					JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 			}
 #if USE_SINGLE_THREAD == 0
-			if (allocRecvParamQ[index].Size() > 0) quitAndDataEvents.TriggerEvent();
+			if (allocRecvParamQ[index].Size() > 8) quitAndDataEvents.TriggerEvent();
 #endif
 		}
 		else
@@ -2088,10 +2097,9 @@ namespace JACKIE_INET
 		while (!serv->endThreads)
 		{
 			serv->RunRecvCycleOnce(index);
-#if USE_SINGLE_THREAD == 1
+#if USE_SINGLE_THREAD == 1 // sleep to cache more recv to process in one time
 			JackieSleep(10);
 #endif
-			//JackieSleep(1000);
 		}
 		JDEBUG << "Recv polling thread Stops....";
 

@@ -218,7 +218,7 @@ namespace JACKIE_INET
 
 	private:
 		void ProcessOneRecvParam(JISRecvParams* recvParams);
-		bool ProcessOneUnconnectedRecvParams(JISRecvParams* recvParams,
+		void IsOfflineRecvParams(JISRecvParams* recvParams,
 			bool* isOfflinerecvParams);
 		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieBits &updateBitStream);
 		void ProcessConnectionRequestCancelQ(void); /// @Done

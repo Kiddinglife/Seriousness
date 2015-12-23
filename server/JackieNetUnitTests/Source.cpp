@@ -454,6 +454,7 @@ static void test_ServerApplication_funcs()
 			//c->command = Command::BCS_SEND;
 			//app->ExecuteComand(c);
 		}
+		JackieSleep(10);
 	}
 
 	app->StopRecvThread();

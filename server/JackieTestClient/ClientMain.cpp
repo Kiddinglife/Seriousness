@@ -75,6 +75,7 @@ int main(int argc, char** argv)
 			//app->ExecuteComand(c);
 
 		}
+		JackieSleep(10); 
 	}
 
 	app->StopRecvThread();
