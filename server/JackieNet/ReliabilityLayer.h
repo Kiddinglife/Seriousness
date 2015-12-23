@@ -2,6 +2,7 @@
 #define ReliabilityLayer_H_
 
 #include "DLLExport.h"
+#include "NetTime.h"
 
 namespace JACKIE_INET
 {

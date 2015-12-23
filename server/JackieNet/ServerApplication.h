@@ -248,7 +248,7 @@ namespace JACKIE_INET
 		UInt32 GetIncomingConnectionsCount(void) const;
 		bool CanAcceptIncomingConnection(void) const
 		{
-			return GetIncomingConnectionsCount() < GetIncomingConnectionsCount();
+			return GetIncomingConnectionsCount() < maxConnections;
 		}
 		/// to check if this is loop back address of local host
 		bool IsLoopbackAddress(const JackieAddressGuidWrapper &systemIdentifier,

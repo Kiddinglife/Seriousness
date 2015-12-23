@@ -151,19 +151,19 @@ static void test_JACKIE_INet_GUID_ToString_func()
 
 static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 {
-	std::cout << "JACKIE_INET_Address_GUID_Wrapper::test_ToHashCode_func() starts...\n";
+	std::cout << "JackieAddressGuidWrapper::test_ToHashCode_func() starts...\n";
 
-	JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper wrapper;
+	JACKIE_INET::JackieAddressGuidWrapper wrapper;
 	printf_s("ToString(%s)\n", wrapper.ToString());
 	printf_s("ToHashCode(%d)\n",
-		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper));
+		JACKIE_INET::JackieAddressGuidWrapper::ToHashCode(wrapper));
 
 	JACKIE_INET::JackieGUID gui(12);
 	JACKIE_INET::JackieAddress adrr("localhost", (UInt16)123456);
-	JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper wrapper1(gui);
+	JACKIE_INET::JackieAddressGuidWrapper wrapper1(gui);
 	printf_s("ToString(%s)\n", wrapper1.ToString());
 	printf_s("ToHashCode(%d)\n",
-		JACKIE_INET::JACKIE_INET_Address_GUID_Wrapper::ToHashCode(wrapper1));
+		JACKIE_INET::JackieAddressGuidWrapper::ToHashCode(wrapper1));
 }
 
 #include "JackieNet/NetTime.h"
@@ -807,7 +807,7 @@ enum
 //static int testcase = JACKIE_INet_GUID_h;
 //static int testfunc = AllFuncs;
 
-//static int testcase = JACKIE_INET_Address_GUID_Wrapper;
+//static int testcase = JackieAddressGuidWrapper;
 //static int testfunc = AllFuncs;
 
 //static int testcase = NetTime_h;

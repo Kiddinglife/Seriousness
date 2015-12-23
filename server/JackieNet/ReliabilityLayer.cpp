@@ -19,22 +19,22 @@ namespace JACKIE_INET
 
 	void ReliabilityLayer::Reset(bool param1, int MTUSize, bool client_has_security)
 	{
-		throw std::logic_error("The method or operation is not implemented.");
+		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
 	void ReliabilityLayer::SetSplitMessageProgressInterval(int splitMessageProgressInterval)
 	{
-		throw std::logic_error("The method or operation is not implemented.");
+		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
 	void ReliabilityLayer::SetUnreliableTimeout(TimeMS unreliableTimeout)
 	{
-		throw std::logic_error("The method or operation is not implemented.");
+		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
 	void ReliabilityLayer::SetTimeoutTime(TimeMS defaultTimeoutTime)
 	{
-		throw std::logic_error("The method or operation is not implemented.");
+		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
 }
