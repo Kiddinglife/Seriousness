@@ -19,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																			{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																							{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																			{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																							{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -51,27 +51,7 @@ namespace JACKIE_INET
 		0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
 		0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56, 0x78
 	};
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	static void test_sendto(ServerApplication& sp)
-	{
-		JackieBits writer;
-		writer.Write(ID_INCOMPATIBLE_PROTOCOL_VERSION);
-		writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
-		writer.Write(OFFLINE_MESSAGE_DATA_ID,
-			sizeof(OFFLINE_MESSAGE_DATA_ID));
-		writer.WriteMini(sp.GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
 
-		JISSendParams data2send;
-		data2send.data = writer.DataInt8();
-		data2send.length = writer.GetWrittenBytesCount();
-		data2send.receiverINetAddress = sp.bindedSockets[0]->GetBoundAddress();
-
-		sp.bindedSockets[0]->Send(&data2send, TRACE_FILE_AND_LINE_);
-		JDEBUG << "actually has sent " << data2send.bytesWritten << " bytes ";
-		Sleep(1000);
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
 	ServerApplication::ServerApplication() : sendBitStream(MAXIMUM_MTU_SIZE
 #if LIBCAT_SECURITY==1
 		+ cat::AuthenticatedEncryption::OVERHEAD_BYTES
@@ -94,7 +74,7 @@ namespace JACKIE_INET
 
 		defaultMTUSize = mtuSizes[mtuSizesCount - 1];
 		trackFrequencyTable = false;
-		maxPassiveConnections = maxConnections = 0;
+		maxIncomingConnections = maxConnections = 0;
 		bytesSentPerSecond = bytesReceivedPerSecond = 0;
 
 		remoteSystemList = 0;
@@ -188,7 +168,8 @@ namespace JACKIE_INET
 		if (bindLocalSockets == 0 || bindLocalSocketsCount < 1)
 			return INVALID_JACKIE_LOCAL_SOCKET;
 
-		assert(maxConn > 0); if (maxConn <= 0) return INVALID_MAX_CONNECTIONS;
+		assert(maxConn > 0);
+		if (maxConn <= 0) return INVALID_MAX_CONNECTIONS;
 
 		/// Start to bind given sockets 
 		UInt32 index;
@@ -320,7 +301,7 @@ namespace JACKIE_INET
 		if (maxConnections == 0)
 		{
 			// Don't allow more incoming connections than we have peers.
-			if (maxPassiveConnections > maxConn) maxPassiveConnections = maxConn;
+			if (maxIncomingConnections > maxConn) maxIncomingConnections = maxConn;
 			maxConnections = maxConn;
 
 			remoteSystemList = JACKIE_INET::OP_NEW_ARRAY<RemoteEndPoint>(maxConnections, TRACE_FILE_AND_LINE_);
@@ -991,7 +972,7 @@ namespace JACKIE_INET
 							// echo MTU
 							toServerWriter.WriteMini(mtu);
 							// echo Our guid
-							toServerWriter.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+							toServerWriter.WriteMini(myGuid);
 
 							JISSendParams outcome_data;
 							outcome_data.data = toServerWriter.DataInt8();
@@ -1028,7 +1009,7 @@ namespace JACKIE_INET
 						writer.Write((MessageID)JACKIE_INET_PROTOCOL_VERSION);
 						writer.Write(OFFLINE_MESSAGE_DATA_ID,
 							sizeof(OFFLINE_MESSAGE_DATA_ID));
-						writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+						writer.WriteMini(myGuid);
 
 						JISSendParams data2send;
 						data2send.data = writer.DataInt8();
@@ -1049,7 +1030,7 @@ namespace JACKIE_INET
 						writer.Write(ID_OPEN_CONNECTION_REPLY_1);
 						writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 							sizeof(OFFLINE_MESSAGE_DATA_ID));
-						writer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+						writer.WriteMini(myGuid);
 
 #if LIBCAT_SECURITY==1
 						if (_using_security)
@@ -1101,7 +1082,7 @@ namespace JACKIE_INET
 				if (*isOfflinerecvParams)
 				{
 					JDEBUG << "ID_OPEN_CONNECTION_REQUEST_2";
-					JackieBits fromClientReader((UInt8*)recvParams->data, 
+					JackieBits fromClientReader((UInt8*)recvParams->data,
 						recvParams->bytesRead);
 					MessageID msgid;
 					fromClientReader.Read(msgid);
@@ -1173,7 +1154,7 @@ namespace JACKIE_INET
 					bool GUIDInUse = guid_rep != 0 && guid_rep->isActive;
 					if (IPAddrInUse == true && GUIDInUse == true)
 					{
-						if (addr_rep == addr_rep && 
+						if (addr_rep == addr_rep &&
 							addr_rep->connectMode == RemoteEndPoint::UNVERIFIED_SENDER)
 						{
 							// ID_OPEN_CONNECTION_REPLY if they are the same
@@ -1216,11 +1197,11 @@ namespace JACKIE_INET
 					bsAnswer.Write(ID_OPEN_CONNECTION_REPLY_2);
 					bsAnswer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bsAnswer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+					bsAnswer.WriteMini(myGuid);
 					bsAnswer.WriteMini(recvParams->senderINetAddress);
 					bsAnswer.WriteMini(mtu);
 					bsAnswer.WriteMini(client_has_security);
-					
+
 					if (outcome == 1)
 					{
 						// Duplicate connection request packet from packetloss
@@ -1244,8 +1225,54 @@ namespace JACKIE_INET
 					}
 					else if (outcome != 0)
 					{
+						JackieBits toClientWriter;
+						toClientWriter.Write(ID_ALREADY_CONNECTED);
+						toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+							sizeof(OFFLINE_MESSAGE_DATA_ID));
+						toClientWriter.Write(myGuid);
+
+						JISSendParams bsp;
+						bsp.data = toClientWriter.DataInt8();
+						bsp.length = toClientWriter.GetWrittenBytesCount();
+						bsp.receiverINetAddress = recvParams->senderINetAddress;
+						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&bsp);
 					}
-					JackieBits toClientWriter;
+					else if ( outcome == 0) /// start to handle new connection from client
+					{
+						if (CanAcceptIncomingConnection() == false)
+						{/// no more incoming conn accepted
+							JackieBits toClientWriter;
+							toClientWriter.Write(ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS);
+							toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, 
+								sizeof(OFFLINE_MESSAGE_DATA_ID));
+							toClientWriter.WriteMini(myGuid);
+
+							JISSendParams bsp;
+							bsp.data = toClientWriter.DataInt8();
+							bsp.length = toClientWriter.GetWrittenBytesCount();
+							bsp.receiverINetAddress = recvParams->senderINetAddress;
+							recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+							for (index = 0; index < pluginListNTS.Size(); index++)
+								pluginListNTS[index]->OnDirectSocketSend(&bsp);
+						}
+						else
+						{
+							//Assign this client to Remote System List
+							bool thisIPConnectedRecently = false;
+							RemoteEndPoint* remoteClient;
+							UInt32 index_i, index_j, index2use;
+							assert(recvParams->senderINetAddress != JACKIE_NULL_ADDRESS);
+							if ()
+							{
+
+							}
+						}
+					}
+
 				}
 				//return true;
 				break;
@@ -1253,7 +1280,7 @@ namespace JACKIE_INET
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
+			case ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
@@ -1829,7 +1856,7 @@ namespace JACKIE_INET
 			case ID_ALREADY_CONNECTED:
 				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
 				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
+			case ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS:
 				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
 				break;
 			case ID_CONNECTION_BANNED:
@@ -1878,7 +1905,7 @@ namespace JACKIE_INET
 			case ID_ALREADY_CONNECTED:
 				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_ALREADY_CONNECTED);
 				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
+			case ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS:
 				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_NO_FREE_INCOMING_CONNECTIONS);
 				break;
 			case ID_CONNECTION_BANNED:
@@ -2258,6 +2285,24 @@ namespace JACKIE_INET
 		connReqQLock.Unlock();
 
 		return CONNECTION_ATTEMPT_POSTED;
+	}
+
+	UInt32 ServerApplication::GetIncomingConnectionsCount(void) const
+	{
+		if (remoteSystemList == 0 || endThreads == true) return 0;
+
+		unsigned int income_cnnections = 0;
+		for (unsigned int i = 0; i < activeSystemListSize; i++)
+		{
+			if ((activeSystemList[i])->isActive &&
+				(activeSystemList[i])->connectMode == RemoteEndPoint::CONNECTED &&
+				(activeSystemList[i])->locallyInitiateConnection == false
+				)
+			{
+				income_cnnections++;
+			}
+		}
+		return income_cnnections;
 	}
 
 }

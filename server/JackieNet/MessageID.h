@@ -115,7 +115,7 @@ enum DefaultMessageIDTypes : unsigned char
 	/// RakPeer - A remote system has successfully connected.
 	ID_NEW_INCOMING_CONNECTION,
 	/// RakPeer - The system we attempted to connect to is not accepting new connections.
-	ID_NO_FREE_INCOMING_CONNECTIONS,
+	ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS,
 	/// RakPeer - The system specified in Packet::systemAddress has disconnected from us.  For the client, this would mean the
 	/// server has shutdown. 
 	ID_DISCONNECTION_NOTIFICATION,

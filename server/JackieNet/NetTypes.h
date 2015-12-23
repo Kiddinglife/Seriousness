@@ -824,7 +824,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		ReliabilityLayer reliabilityLayer;
 		/// True if we started this connection via Connect.  
 		/// False if someone else connected to us.
-		bool doConnect;
+		bool locallyInitiateConnection;
 		/// last x ping times and calculated clock differentials with it
 		struct PingAndClockDifferential
 		{

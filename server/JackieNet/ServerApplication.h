@@ -59,7 +59,7 @@ namespace JACKIE_INET
 		/// Store the maximum number of peers allowed to connect
 		UInt32 maxConnections;
 		///Store the maximum incoming connection allowed 
-		UInt32 maxPassiveConnections;
+		UInt32 maxIncomingConnections;
 
 
 		char incomingPassword[256];
@@ -244,6 +244,12 @@ namespace JACKIE_INET
 		const JackieGUID& GetGuidFromSystemAddress(const JackieAddress input) const;
 
 		UInt32 MaxConnections() const { return maxConnections; }
+		/// return how many client initiats a connection to us
+		UInt32 GetIncomingConnectionsCount(void) const;
+		bool CanAcceptIncomingConnection(void) const
+		{
+			return GetIncomingConnectionsCount() < GetIncomingConnectionsCount();
+		}
 
 		/// @Function CancelConnectionRequest 
 		/// @Brief  
