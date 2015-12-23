@@ -424,7 +424,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		bool operator < (const JackieGUID& right) const;
 	};
 
-	struct JACKIE_EXPORT JACKIE_INET_Address_GUID_Wrapper
+	struct JACKIE_EXPORT JackieAddressGuidWrapper
 	{
 		JackieGUID guid;
 		JackieAddress systemAddress;
@@ -449,49 +449,49 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 		/// Firstly try to return the hashcode of @guid if guid != null
 		/// otherwise it will return hashcode of @systemAddress
-		static unsigned long ToHashCode(const JACKIE_INET_Address_GUID_Wrapper &aog);
+		static unsigned long ToHashCode(const JackieAddressGuidWrapper &aog);
 
 		/// Firstly try to return the hashcode of @guid if guid != null
 		/// otherwise it will return the string of @systemAddress
 		const char *ToString(bool writePort = true) const;
 		void ToString(bool writePort, char *dest) const;
 
-		JACKIE_INET_Address_GUID_Wrapper() { }
-		JACKIE_INET_Address_GUID_Wrapper(const JACKIE_INET_Address_GUID_Wrapper& input)
+		JackieAddressGuidWrapper() { }
+		JackieAddressGuidWrapper(const JackieAddressGuidWrapper& input)
 		{
 			guid = input.guid;
 			systemAddress = input.systemAddress;
 		}
-		JACKIE_INET_Address_GUID_Wrapper(const JackieAddress& input)
+		JackieAddressGuidWrapper(const JackieAddress& input)
 		{
 			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 		}
-		JACKIE_INET_Address_GUID_Wrapper(const Packet& packet);
-		JACKIE_INET_Address_GUID_Wrapper(const JackieGUID& input)
+		JackieAddressGuidWrapper(const Packet& packet);
+		JackieAddressGuidWrapper(const JackieGUID& input)
 		{
 			guid = input;
 			systemAddress = JACKIE_NULL_ADDRESS;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = (const JACKIE_INET_Address_GUID_Wrapper& input)
+		JackieAddressGuidWrapper& operator = (const JackieAddressGuidWrapper& input)
 		{
 			guid = input.guid;
 			systemAddress = input.systemAddress;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = (const JackieAddress& input)
+		JackieAddressGuidWrapper& operator = (const JackieAddress& input)
 		{
 			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 			return *this;
 		}
-		JACKIE_INET_Address_GUID_Wrapper& operator = (const JackieGUID& input)
+		JackieAddressGuidWrapper& operator = (const JackieGUID& input)
 		{
 			guid = input;
 			systemAddress = JACKIE_NULL_ADDRESS;
 			return *this;
 		}
-		bool operator==(const JACKIE_INET_Address_GUID_Wrapper& right) const
+		bool operator==(const JackieAddressGuidWrapper& right) const
 		{
 			return (guid != JACKIE_NULL_GUID && guid == right.guid) ||
 				(systemAddress != JACKIE_NULL_ADDRESS &&
@@ -844,7 +844,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JackieGUID guid;
 		int MTUSize;
 		// Reference counted socket to send back on
-		JackieINetSocket* rakNetSocket;
+		JackieINetSocket* socket2use;
 		SystemIndex remoteSystemIndex;
 
 #if LIBCAT_SECURITY==1
@@ -880,7 +880,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		PacketReliability priority;
 		PacketReliability reliability;
 		char orderingChannel;
-		JACKIE_INET_Address_GUID_Wrapper systemIdentifier;
+		JackieAddressGuidWrapper systemIdentifier;
 		bool broadcast;
 		RemoteEndPoint::ConnectMode repStatus;
 		NetworkID networkID;

@@ -597,23 +597,23 @@ namespace JACKIE_INET
 		return true;
 	}
 
-	JACKIE_INET_Address_GUID_Wrapper::JACKIE_INET_Address_GUID_Wrapper(const Packet& packet)
+	JackieAddressGuidWrapper::JackieAddressGuidWrapper(const Packet& packet)
 	{
 		guid = packet.guid;
 		systemAddress = packet.systemAddress;
 	}
-	unsigned long JACKIE_INET_Address_GUID_Wrapper::ToHashCode(const JACKIE_INET_Address_GUID_Wrapper &aog)
+	unsigned long JackieAddressGuidWrapper::ToHashCode(const JackieAddressGuidWrapper &aog)
 	{
 		if (aog.guid != JACKIE_NULL_GUID)
 			return JackieGUID::ToUInt32(aog.guid);
 		return JackieAddress::ToHashCode(aog.systemAddress);
 	}
-	const char *JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort) const
+	const char *JackieAddressGuidWrapper::ToString(bool writePort) const
 	{
 		if (guid != JACKIE_NULL_GUID) return guid.ToString();
 		return systemAddress.ToString(writePort);
 	}
-	void JACKIE_INET_Address_GUID_Wrapper::ToString(bool writePort, char *dest) const
+	void JackieAddressGuidWrapper::ToString(bool writePort, char *dest) const
 	{
 		if (guid != JACKIE_NULL_GUID) return guid.ToString(dest);
 		return systemAddress.ToString(writePort, dest);

@@ -29,6 +29,10 @@ namespace JACKIE_INET
 		//split packets
 		bool ProcessOneConnectedRecvParams(ServerApplication* serverApp,
 			JISRecvParams* recvParams, unsigned mtuSize);
+		void Reset(bool param1, int MTUSize, bool client_has_security);
+		void SetSplitMessageProgressInterval(int splitMessageProgressInterval);
+		void SetUnreliableTimeout(TimeMS unreliableTimeout);
+		void SetTimeoutTime(TimeMS defaultTimeoutTime);
 	};
 }
 

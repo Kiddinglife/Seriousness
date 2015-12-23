@@ -52,7 +52,7 @@ namespace JACKIE_INET
 		JackieBits sendBitStream;
 
 		JackieGUID myGuid;
-		JackieAddress IPAddress[MAX_COUNT_LOCAL_IP_ADDR];
+		JackieAddress localIPAddrs[MAX_COUNT_LOCAL_IP_ADDR];
 		JackieAddress firstExternalID;
 
 
@@ -117,7 +117,7 @@ namespace JACKIE_INET
 		TimeMS unreliableTimeout;
 		TimeMS defaultTimeoutTime;
 		UInt32 maxOutgoingBPS;
-		bool limitConnectionFrequencyFromTheSameIP;
+		bool limitConnFrequencyOfSameClient;
 
 		// Nobody would use the internet simulator in a final build.
 #ifdef _DEBUG
@@ -250,7 +250,9 @@ namespace JACKIE_INET
 		{
 			return GetIncomingConnectionsCount() < GetIncomingConnectionsCount();
 		}
-
+		/// to check if this is loop back address of local host
+		bool IsLoopbackAddress(const JackieAddressGuidWrapper &systemIdentifier,
+			bool matchPort) const;
 		/// @Function CancelConnectionRequest 
 		/// @Brief  
 		/// Cancel a pending connection attempt
@@ -358,7 +360,7 @@ namespace JACKIE_INET
 			bool neededBySendThread, bool onlyWantActiveEndPoint) const;
 		RemoteEndPoint* GetRemoteEndPoint(const JackieAddress& sa)
 			const;
-		RemoteEndPoint* GetRemoteEndPoint(const JACKIE_INET_Address_GUID_Wrapper&
+		RemoteEndPoint* GetRemoteEndPoint(const JackieAddressGuidWrapper&
 			senderWrapper, bool neededBySendThread,
 			bool onlyWantActiveEndPoint) const;
 		RemoteEndPoint* GetRemoteEndPoint(const JackieGUID& senderGUID,
@@ -383,6 +385,8 @@ namespace JACKIE_INET
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);
+		void AddToActiveSystemList(UInt32 index2use);
+		int GetIndexFromSystemAddress(JackieAddress senderINetAddress, bool param2);
 	};
 }
 

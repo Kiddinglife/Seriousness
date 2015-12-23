@@ -132,7 +132,7 @@ enum DefaultMessageIDTypes : unsigned char
 	ID_INCOMPATIBLE_PROTOCOL_VERSION,
 	// Means that this IP address connected recently, and can't connect again as a security measure. See
 	/// RakPeer::SetLimitIPConnectionFrequency()
-	ID_IP_RECENTLY_CONNECTED,
+	ID_YOU_CONNECT_TOO_OFTEN,
 	/// RakPeer - The sizeof(RakNetTime) bytes following this byte represent a value which is automatically modified by the difference
 	/// in system times between the sender and the recipient. Requires that you call SetOccasionalPing.
 	ID_TIMESTAMP,

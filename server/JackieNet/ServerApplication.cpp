@@ -19,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																							{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																					{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																							{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																					{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -99,7 +99,7 @@ namespace JACKIE_INET
 
 		for (UInt32 index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++)
 		{
-			IPAddress[index] = JACKIE_NULL_ADDRESS;
+			localIPAddrs[index] = JACKIE_NULL_ADDRESS;
 		}
 
 #ifdef _DEBUG
@@ -118,7 +118,7 @@ namespace JACKIE_INET
 		occasionalPing = false;
 #endif
 
-		limitConnectionFrequencyFromTheSameIP = false;
+		limitConnFrequencyOfSameClient = false;
 
 #if USE_SINGLE_THREAD == 0
 		quitAndDataEvents.Init();
@@ -278,8 +278,8 @@ namespace JACKIE_INET
 		{
 			for (index = 0; index < MAX_COUNT_LOCAL_IP_ADDR; index++)
 			{
-				if (IPAddress[index] == JACKIE_NULL_ADDRESS) break;
-				IPAddress[index].SetPortHostOrder(((JISBerkley*)bindedSockets[0])->GetBoundAddress().GetPortHostOrder());
+				if (localIPAddrs[index] == JACKIE_NULL_ADDRESS) break;
+				localIPAddrs[index].SetPortHostOrder(((JISBerkley*)bindedSockets[0])->GetBoundAddress().GetPortHostOrder());
 			}
 		}
 #endif
@@ -513,27 +513,27 @@ namespace JACKIE_INET
 
 	void ServerApplication::InitIPAddress(void)
 	{
-		assert(IPAddress[0] == JACKIE_NULL_ADDRESS);
-		JackieINetSocket::GetMyIP(IPAddress);
+		assert(localIPAddrs[0] == JACKIE_NULL_ADDRESS);
+		JackieINetSocket::GetMyIP(localIPAddrs);
 
 		// Sort the addresses from lowest to highest
 		int startingIdx = 0;
 		while (startingIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 &&
-			IPAddress[startingIdx] != JACKIE_NULL_ADDRESS)
+			localIPAddrs[startingIdx] != JACKIE_NULL_ADDRESS)
 		{
 			int lowestIdx = startingIdx;
-			for (int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && IPAddress[curIdx] != JACKIE_NULL_ADDRESS; curIdx++)
+			for (int curIdx = startingIdx + 1; curIdx < MAX_COUNT_LOCAL_IP_ADDR - 1 && localIPAddrs[curIdx] != JACKIE_NULL_ADDRESS; curIdx++)
 			{
-				if (IPAddress[curIdx] < IPAddress[startingIdx])
+				if (localIPAddrs[curIdx] < localIPAddrs[startingIdx])
 				{
 					lowestIdx = curIdx;
 				}
 			}
 			if (startingIdx != lowestIdx)
 			{
-				JackieAddress temp = IPAddress[startingIdx];
-				IPAddress[startingIdx] = IPAddress[lowestIdx];
-				IPAddress[lowestIdx] = temp;
+				JackieAddress temp = localIPAddrs[startingIdx];
+				localIPAddrs[startingIdx] = localIPAddrs[lowestIdx];
+				localIPAddrs[lowestIdx] = temp;
 			}
 			++startingIdx;
 		}
@@ -967,7 +967,7 @@ namespace JACKIE_INET
 #endif // LIBCAT_SECURITY
 							}
 
-							// bound address
+							// echo server's bound address
 							toServerWriter.WriteMini(rcs->receiverAddr);
 							// echo MTU
 							toServerWriter.WriteMini(mtu);
@@ -992,6 +992,7 @@ namespace JACKIE_INET
 			case ID_OPEN_CONNECTION_REPLY_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
+
 				break;
 			case ID_OPEN_CONNECTION_REQUEST_1:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1132,9 +1133,9 @@ namespace JACKIE_INET
 #endif // LIBCAT_SECURITY
 					JDEBUG << "client_has_security " << (int)client_has_security;
 
-					JackieAddress bound_addr;
-					fromClientReader.ReadMini(bound_addr);
-					JDEBUG << "bound_addr " << bound_addr.ToString();
+					JackieAddress server_bound_addr;
+					fromClientReader.ReadMini(server_bound_addr);
+					JDEBUG << "bound_addr " << server_bound_addr.ToString();
 					UInt16 mtu;
 					fromClientReader.ReadMini(mtu);
 					JDEBUG << "mtu " << mtu;
@@ -1193,14 +1194,14 @@ namespace JACKIE_INET
 						JDEBUG << " new connection is allowed ";
 					}
 
-					JackieBits bsAnswer;
-					bsAnswer.Write(ID_OPEN_CONNECTION_REPLY_2);
-					bsAnswer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+					JackieBits clientReplay2Writer;
+					clientReplay2Writer.Write(ID_OPEN_CONNECTION_REPLY_2);
+					clientReplay2Writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					bsAnswer.WriteMini(myGuid);
-					bsAnswer.WriteMini(recvParams->senderINetAddress);
-					bsAnswer.WriteMini(mtu);
-					bsAnswer.WriteMini(client_has_security);
+					clientReplay2Writer.WriteMini(myGuid);
+					clientReplay2Writer.WriteMini(recvParams->senderINetAddress);
+					clientReplay2Writer.WriteMini(mtu);
+					clientReplay2Writer.WriteMini(client_has_security);
 
 					if (outcome == 1)
 					{
@@ -1210,13 +1211,13 @@ namespace JACKIE_INET
 						if (client_has_security)
 						{
 							CAT_AUDIT_PRINTF("AUDIT: Resending public key and answer from packetloss.  Sending ID_OPEN_CONNECTION_REPLY_2\n");
-							bsAnswer.WriteAlignedBytes((const unsigned char *)rssFromSA->answer, sizeof(rssFromSA->answer));
+							clientReplay2Writer.WriteAlignedBytes((const unsigned char *)rssFromSA->answer, sizeof(rssFromSA->answer));
 						}
 #endif // LIBCAT_SECURITY
 
 						JISSendParams bsp;
-						bsp.data = bsAnswer.DataInt8();
-						bsp.length = bsAnswer.GetWrittenBytesCount();
+						bsp.data = clientReplay2Writer.DataInt8();
+						bsp.length = clientReplay2Writer.GetWrittenBytesCount();
 						bsp.receiverINetAddress = recvParams->senderINetAddress;
 						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
 
@@ -1240,13 +1241,14 @@ namespace JACKIE_INET
 						for (index = 0; index < pluginListNTS.Size(); index++)
 							pluginListNTS[index]->OnDirectSocketSend(&bsp);
 					}
-					else if ( outcome == 0) /// start to handle new connection from client
+					else if (outcome == 0) /// start to handle new connection from client
 					{
+						JackieBits toClientWriter;
+
 						if (CanAcceptIncomingConnection() == false)
 						{/// no more incoming conn accepted
-							JackieBits toClientWriter;
 							toClientWriter.Write(ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS);
-							toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, 
+							toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 								sizeof(OFFLINE_MESSAGE_DATA_ID));
 							toClientWriter.WriteMini(myGuid);
 
@@ -1261,17 +1263,207 @@ namespace JACKIE_INET
 						}
 						else
 						{
-							//Assign this client to Remote System List
-							bool thisIPConnectedRecently = false;
-							RemoteEndPoint* remoteClient;
-							UInt32 index_i, index_j, index2use;
 							assert(recvParams->senderINetAddress != JACKIE_NULL_ADDRESS);
-							if ()
-							{
 
+							TimeMS time = GetTimeMS();
+							//Assign this client to Remote System List
+							bool thisIPFloodsConnRequest = false;
+							UInt32 i, j, index2use;
+
+							if (limitConnFrequencyOfSameClient)
+							{
+								if (!IsLoopbackAddress(recvParams->senderINetAddress, false))
+								{
+									for (i = 0; i < maxConnections; i++)
+									{
+										if (remoteSystemList[i].isActive == true &&
+											remoteSystemList[i].systemAddress.EqualsExcludingPort(recvParams->senderINetAddress) &&
+											time >= remoteSystemList[i].connectionTime &&
+											time - remoteSystemList[i].connectionTime < 100
+											)
+										{
+											// Attackers can flood ID_OPEN_CONNECTION_REQUEST and use up all available connection slots
+											// Ignore connection attempts if this IP address connected within the last 100 ms
+											thisIPFloodsConnRequest = true;
+											//ValidateRemoteSystemLookup();
+											addr_rep = 0;
+										}
+									}
+								}
+							} ///end of  limitConnFrequencyOfSameClient
+
+							// Don't use a different port than what we received on
+							// so we set received bound address
+							server_bound_addr.SetPortNetworkOrder(recvParams->localBoundSocket->GetBoundAddress().GetPortNetworkOrder());
+
+							RemoteEndPoint* remoteClient;
+							thisIPFloodsConnRequest = false;
+
+							// AssignSystemAddressToRemoteSystemList
+							for (index2use = 0; index2use < maxConnections; index2use++)
+							{
+								if (remoteSystemList[index2use].isActive == false)
+								{
+									JDEBUG << recvParams->senderINetAddress.ToString() << " has become active";
+
+									remoteClient = remoteSystemList + index2use;
+									RefRemoteEndPoint(recvParams->senderINetAddress, index2use);
+
+									remoteClient->MTUSize = defaultMTUSize;
+									if (mtu > defaultMTUSize) remoteClient->MTUSize = mtu;
+									assert(remoteClient->MTUSize <= MAXIMUM_MTU_SIZE);
+									remoteClient->guid = guid;
+
+									// This one line causes future incoming packets to 
+									// go through the reliability layer
+									remoteClient->isActive = true;
+
+									// Reserve this reliability layer for ourselves.
+									remoteClient->reliabilityLayer.Reset(true, remoteClient->MTUSize, client_has_security);
+									remoteClient->reliabilityLayer.SetSplitMessageProgressInterval(splitMessageProgressInterval);
+									remoteClient->reliabilityLayer.SetUnreliableTimeout(unreliableTimeout);
+									remoteClient->reliabilityLayer.SetTimeoutTime(defaultTimeoutTime);
+									AddToActiveSystemList(index2use);
+									if (recvParams->localBoundSocket->GetBoundAddress() == server_bound_addr)
+									{
+										remoteClient->socket2use = recvParams->localBoundSocket;
+									}
+									else
+									{
+										// Client -----> Server : recv from  ip1
+										// Client <----- Server : send from ip2
+										// Client  -----> Server:recv from ip2 with server_bound_addr = ip1
+										// we use ip2 because we believe that  the passive-connection 
+										// endpoint is always dominont and more official obviously
+
+										char str[256];
+										server_bound_addr.ToString(true, str);
+										// See if this is an internal IP address.
+										// If so, force binding on it so we reply on the same IP address as they sent to.
+										int foundIndex = -1;
+										for (unsigned int ipListIndex = 0; ipListIndex < MAX_COUNT_LOCAL_IP_ADDR; ipListIndex++)
+										{
+											if (localIPAddrs[ipListIndex] == JACKIE_NULL_ADDRESS)
+												break;
+
+											if (server_bound_addr.EqualsExcludingPort(localIPAddrs[ipListIndex]))
+											{
+												foundIndex = ipListIndex;
+												break;
+											}
+										}
+
+										// @Reminder
+										// Originally this code was to force a machine with multiple IP 
+										// addresses to reply back on the IP that the datagram came in on
+										if (foundIndex == -1)
+										{
+											// Client [LAN192.168.0.0.8] -----> GateWay[WAN227.0.54.23] ----->Server [LAN192.168.0.0.8]
+											// Serve is located in LAN and client connect to the Gateway that forwards the data to Server
+											// in this case server_bound_addr = 227.0.54.23 but recvParams->localBoundSocket->GetBoundAddress() = 192.168.0.0.8
+											// we use recvParams->localBoundSocket because it does not matter
+											// Hi man, nobody will deploy the real game server in LAN if it is client/server artechtecture (LAN game exclusive)
+											remoteClient->socket2use = recvParams->localBoundSocket;
+										}
+										else
+										{
+											// Force binding
+											unsigned int socketListIndex;
+											for (socketListIndex = 0; socketListIndex < bindedSockets.Size(); socketListIndex++)
+											{
+												if (bindedSockets[socketListIndex]->GetBoundAddress() == server_bound_addr)
+												{
+													// Force binding with existing socket
+													remoteClient->socket2use = bindedSockets[socketListIndex];
+													break;
+												}
+											}
+
+											if (socketListIndex == bindedSockets.Size())
+											{
+												// this hsould not happen !! 
+												JERROR << "remote client have no right socket to assign!!!";
+											}
+
+										}
+									} // server_bound_addr != recv incomeing socket
+
+									// setup ping 
+									for (j = 0; j < (unsigned)PING_TIMES_ARRAY_SIZE; j++)
+									{
+										remoteClient->pingAndClockDifferential[j].pingTime = 65535;
+										remoteClient->pingAndClockDifferential[j].clockDifferential = 0;
+									}
+									remoteClient->connectMode = RemoteEndPoint::UNVERIFIED_SENDER;
+									remoteClient->pingAndClockDifferentialWriteIndex = 0;
+									remoteClient->lowestPing = 65535;
+									remoteClient->nextPingTime = 0; // Ping immediately
+									remoteClient->locallyInitiateConnection = false;
+									remoteClient->connectionTime = time;
+									remoteClient->myExternalSystemAddress = JACKIE_NULL_ADDRESS;
+									remoteClient->lastReliableSend = time;
+
+#ifdef _DEBUG
+									int indexLoopupCheck = GetIndexFromSystemAddress(recvParams->senderINetAddress, true);
+									if (indexLoopupCheck != (int)index2use)
+									{
+										assert((int)indexLoopupCheck == (int)index2use);
+									}
+#endif
+									//return remoteClient;
+								} //remoteSystemList[index2use].isActive == false
+							} // forloop AssignSystemAddressToRemoteSystemList done
+
+							if (thisIPFloodsConnRequest)
+							{
+								toClientWriter.Write(ID_YOU_CONNECT_TOO_OFTEN);
+								toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+								toClientWriter.WriteMini(myGuid);
+								//SocketLayer::SendTo( rakNetSocket, (const char*) bsOut.GetData(), bsOut.GetNumberOfBytesUsed(), systemAddress, _FILE_AND_LINE_ );
+
+								JISSendParams bsp;
+								bsp.data = toClientWriter.DataInt8();
+								bsp.length = toClientWriter.GetWrittenBytesCount();
+								bsp.receiverINetAddress = recvParams->senderINetAddress;
+								recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+								for (index = 0; index < pluginListNTS.Size(); index++)
+									pluginListNTS[index]->OnDirectSocketSend(&bsp);
+							} // thisIPFloodsConnRequest == true
+
+#if LIBCAT_SECURITY==1
+							if (requiresSecurityOfThisClient)
+							{
+								CAT_AUDIT_PRINTF("AUDIT: Writing public key.  Sending ID_OPEN_CONNECTION_REPLY_2\n");
+								if (rakPeer->_server_handshake->ProcessChallenge(remoteHandshakeChallenge, rssFromSA->answer, rssFromSA->reliabilityLayer.GetAuthenticatedEncryption()))
+								{
+									CAT_AUDIT_PRINTF("AUDIT: Challenge good!\n");
+									// Keep going to OK block
+								}
+								else
+								{
+									CAT_AUDIT_PRINTF("AUDIT: Challenge BAD!\n");
+
+									// Unassign this remote system
+									rakPeer->DereferenceRemoteSystem(senderAddress);
+									return true;
+								}
+
+								clientReplay2Writer.WriteAlignedBytesFrom((const unsigned char *)rssFromSA->answer, sizeof(rssFromSA->answer));
 							}
-						}
-					}
+#endif // LIBCAT_SECURITY
+
+							JISSendParams bsp;
+							bsp.data = clientReplay2Writer.DataInt8();
+							bsp.length = clientReplay2Writer.GetWrittenBytesCount();
+							bsp.receiverINetAddress = recvParams->senderINetAddress;
+							recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+
+							for (index = 0; index < pluginListNTS.Size(); index++)
+								pluginListNTS[index]->OnDirectSocketSend(&bsp);
+
+						}  // 	CanAcceptIncomingConnection() == true
+					} // outcome == 0
 
 				}
 				//return true;
@@ -1292,7 +1484,7 @@ namespace JACKIE_INET
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
-			case ID_IP_RECENTLY_CONNECTED:
+			case ID_YOU_CONNECT_TOO_OFTEN:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				break;
@@ -1336,12 +1528,12 @@ namespace JACKIE_INET
 					JACKIE_INET::OP_DELETE(connReqQ[i], TRACE_FILE_AND_LINE_);
 					connReqQ.RemoveAtIndex(i);
 					break;
-				}
 			}
-			connReqQLock.Unlock();
 		}
-		connReqCancelQLock.Unlock();
+			connReqQLock.Unlock();
 	}
+		connReqCancelQLock.Unlock();
+}
 
 	/// @Done
 	void ServerApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
@@ -1672,7 +1864,7 @@ namespace JACKIE_INET
 		return 0;
 	}
 	RemoteEndPoint* ServerApplication::GetRemoteEndPoint(const
-		JACKIE_INET_Address_GUID_Wrapper& senderWrapper, bool neededBySendThread,
+		JackieAddressGuidWrapper& senderWrapper, bool neededBySendThread,
 		bool onlyWantActiveEndPoint) const
 	{
 		if (senderWrapper.guid != JACKIE_NULL_GUID)
@@ -1718,6 +1910,18 @@ namespace JACKIE_INET
 
 	void ServerApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 	{
+#ifdef _DEBUG	
+		for (int remoteSystemIndex = 0;
+			remoteSystemIndex < maxConnections; ++remoteSystemIndex)
+		{
+			if (remoteSystemList[remoteSystemIndex].isActive)
+			{
+				unsigned int hashIndex = GetRemoteEndPointIndex(remoteSystemList[remoteSystemIndex].systemAddress);
+				assert(hashIndex == remoteSystemIndex);
+			}
+		}
+#endif // _DEBUG
+
 		RemoteEndPoint* remote = remoteSystemList + index;
 		JackieAddress old = remote->systemAddress;
 		if (old != JACKIE_NULL_ADDRESS)
@@ -1868,7 +2072,7 @@ namespace JACKIE_INET
 			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
 				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
 				break;
-			case ID_IP_RECENTLY_CONNECTED:
+			case ID_YOU_CONNECT_TOO_OFTEN:
 				pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
 				break;
 			}
@@ -1917,7 +2121,7 @@ namespace JACKIE_INET
 			case ID_INCOMPATIBLE_PROTOCOL_VERSION:
 				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_INCOMPATIBLE_PROTOCOL);
 				break;
-			case ID_IP_RECENTLY_CONNECTED:
+			case ID_YOU_CONNECT_TOO_OFTEN:
 				pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_IP_RECENTLY_CONNECTED);
 				break;
 			}
@@ -2093,7 +2297,7 @@ namespace JACKIE_INET
 #if USE_SINGLE_THREAD == 0
 			if (allocRecvParamQ[index].Size() > 8) quitAndDataEvents.TriggerEvent();
 #endif
-		}
+			}
 		else
 		{
 			//@ Remember myself
@@ -2111,7 +2315,7 @@ namespace JACKIE_INET
 			}
 			JISRecvParamsPool[index].Reclaim(recvParams);
 		}
-	}
+		}
 
 	JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	{
@@ -2305,4 +2509,14 @@ namespace JACKIE_INET
 		return income_cnnections;
 	}
 
-}
+	void ServerApplication::AddToActiveSystemList(UInt32 index2use)
+	{
+		activeSystemList[activeSystemListSize++] = remoteSystemList + index2use;
+	}
+
+	int ServerApplication::GetIndexFromSystemAddress(JackieAddress senderINetAddress, bool param2)
+	{
+		throw std::logic_error("The method or operation is not implemented.");
+	}
+
+	}
