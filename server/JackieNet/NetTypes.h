@@ -856,7 +856,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Valid after connectMode reaches HANDLING_CONNECTION_REQUEST
 		char client_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 #endif
-		enum Status
+		enum ConnectMode
 		{
 			NO_ACTION,
 			DISCONNECT_ASAP,
@@ -866,7 +866,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			HANDLING_CONNECTION_REQUEST,
 			UNVERIFIED_SENDER,
 			CONNECTED
-		} status;
+		} connectMode;
 	};
 	struct JACKIE_EXPORT RemoteEndPointIndex
 	{
@@ -882,7 +882,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		char orderingChannel;
 		JACKIE_INET_Address_GUID_Wrapper systemIdentifier;
 		bool broadcast;
-		RemoteEndPoint::Status repStatus;
+		RemoteEndPoint::ConnectMode repStatus;
 		NetworkID networkID;
 		bool blockingCommand; // Only used for RPC
 		char *data;

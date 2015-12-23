@@ -19,13 +19,13 @@
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																		{*isUnconnected = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																		{*isUnconnected =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -339,7 +339,7 @@ namespace JACKIE_INET
 				remoteSystemList[index].systemAddress = JACKIE_NULL_ADDRESS;
 				remoteSystemList[index].guid = JACKIE_NULL_GUID;
 				remoteSystemList[index].myExternalSystemAddress = JACKIE_NULL_ADDRESS;
-				remoteSystemList[index].status = RemoteEndPoint::NO_ACTION;
+				remoteSystemList[index].connectMode = RemoteEndPoint::NO_ACTION;
 				remoteSystemList[index].MTUSize = defaultMTUSize;
 				remoteSystemList[index].remoteSystemIndex = (SystemIndex)index;
 
@@ -878,26 +878,23 @@ namespace JACKIE_INET
 				UNCONNECTED_RECVPARAMS_HANDLER2;
 				if (*isUnconnected)
 				{
-					JackieBits bsIn((UInt8*)recvParams->data, recvParams->bytesRead);
-					bsIn.ReadSkipBytes(sizeof(MessageID));
-					bsIn.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+					JackieBits fromClientReader((UInt8*)recvParams->data, recvParams->bytesRead);
+					fromClientReader.ReadSkipBytes(sizeof(MessageID));
+					fromClientReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
 					JackieGUID serverGuid;
-					bsIn.ReadMini(serverGuid);
+					fromClientReader.ReadMini(serverGuid);
 					bool serverHasSecurity;
-					bsIn.ReadMini(serverHasSecurity);
+					fromClientReader.ReadMini(serverHasSecurity);
 					UInt32 cookie;
 					// Even if the server has security,
 					// it may not be required of us if we are in the security exception list
 					if (serverHasSecurity)
 					{
-						bsIn.Read(cookie);
+						fromClientReader.Read(cookie);
 					}
 
-					JackieBits bsOut;
-					bsOut.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_2);
-					bsOut.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-					if (serverHasSecurity)
-						bsOut.Write(cookie);
+					UInt16 mtu;
+					fromClientReader.ReadMini(mtu);
 
 					ConnectionRequest *rcs;
 					connReqQLock.Lock();
@@ -910,11 +907,18 @@ namespace JACKIE_INET
 							/// we can  unlock now 
 							connReqQLock.Unlock();
 
+							/// prepare out data to server
+							JackieBits toServerWriter;
+							toServerWriter.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_2);
+							toServerWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
+							if (serverHasSecurity)
+								toServerWriter.Write(cookie);
+
 							if (serverHasSecurity)
 							{
 #if LIBCAT_SECURITY==1
 								unsigned char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
-								bsIn.ReadAlignedBytes(public_key, sizeof(public_key));
+								fromClientReader.ReadAlignedBytes(public_key, sizeof(public_key));
 
 								if (rcs->publicKeyMode==PKM_ACCEPT_ANY_PUBLIC_KEY)
 								{
@@ -947,19 +951,19 @@ namespace JACKIE_INET
 								{
 									// Message does not contain a challenge
 									// We might still pass if we are in the security exception list
-									bsOut.WriteFrom((unsigned char)0);
+									toServerWriter.WriteFrom((unsigned char)0);
 								}
 								else
 								{
 									// Message contains a challenge
-									bsOut.WriteFrom((unsigned char)1);
+									toServerWriter.WriteFrom((unsigned char)1);
 									// challenge
 									CAT_AUDIT_PRINTF("AUDIT: Sending challenge\n");
-									bsOut.WriteAlignedBytesFrom((const unsigned char*)rcs->handshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
+									toServerWriter.WriteAlignedBytesFrom((const unsigned char*)rcs->handshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
 								}
 #else // LIBCAT_SECURITY
 								// Message does not contain a challenge
-								bsOut.WriteMini(false);
+								toServerWriter.WriteMini(false);
 #endif // LIBCAT_SECURITY
 							}
 							else
@@ -982,24 +986,21 @@ namespace JACKIE_INET
 #endif // LIBCAT_SECURITY
 							}
 
-							UInt16 mtu;
-							bsIn.ReadMini(mtu);
-
 							// bound address
-							bsOut.Write(rcs->receiverAddr);
+							toServerWriter.Write(rcs->receiverAddr);
 							// echo MTU
-							bsOut.Write(mtu);
+							toServerWriter.Write(mtu);
 							// echo Our guid
-							bsOut.Write(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+							toServerWriter.Write(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
 
-							JISSendParams bsp;
-							bsp.data = bsOut.DataInt8();
-							bsp.length = bsOut.GetWrittenBytesCount();
-							bsp.receiverINetAddress = recvParams->senderINetAddress;
-							recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+							JISSendParams outcome_data;
+							outcome_data.data = toServerWriter.DataInt8();
+							outcome_data.length = toServerWriter.GetWrittenBytesCount();
+							outcome_data.receiverINetAddress = recvParams->senderINetAddress;
+							recvParams->localBoundSocket->Send(&outcome_data, TRACE_FILE_AND_LINE_);
 
 							for (index = 0; index < pluginListNTS.Size(); index++)
-								pluginListNTS[index]->OnDirectSocketSend(&bsp);
+								pluginListNTS[index]->OnDirectSocketSend(&outcome_data);
 
 							return true;
 						}
@@ -1097,6 +1098,147 @@ namespace JACKIE_INET
 			case ID_OPEN_CONNECTION_REQUEST_2:
 				UNCONNETED_RECVPARAMS_HANDLER0;
 				UNCONNECTED_RECVPARAMS_HANDLER2;
+				if (*isUnconnected)
+				{
+					JDEBUG << "ID_OPEN_CONNECTION_REQUEST_2";
+					JackieBits fromClientReader;
+					MessageID msgid;
+					fromClientReader.Read(msgid);
+					JDEBUG << "recv msg id " << msgid;
+					fromClientReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+					bool client_has_security = false;
+#if LIBCAT_SECURITY==1
+					char remoteHandshakeChallenge[cat::EasyHandshake::CHALLENGE_BYTES];
+
+					if (rakPeer->_using_security)
+					{
+						char str1[64];
+						senderAddress.ToString(false, str1);
+						requiresSecurityOfThisClient = rakPeer->IsInSecurityExceptionList(str1) == false;
+
+						UInt32 cookie;
+						bs.ReadTo(cookie);
+						CAT_AUDIT_PRINTF("AUDIT: Got cookie %i from %i:%i\n", cookie, senderAddress);
+						if (rakPeer->_cookie_jar->Verify(&senderAddress.address, sizeof(senderAddress.address), cookie) == false)
+						{
+							return true;
+						}
+						CAT_AUDIT_PRINTF("AUDIT: Cookie good!\n");
+
+						unsigned char clientWroteChallenge;
+						bs.ReadTo(clientWroteChallenge);
+
+						if (requiresSecurityOfThisClient == true && clientWroteChallenge == 0)
+						{
+							// Fail, client doesn't support security, and it is required
+							return true;
+						}
+
+						if (clientWroteChallenge)
+						{
+							bs.ReadAlignedBytes((unsigned char*)remoteHandshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
+#ifdef CAT_AUDIT
+							printf("AUDIT: RECV CHALLENGE ");
+							for (int ii = 0; ii < sizeof(remoteHandshakeChallenge); ++ii)
+							{
+								printf("%02x", (cat::u8)remoteHandshakeChallenge[ii]);
+							}
+							printf("\n");
+#endif
+						}
+					}
+#endif // LIBCAT_SECURITY
+
+					JackieAddress bound_addr;
+					fromClientReader.Read(bound_addr);
+					UInt16 mtu;
+					fromClientReader.Read(mtu);
+					JackieGUID guid;
+					fromClientReader.Read(guid);
+
+					// addr_in_use, guid_in_use, outcome
+					// TRUE,	  , TRUE	 , ID_OPEN_CONNECTION_REPLY if they are the same, else ID_ALREADY_CONNECTED
+					// FALSE,     , TRUE     , ID_ALREADY_CONNECTED (someone else took this guid)
+					// TRUE,	  , FALSE	 , ID_ALREADY_CONNECTED (silently disconnected, restarted rakNet)
+					// FALSE	  , FALSE	 , Allow connection
+					int outcome;
+					RemoteEndPoint* addr_rep = GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
+					bool IPAddrInUse = addr_rep != 0 && addr_rep->isActive;
+					RemoteEndPoint* guid_rep = GetRemoteEndPoint(guid, true);
+					bool GUIDInUse = guid_rep != 0 && guid_rep->isActive;
+					if (IPAddrInUse == true && GUIDInUse == true)
+					{
+						if (addr_rep == addr_rep && 
+							addr_rep->connectMode == RemoteEndPoint::UNVERIFIED_SENDER)
+						{
+							// ID_OPEN_CONNECTION_REPLY if they are the same
+							outcome = 1;
+
+							// Note to self: If REQUESTED_CONNECTION, this means two systems attempted to connect to each other at the same time, and one finished first.
+							// Returns ID)_CONNECTION_REQUEST_ACCEPTED to one system, and ID_ALREADY_CONNECTED followed by ID_NEW_INCOMING_CONNECTION to another
+						}
+						else
+						{
+							// return client with ID_ALREADY_CONNECTED 
+							// (restarted jackieinet, connected again from same ip, 
+							// plus someone else took this guid)
+							outcome = 2;
+						}
+					}
+					else if (IPAddrInUse == false && GUIDInUse == true)
+					{
+						// this happend when someone else took client's guid
+						// and try to connect to server with different ip address
+						// we take this as same connected client
+						// return client msg id of ID_ALREADY_CONNECTED
+						outcome = 3;
+					}
+					else if (IPAddrInUse == true && GUIDInUse == false)
+					{
+						// this happend when client restart jackieineinstance and get a new guid
+						// client is silently disconnected in server
+						//  return client msg id of ID_ALREADY_CONNECTED
+						outcome = 4;
+					}
+					else
+					{
+						// this client is totally new client and  new connection is allowed
+						outcome = 0;
+					}
+
+					JackieBits bsAnswer;
+					bsAnswer.Write(ID_OPEN_CONNECTION_REPLY_2);
+					bsAnswer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+						sizeof(OFFLINE_MESSAGE_DATA_ID));
+					bsAnswer.WriteMini(GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS));
+					bsAnswer.WriteMini(recvParams->senderINetAddress);
+					bsAnswer.WriteMini(mtu);
+					bsAnswer.WriteMini(client_has_security);
+					
+					if (outcome == 1)
+					{
+						// Duplicate connection request packet from packetloss
+						// Send back the same answer
+#if LIBCAT_SECURITY==1
+						if (client_has_security)
+						{
+							CAT_AUDIT_PRINTF("AUDIT: Resending public key and answer from packetloss.  Sending ID_OPEN_CONNECTION_REPLY_2\n");
+							bsAnswer.WriteAlignedBytes((const unsigned char *)rssFromSA->answer, sizeof(rssFromSA->answer));
+						}
+#endif // LIBCAT_SECURITY
+
+						JISSendParams bsp;
+						bsp.data = bsAnswer.DataInt8();
+						bsp.length = bsAnswer.GetWrittenBytesCount();
+						bsp.receiverINetAddress = recvParams->senderINetAddress;
+						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
+					}
+					else if (outcome != 0)
+					{
+					}
+					JackieBits toClientWriter;
+				}
+				return true;
 				break;
 			case ID_CONNECTION_ATTEMPT_FAILED:
 				UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1221,6 +1363,7 @@ namespace JACKIE_INET
 				}
 				else /// try to connect again
 				{
+					JDEBUG << "client try to connect again";
 					/// more times try to request connection, less mtu used
 					int MTUSizeIndex = connReq->requestsMade /
 						(connReq->connAttemptTimes / mtuSizesCount);
@@ -1333,7 +1476,7 @@ namespace JACKIE_INET
 					remoteEndPoint = GetRemoteEndPoint(
 						cmd->systemIdentifier, true, true);
 					if (remoteEndPoint != 0)
-						remoteEndPoint->status = cmd->repStatus;
+						remoteEndPoint->connectMode = cmd->repStatus;
 				}
 				break;
 			case Command::BCS_CLOSE_CONNECTION:

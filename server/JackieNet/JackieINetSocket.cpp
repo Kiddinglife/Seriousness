@@ -491,13 +491,13 @@ namespace JACKIE_INET
 		{
 			memcpy(&recvFromStruct->senderINetAddress.address.addr6, (sockaddr_in6 *)&sa, sizeof(sockaddr_in6));
 			recvFromStruct->senderINetAddress.debugPort = ntohs(recvFromStruct->senderINetAddress.address.addr6.sin6_port);
-	}
+		}
 
 		return recvFromStruct->bytesRead;
 #else
 		return RecvFromIPV4(recvFromStruct);
 #endif
-}
+	}
 	//////////////////////////////////////////////////////////////////////////
 
 	JACKIE_INET::JISSendResult JISBerkley::Send(JISSendParams *sendParameters,
@@ -607,7 +607,7 @@ namespace JACKIE_INET
 		/// send succeeds
 		sendParameters->bytesWritten = len;
 		return len;
-		}
+	}
 
 
 	void JISBerkley::GetSystemAddressViaJISSocket(JISSocket rns2Socket, JackieAddress *systemAddressOut)
@@ -632,7 +632,7 @@ namespace JACKIE_INET
 #endif
 			*systemAddressOut = JACKIE_NULL_ADDRESS;
 			return;
-	}
+		}
 
 		systemAddressOut->SetPortNetworkOrder(sa.sin_port);
 		systemAddressOut->address.addr4.sin_addr.s_addr = sa.sin_addr.s_addr;
@@ -681,7 +681,7 @@ namespace JACKIE_INET
 			if (memcmp(&systemAddressOut->address.addr4.sin_addr.s_addr, &zero,
 				sizeof(zero)) == 0)
 				systemAddressOut->SetToLoopBack(6);
-	}
+		}
 
 #else
 		GetSystemAddressViaJISSocketIPV4(rns2Socket, systemAddressOut);
@@ -768,4 +768,4 @@ namespace JACKIE_INET
 
 #endif
 
-		}
+}

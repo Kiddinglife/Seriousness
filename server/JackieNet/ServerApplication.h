@@ -331,7 +331,7 @@ namespace JACKIE_INET
 		ConnectionAttemptResult Connect(const char* host, UInt16 port,
 			const char *pwd = 0, UInt32 pwdLen = 0, JACKIE_Public_Key *publicKey = 0,
 			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 6,
-			UInt32 ConnectionAttemptIntervalMS = 100000, TimeMS timeout = 0,
+			UInt32 ConnectionAttemptIntervalMS = 1000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
 
