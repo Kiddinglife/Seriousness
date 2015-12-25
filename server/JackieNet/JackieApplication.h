@@ -228,9 +228,9 @@ namespace JACKIE_INET
 		void AdjustTimestamp(JackiePacket*& incomePacket) const;
 
 	public:
-		virtual StartupResult Start(UInt32 maxConnections,
-			BindSocket *socketDescriptors,
-			UInt32 socketDescriptorCount, Int32 threadPriority = -99999);
+		virtual StartupResult Start(BindSocket *socketDescriptors,
+			UInt32 maxConnections = 8, UInt32 socketDescriptorCount = 1,
+			Int32 threadPriority = -99999);
 		void End(UInt32 blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
 
@@ -263,7 +263,74 @@ namespace JACKIE_INET
 		/// @Author mengdi[Jackie]
 		void CancelConnectionRequest(const JackieAddress& target);
 
-		bool GenerateConnectionRequestChallenge(ConnectionRequest *connectionRequest, JackiePublicKey *jackiePublicKey);
+		bool GenerateConnectionRequestChallenge(ConnectionRequest *connectionRequest, JackieSHSKey *jackiePublicKey);
+
+		/// Returns the number of IP addresses we have
+		inline unsigned int GetLocalIPAddrCount(void)
+		{
+			if (!IsActive())
+			{
+				InitIPAddress();
+			}
+			int i = 0;
+			while (localIPAddrs[i] != JACKIE_NULL_ADDRESS)
+				i++;
+			return i;
+		}
+
+		// Returns an IP address at index 0 to GetNumberOfAddresses-1
+		// \param[in] index index into the list of IP addresses
+		// \return The local IP address at this index
+		const char* GetLocalIPAddr(unsigned int index)
+		{
+			if (!IsActive())
+			{
+				InitIPAddress();
+			}
+			static char str[65];
+			localIPAddrs[index].ToString(false, str);
+			return str;
+		}
+
+		/// Sets the password incoming connections must match in the call to Connect
+		/// (defaults to none) Pass 0 to passwordData to specify no password
+		/// passwd: A data block that incoming connections must match.
+		/// This can be just a password, or can be a stream of data.
+		/// Specify 0 for no password data
+		/// passwdLength: The length in bytes of passwordData
+		void SetIncomingConnectionsPasswd(const char passwd[255], int passwdLength)
+		{
+			//if (passwordDataLength > MAX_OFFLINE_DATA_LENGTH)
+			//	passwordDataLength=MAX_OFFLINE_DATA_LENGTH;
+
+			if (passwdLength > 255)
+				passwdLength = 255;
+
+			if (passwd == 0)
+				passwdLength = 0;
+
+			// Not threadsafe but it's not important enough to lock.  
+			// Who is going to change the password a lot during runtime?
+			// It won't overflow because @incomingPasswordLength is an unsigned char
+			if (passwd != 0 && passwdLength > 0)
+				memcpy(incomingPassword, passwd, passwdLength);
+			incomingPasswordLength = (unsigned char)passwdLength;
+		}
+
+		///  Must be called while offline
+		/// If you are allowed to be connected by others,
+		/// you must call this or else security will not be enabled for incoming connections.
+		/// This feature requires more round trips, bandwidth, and CPU time for the connection
+		/// handshake.  x64 builds require under 25% of the CPU time of other builds
+		/// Parameters:
+		/// publicKey = A pointer to the public key for accepting new connections
+		/// privateKey = A pointer to the private key for accepting new connections
+		/// If the private keys are 0, then a new key will be generated when this function is called
+		/// bRequireClientKey: Should be set to false for most servers.  Allows the server to accept
+		/// a public key from connecting clients as a proof of identity but eats twice as much CPU time as a normal connection
+		bool EnableIncomingSecureConnections(const char *public_key,
+			const char *private_key, bool bRequireClientKey);
+
 	private:
 		void ClearAllCommandQs(void);
 		void ClearSocketQueryOutputs(void);
@@ -317,14 +384,14 @@ namespace JACKIE_INET
 		/// @Access  public  
 		/// @Param [in] [const char * host] Either a dotted IP address or a domain name
 		/// @Param [in] [UInt16 port] Which port to connect to on the remote machine.
-		/// @Param [in] [const char * pwd]  
-		/// 1.Must match the pwd on the server.  
+		/// @Param [in] [const char * passwd]  
+		/// 1.Must match the passwd on the server.  
 		/// 2.This can be just a password, or can be a stream of data
-		/// @Param [in] [UInt32 pwdLen]  The length in bytes
-		/// @Param [in] [JACKIE_Public_Key * publicKey]  
-		/// @Param [in] [UInt32 ConnectionSocketIndex]  
-		/// @Param [in] [UInt32 ConnectionAttemptTimes]  
-		/// @Param [in] [UInt32 ConnectionAttemptIntervalMS]  
+		/// @Param [in] [UInt32 passwdLength]  The length in bytes
+		/// @Param [in] [JACKIE_Public_Key * jackiePublicKey]  
+		/// @Param [in] [UInt32 localSocketIndex]  
+		/// @Param [in] [UInt32 attemptTimes]  
+		/// @Param [in] [UInt32 attemptIntervalMS]  
 		/// @Param [in] [TimeMS timeout]  
 		/// @Returns [JACKIE_INET::ConnectionAttemptResult]
 		/// 1.True on successful initiation. 
@@ -338,9 +405,10 @@ namespace JACKIE_INET
 		/// ID_CONNECTION_REQUEST_ACCEPTED. 
 		/// @Author mengdi[Jackie]
 		ConnectionAttemptResult Connect(const char* host, UInt16 port,
-			const char *pwd = 0, UInt32 pwdLen = 0, JackiePublicKey *publicKey = 0,
-			UInt32 ConnectionSocketIndex = 0, UInt32 ConnectionAttemptTimes = 6,
-			UInt32 ConnectionAttemptIntervalMS = 1000, TimeMS timeout = 0,
+			const char *passwd = 0, UInt32 passwdLength = 0,
+			JackieSHSKey *jackiePublicKey = 0,
+			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
+			UInt32 attemptIntervalMS = 10000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
 
@@ -357,14 +425,14 @@ namespace JACKIE_INET
 
 
 		const JackieGUID& GetMyGUID(void) const { return myGuid; }
-		JackieRemoteSystem* GetRemoteEndPoint(const JackieAddress& sa,
+		JackieRemoteSystem* GetRemoteSystem(const JackieAddress& sa,
 			bool neededBySendThread, bool onlyWantActiveEndPoint) const;
-		JackieRemoteSystem* GetRemoteEndPoint(const JackieAddress& sa)
+		JackieRemoteSystem* GetRemoteSystem(const JackieAddress& sa)
 			const;
-		JackieRemoteSystem* GetRemoteEndPoint(const JackieAddressGuidWrapper&
+		JackieRemoteSystem* GetRemoteSystem(const JackieAddressGuidWrapper&
 			senderWrapper, bool neededBySendThread,
 			bool onlyWantActiveEndPoint) const;
-		JackieRemoteSystem* GetRemoteEndPoint(const JackieGUID& senderGUID,
+		JackieRemoteSystem* GetRemoteSystem(const JackieGUID& senderGUID,
 			bool onlyWantActiveEndPoint) const;
 		Int32 GetRemoteEndPointIndex(const JackieAddress &sa) const;
 		void RefRemoteEndPoint(const JackieAddress &sa, UInt32 index);

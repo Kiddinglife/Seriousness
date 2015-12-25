@@ -52,33 +52,61 @@ int main(int argc, char** argv)
 
 	JINFO << "Start Client..";
 
-	JACKIE_INET::JackieApplication* app = JACKIE_INET::JackieApplication::GetInstance();
+	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
 	JackieIPlugin plugin;
-	app->AttachOnePlugin(&plugin);
+	client->AttachOnePlugin(&plugin);
 
-	JACKIE_INET::BindSocket socketDescriptor("", 0);
-	app->Start(4, &socketDescriptor, 1);
-
-	app->Connect("127.0.0.1", 38000);
-
-	JackiePacket* packet = 0;
-	//// Loop for input
-	while (1)
+	// default use wild address and random port and blobking mode
+	JACKIE_INET::BindSocket socketDescriptor;
+	if (client->Start(&socketDescriptor) == StartupResult::START_SUCCEED)
 	{
-		// This sleep keeps RakNet responsive
-		for (packet = app->GetPacketOnce(); packet != 0;
-			app->ReclaimPacket(packet), packet = 0)
+
+#if ENABLE_SECURE_HAND_SHAKE==1
 		{
-			/// user logics goes here
-			//Command* c = app->AllocCommand();
-			//c->command = Command::BCS_SEND;
-			//app->ExecuteComand(c);
-
+			char serverPublicKey[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+			FILE *fp = fopen("publickey.dat", "rb");
+			fread(serverPublicKey, sizeof(serverPublicKey), 1, fp);
+			fclose(fp);
+			JACKIE_INET::JackieSHSKey shsKeys;
+			shsKeys.remoteServerPublicKey = serverPublicKey;
+			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
+			assert(client->Connect("127.0.0.1", 38000, "admin", strlen("admin"), &shsKeys) == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}
-		JackieSleep(10); 
-	}
+#endif
+		assert(client->Connect("127.0.0.1", 38000, "root", strlen("root")) == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 
-	app->StopRecvThread();
-	app->StopNetworkUpdateThread();
+		JINFO << "\nMy IP addresses:";
+		unsigned int i;
+		for (i = 0; i < client->GetLocalIPAddrCount(); i++)
+		{
+			JINFO << i + 1 << ". " << client->GetLocalIPAddr(i);
+		}
+
+		JINFO << " My GUID " << client->GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS);
+
+		JackiePacket* packet = 0;
+
+		//// Loop for input
+		while (1)
+		{
+			JackieSleep(10);		// This sleep keeps jackie net more responsive
+
+			for (packet = client->GetPacketOnce(); packet != 0;
+				client->ReclaimPacket(packet), packet = 0)
+			{
+				/// user logics goes here
+				//Command* c = app->AllocCommand();
+				//c->command = Command::BCS_SEND;
+				//app->ExecuteComand(c);
+
+			}
+		}
+
+		client->StopRecvThread();
+		client->StopNetworkUpdateThread();
+	}
+	else
+	{
+	}
 	return 0;
 }

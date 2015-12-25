@@ -17,9 +17,9 @@ namespace JACKIE_INET
 	BindSocket::BindSocket()
 	{
 #ifdef __native_client__
-		blockingSocket=false;
+		blockingSocket=USE_NON_BLOBKING_SOCKET;
 #else
-		blockingSocket = true;
+		blockingSocket = USE_BLOBKING_SOCKET;
 #endif
 		port = 0;
 		hostAddress[0] = 0;

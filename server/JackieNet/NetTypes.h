@@ -110,7 +110,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	enum StartupResult
 	{
-		STARTED,
+		START_SUCCEED,
 		ALREADY_STARTED,
 		INVALID_JACKIE_LOCAL_SOCKET,
 		INVALID_MAX_CONNECTIONS,
@@ -181,7 +181,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 
 	/// Passed to ServerApplication::Connect()
-	struct  JACKIE_EXPORT JackiePublicKey
+	struct  JACKIE_EXPORT JackieSHSKey
 	{
 		/// How to interpret the public key, see above
 		SecureConnectionMode publicKeyMode;

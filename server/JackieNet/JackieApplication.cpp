@@ -128,10 +128,8 @@ namespace JACKIE_INET
 	}
 
 
-	JACKIE_INET::StartupResult JackieApplication::Start(UInt32 maxConn,
-		BindSocket *bindLocalSockets,
-		UInt32 bindLocalSocketsCount,
-		Int32 threadPriority /*= -99999*/)
+	JACKIE_INET::StartupResult JackieApplication::Start(BindSocket *bindLocalSockets,
+		UInt32 maxConn,UInt32 bindLocalSocketsCount,Int32 threadPriority /*= -99999*/)
 	{
 		if (IsActive()) return StartupResult::ALREADY_STARTED;
 
@@ -404,7 +402,7 @@ namespace JACKIE_INET
 		//#endif
 
 		JDEBUG << "Startup Application Succeeds....";
-		return ALREADY_STARTED;
+		return START_SUCCEED;
 	}
 
 	void JackieApplication::End(UInt32 blockDuration,
@@ -706,7 +704,7 @@ namespace JACKIE_INET
 		{
 			/// See if this datagram came from a connected system
 			JackieRemoteSystem* remoteEndPoint =
-				GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
+				GetRemoteSystem(recvParams->senderINetAddress, true, true);
 			if (remoteEndPoint != 0) // if this datagram comes from connected system
 			{
 				//if (!isUnconnectedRecvPrrams)
@@ -1171,9 +1169,9 @@ namespace JACKIE_INET
 					// TRUE,	  , FALSE	 , ID_ALREADY_CONNECTED (silently disconnected, restarted rakNet)
 					// FALSE	  , FALSE	 , Allow connection
 					int outcome;
-					JackieRemoteSystem* addr_rep = GetRemoteEndPoint(recvParams->senderINetAddress, true, true);
+					JackieRemoteSystem* addr_rep = GetRemoteSystem(recvParams->senderINetAddress, true, true);
 					bool IPAddrInUse = addr_rep != 0 && addr_rep->isActive;
-					JackieRemoteSystem* guid_rep = GetRemoteEndPoint(guid, true);
+					JackieRemoteSystem* guid_rep = GetRemoteSystem(guid, true);
 					bool GUIDInUse = guid_rep != 0 && guid_rep->isActive;
 					if (IPAddrInUse == true && GUIDInUse == true)
 					{
@@ -1723,7 +1721,7 @@ namespace JACKIE_INET
 				/// setting it to a disconnection state, which does not allow further sends
 				if (cmd->repStatus != JackieRemoteSystem::NO_ACTION)
 				{
-					remoteEndPoint = GetRemoteEndPoint(
+					remoteEndPoint = GetRemoteSystem(
 						cmd->systemIdentifier, true, true);
 					if (remoteEndPoint != 0)
 						remoteEndPoint->connectMode = cmd->repStatus;
@@ -1734,7 +1732,7 @@ namespace JACKIE_INET
 				CloseConnectionInternally(false, true, cmd);
 				break;
 			case Command::BCS_CHANGE_SYSTEM_ADDRESS: //re-rout
-				remoteEndPoint = GetRemoteEndPoint(
+				remoteEndPoint = GetRemoteSystem(
 					cmd->systemIdentifier, true, true);
 				if (remoteEndPoint != 0)
 				{
@@ -1844,7 +1842,7 @@ namespace JACKIE_INET
 		return JACKIE_NULL_GUID;
 	}
 
-	JackieRemoteSystem* JackieApplication::GetRemoteEndPoint(const JackieAddress&
+	JackieRemoteSystem* JackieApplication::GetRemoteSystem(const JackieAddress&
 		sa, bool neededBySendThread, bool onlyWantActiveEndPoint) const
 	{
 		if (sa == JACKIE_NULL_ADDRESS) return 0;
@@ -1885,17 +1883,17 @@ namespace JACKIE_INET
 		// no matched end point found
 		return 0;
 	}
-	JackieRemoteSystem* JackieApplication::GetRemoteEndPoint(const
+	JackieRemoteSystem* JackieApplication::GetRemoteSystem(const
 		JackieAddressGuidWrapper& senderWrapper, bool neededBySendThread,
 		bool onlyWantActiveEndPoint) const
 	{
 		if (senderWrapper.guid != JACKIE_NULL_GUID)
-			return GetRemoteEndPoint(senderWrapper.guid, onlyWantActiveEndPoint);
+			return GetRemoteSystem(senderWrapper.guid, onlyWantActiveEndPoint);
 		else
-			return GetRemoteEndPoint(senderWrapper.systemAddress, neededBySendThread,
+			return GetRemoteSystem(senderWrapper.systemAddress, neededBySendThread,
 			onlyWantActiveEndPoint);
 	}
-	JackieRemoteSystem* JackieApplication::GetRemoteEndPoint(const JackieGUID&
+	JackieRemoteSystem* JackieApplication::GetRemoteSystem(const JackieGUID&
 		senderGUID, bool onlyWantActiveEndPoint) const
 	{
 		if (senderGUID == JACKIE_NULL_GUID) return 0;
@@ -1909,7 +1907,7 @@ namespace JACKIE_INET
 		}
 		return 0;
 	}
-	JackieRemoteSystem* JackieApplication::GetRemoteEndPoint(const JackieAddress& sa) const
+	JackieRemoteSystem* JackieApplication::GetRemoteSystem(const JackieAddress& sa) const
 	{
 		Int32 index = GetRemoteEndPointIndex(sa);
 		if (index == -1) return 0;
@@ -1951,7 +1949,7 @@ namespace JACKIE_INET
 			// The system might be active if rerouting
 			DCHECK_EQ(remoteSystemList[index].isActive, false);
 			// Remove the reference if the reference is pointing to this inactive system
-			if (GetRemoteEndPoint(old) == remote)
+			if (GetRemoteSystem(old) == remote)
 			{
 				DeRefRemoteEndPoint(old);
 			}
@@ -2424,7 +2422,11 @@ namespace JACKIE_INET
 		connReqCancelQLock.Unlock();
 	}
 
-	JACKIE_INET::ConnectionAttemptResult JackieApplication::Connect(const char* host, UInt16 port, const char *pwd /*= 0*/, UInt32 pwdLen /*= 0*/, JackiePublicKey *publicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, UInt32 ConnectionAttemptTimes /*= 6*/, UInt32 ConnectionAttemptIntervalMS /*= 1000*/, TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
+	JACKIE_INET::ConnectionAttemptResult JackieApplication::Connect(const char* host,
+		UInt16 port, const char *passwd /*= 0*/, UInt32 passwdLength /*= 0*/, 
+		JackieSHSKey *jackiePublicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/, 
+		UInt32 attemptTimes /*= 6*/, UInt32 AttemptIntervalMS /*= 1000*/, 
+		TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
 	{
 		JDEBUG << "User Thread start to Connect() to " << host << ":" << port;
 
@@ -2444,8 +2446,8 @@ namespace JACKIE_INET
 			return INVALID_PARAM;
 		}
 
-		if (pwdLen > 255) pwdLen = 255;
-		if (pwd == 0) pwdLen = 0;
+		if (passwdLength > 255) passwdLength = 255;
+		if (passwd == 0) passwdLength = 0;
 
 		bool found = false;
 		for (UInt32 i = 0; i < bindedSockets.Size(); i++)
@@ -2453,6 +2455,7 @@ namespace JACKIE_INET
 			if (bindedSockets[i]->GetUserConnectionSocketIndex() == ConnectionSocketIndex)
 				found = true;
 		}
+
 		if (!found)
 		{
 			JERROR << "invalid ConnectionSocketIndex";
@@ -2464,11 +2467,7 @@ namespace JACKIE_INET
 			bindedSockets[ConnectionSocketIndex]->GetBoundAddress().GetIPVersion());
 		if (!ret || addr == JACKIE_NULL_ADDRESS) return CANNOT_RESOLVE_DOMAIN_NAME;
 
-		if (GetRemoteEndPoint(addr, false, true) != 0)
-			return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
-
-
-		if (GetRemoteEndPoint(addr, false, true) != 0)
+		if (GetRemoteSystem(addr, false, true) != 0)
 			return ALREADY_CONNECTED_TO_ENDPOINT;
 
 		ConnectionRequest* connReq = JACKIE_INET::OP_NEW<ConnectionRequest>(TRACE_FILE_AND_LINE_);
@@ -2480,21 +2479,23 @@ namespace JACKIE_INET
 		connReq->socketIndex = ConnectionSocketIndex;
 		connReq->socket = bindedSockets[ConnectionSocketIndex];
 		connReq->actionToTake = ConnectionRequest::CONNECT;
-		connReq->connAttemptTimes = ConnectionAttemptTimes;
-		connReq->connAttemptIntervalMS = ConnectionAttemptIntervalMS;
+		connReq->connAttemptTimes = attemptTimes;
+		connReq->connAttemptIntervalMS = AttemptIntervalMS;
 		connReq->timeout = timeout;
-		connReq->pwdLen = pwdLen;
-		if (pwdLen > 0 && pwd != 0)
+		connReq->pwdLen = passwdLength;
+		if (passwdLength > 0 && passwd != 0)
 		{
-			memcpy(connReq->pwd, pwd, pwdLen);
+			memcpy(connReq->pwd, passwd, passwdLength);
 		}
 
 #if ENABLE_SECURE_HAND_SHAKE ==1
 		JDEBUG << "Connect()::Generate Connection Request Challenge";
-		if (!GenerateConnectionRequestChallenge(connReq, publicKey))
+		connReq->client_handshake = 0;
+		connReq->publicKeyMode = SecureConnectionMode::INSECURE_CONNECTION;
+		if (!GenerateConnectionRequestChallenge(connReq, jackiePublicKey))
 			return SECURITY_INITIALIZATION_FAILED;
 #else
-		(void)publicKey;
+		(void)jackiePublicKey;
 #endif
 
 		connReqQLock.Lock();
@@ -2514,11 +2515,8 @@ namespace JACKIE_INET
 	}
 
 #if ENABLE_SECURE_HAND_SHAKE==1
-	bool JackieApplication::GenerateConnectionRequestChallenge(ConnectionRequest *connectionRequest, JackiePublicKey *jackiePublicKey)
+	bool JackieApplication::GenerateConnectionRequestChallenge(ConnectionRequest *connectionRequest, JackieSHSKey *jackiePublicKey)
 	{
-		connectionRequest->client_handshake = 0;
-		connectionRequest->publicKeyMode = SecureConnectionMode::INSECURE_CONNECTION;
-
 		if (jackiePublicKey == 0) return true;
 
 		switch (jackiePublicKey->publicKeyMode)
@@ -2564,6 +2562,8 @@ namespace JACKIE_INET
 				return false;
 
 			connectionRequest->client_handshake = JACKIE_INET::OP_NEW<cat::ClientEasyHandshake>(TRACE_FILE_AND_LINE_);
+
+			//copy server pk to conn req
 			memcpy(connectionRequest->remote_public_key, jackiePublicKey->remoteServerPublicKey, cat::EasyHandshake::PUBLIC_KEY_BYTES);
 
 			if (!connectionRequest->client_handshake->Initialize(jackiePublicKey->remoteServerPublicKey) ||

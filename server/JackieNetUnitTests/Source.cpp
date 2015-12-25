@@ -431,23 +431,34 @@ static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
-	JACKIE_INET::JackieApplication* app = JACKIE_INET::JackieApplication::GetInstance();
+	JACKIE_INET::JackieApplication* server = JACKIE_INET::JackieApplication::GetInstance();
+	server->SetIncomingConnectionsPasswd("admin", (int)strlen("admin"));
 	JackieIPlugin plugin;
-	app->AttachOnePlugin(&plugin);
+	server->AttachOnePlugin(&plugin);
 
-	JACKIE_INET::BindSocket socketDescriptor("", 38000);
-	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
-	//USE_BLOBKING_SOCKET;
-	app->Start(1000, &socketDescriptor, 1);
+#if ENABLE_SECURE_HAND_SHAKE==1
+	{
+		cat::EasyHandshake handshake;
+		char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+		char private_key[cat::EasyHandshake::PRIVATE_KEY_BYTES];
+		handshake.GenerateServerKey(public_key, private_key);
+		server->InitializeSecurity(public_key, private_key, false);
+		FILE *fp = fopen("publicKey.dat", "wb");
+		fwrite(public_key, sizeof(public_key), 1, fp);
+		fclose(fp);
+	}
+#endif
 
-	//app->Connect("localhost", 38000);
+	/// default blobking 
+	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
+	server->Start(&socketDescriptor, 100, 1);
 
 	JackiePacket* packet = 0;
 	while (1)
 	{
 		// This sleep keeps RakNet responsive
-		for (packet = app->GetPacketOnce(); packet != 0;
-			app->ReclaimPacket(packet), packet = 0)
+		for (packet = server->GetPacketOnce(); packet != 0;
+			server->ReclaimPacket(packet), packet = 0)
 		{
 			/// user logics goes here
 			//Command* c = app->AllocCommand();
@@ -457,8 +468,8 @@ static void test_ServerApplication_funcs()
 		JackieSleep(10);
 	}
 
-	app->StopRecvThread();
-	app->StopNetworkUpdateThread();
+	server->StopRecvThread();
+	server->StopNetworkUpdateThread();
 }
 
 #include "JackieNet/JackieBits.h"
