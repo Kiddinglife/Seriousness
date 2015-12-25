@@ -2447,7 +2447,7 @@ namespace JACKIE_INET
 			return INVALID_PARAM;
 		}
 
-		if (passwdLength > 255) passwdLength = 255;
+		if (passwdLength > 256) passwdLength = 256;
 		if (passwd == 0) passwdLength = 0;
 
 		bool found = false;

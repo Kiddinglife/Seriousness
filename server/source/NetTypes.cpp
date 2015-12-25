@@ -129,7 +129,7 @@ namespace JACKIE_INET
 #endif
 		}
 		return address.addr4.sin_port > right.address.addr4.sin_port;
-		}
+	}
 	bool JackieAddress::operator<(const JackieAddress& right) const
 	{
 		if (address.addr4.sin_port == right.address.addr4.sin_port)
@@ -143,7 +143,7 @@ namespace JACKIE_INET
 #endif
 		}
 		return address.addr4.sin_port < right.address.addr4.sin_port;
-		}
+	}
 
 	unsigned char JackieAddress::GetIPVersion(void) const
 	{
@@ -512,7 +512,7 @@ namespace JACKIE_INET
 		if (ret != 0)
 		{
 			dest[0] = 0;
-	}
+		}
 
 		if (writePort)
 		{
@@ -522,7 +522,7 @@ namespace JACKIE_INET
 			strcat(dest, (const char*)ch);
 			Itoa(ntohs(address.addr4.sin_port), dest + strlen(dest), 10);
 		}
-		}
+	}
 
 	JackieGUID::JackieGUID(UInt64 _g)
 	{
@@ -715,4 +715,4 @@ namespace JACKIE_INET
 		}
 		return false;
 	}
-	}
+}

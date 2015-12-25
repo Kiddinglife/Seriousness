@@ -64,13 +64,7 @@ namespace JACKIE_INET
 		TCPInterface *tcpInterface;
 #endif
 
-		JackieIPlugin()
-		{
-			serverApplication = 0;
-#if JackieNet_SUPPORT_PacketizedTCP==1 && JackieNet_SUPPORT_TCPInterface==1
-			tcpInterface = 0;
-#endif
-		}
+		JackieIPlugin();
 		virtual ~JackieIPlugin() { }
 
 

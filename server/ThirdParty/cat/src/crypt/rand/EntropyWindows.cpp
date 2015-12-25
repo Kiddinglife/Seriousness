@@ -101,7 +101,7 @@ bool FortunaFactory::InitializeEntropySources()
     if (!CryptAcquireContext(&hCryptProv, 0, 0, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
         return false;
 
-	NTDLL = LoadLibrary("NtDll.dll");
+	NTDLL = LoadLibrary(L"NtDll.dll");
 	if (NTDLL)
 		NtQuerySystemInformation = (PtNtQuerySystemInformation)GetProcAddress(NTDLL, "NtQuerySystemInformation");
 
@@ -179,7 +179,7 @@ void FortunaFactory::PollInvariantSources(int pool_index)
 		pool.Crunch(user_name, user_len * sizeof(TCHAR));
 
     // Hardware profile
-    GetCurrentHwProfileA(&Sources.hw_profile);
+    GetCurrentHwProfile(&Sources.hw_profile);
 
     // Windows version
     Sources.win_ver = GetVersion();

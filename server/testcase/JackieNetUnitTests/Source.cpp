@@ -4,12 +4,14 @@
 #define ELPP_THREAD_SAFE 
 #define ELPP_FORCE_USE_STD_THREAD
 //#define ELPP_DISABLE_INFO_LOGS
-#include "EasyLog.h"
+#include "980easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
+#include "EasyLog.h"
 #include "WSAStartupSingleton.h"
 #include "NetTypes.h"
 #include "GlobalFunctions.h"
+#include "JackieIPlugin.h"
 
 using namespace JACKIE_INET;
 
@@ -445,7 +447,15 @@ static void test_ServerApplication_funcs()
 		char private_key[cat::EasyHandshake::PRIVATE_KEY_BYTES];
 		handshake.GenerateServerKey(public_key, private_key);
 		server->EnableSecureIncomingConnections(public_key, private_key, false);
-		FILE *fp = fopen("publicKey.dat", "wb");
+
+		char str[1024];
+		JackieBits::PrintHex(str, 64 * 8, (UInt8*)public_key);
+		JDEBUG << "server private key \n" << str;
+
+		JackieBits::PrintHex(str, 32 * 8, (UInt8*)private_key);
+		JDEBUG << "server private key \n" << str;
+
+		FILE *fp = fopen("..\\publicKey.pk", "wb");
 		fwrite(public_key, sizeof(public_key), 1, fp);
 		fclose(fp);
 	}
@@ -458,6 +468,8 @@ static void test_ServerApplication_funcs()
 	JackiePacket* packet = 0;
 	while (1)
 	{
+		JackieSleep(10);
+
 		// This sleep keeps RakNet responsive
 		for (packet = server->GetPacketOnce(); packet != 0;
 			server->ReclaimPacket(packet), packet = 0)
@@ -467,7 +479,6 @@ static void test_ServerApplication_funcs()
 			//c->command = Command::BCS_SEND;
 			//app->ExecuteComand(c);
 		}
-		JackieSleep(10);
 	}
 
 	server->StopRecvThread();

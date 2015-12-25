@@ -65,17 +65,19 @@ int main(int argc, char** argv)
 #if ENABLE_SECURE_HAND_SHAKE==1
 		{
 			char serverPublicKey[cat::EasyHandshake::PUBLIC_KEY_BYTES];
-			FILE *fp = fopen("publickey.dat", "rb");
+			FILE *fp = fopen("..\\publickey.pk", "rb");
 			fread(serverPublicKey, sizeof(serverPublicKey), 1, fp);
 			fclose(fp);
 			JACKIE_INET::JackieSHSKey shsKeys;
 			shsKeys.remoteServerPublicKey = serverPublicKey;
 			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
-			assert(client->Connect("127.0.0.1", 38000, "admin", strlen("admin"), &shsKeys) == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
+			char uname[] = "admin";
+			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			assert(connectResult == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}
-#endif
+#elif
 		assert(client->Connect("127.0.0.1", 38000, "root", strlen("root")) == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
-
+#endif
 		JINFO << "\nMy IP addresses:";
 		unsigned int i;
 		for (i = 0; i < client->GetLocalIPAddrCount(); i++)

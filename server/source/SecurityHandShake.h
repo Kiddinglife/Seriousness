@@ -1,5 +1,5 @@
-#ifndef secure_shanke
-#define secure_shanke
+#ifndef SecurityHandShake_H
+#define SecurityHandShake_H
 
 #include "CompileFeatures.h"
 
