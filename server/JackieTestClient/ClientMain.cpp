@@ -9,9 +9,9 @@ INITIALIZE_EASYLOGGINGPP
 
 #include "JackieNet/DefaultNetDefines.h"
 
-#include "JackieNet/ServerApplication.h"
+#include "JackieNet/JackieApplication.h"
 #include "JackieNet/MessageID.h"
-#include "JackieNet/IPlugin.h"
+#include "JackieNet/JackieIPlugin.h"
 
 using namespace JACKIE_INET;
 
@@ -52,8 +52,8 @@ int main(int argc, char** argv)
 
 	JINFO << "Start Client..";
 
-	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
-	IPlugin plugin;
+	JACKIE_INET::JackieApplication* app = JACKIE_INET::JackieApplication::GetInstance();
+	JackieIPlugin plugin;
 	app->AttachOnePlugin(&plugin);
 
 	JACKIE_INET::BindSocket socketDescriptor("", 0);
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
 	app->Connect("127.0.0.1", 38000);
 
-	Packet* packet = 0;
+	JackiePacket* packet = 0;
 	//// Loop for input
 	while (1)
 	{

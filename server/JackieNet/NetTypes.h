@@ -18,14 +18,15 @@
 #include "SockOSIncludes.h"
 #include "SocketDefines.h"
 #include "NetTime.h"
-#include "ReliabilityLayer.h"
+#include "JackieReliabler.h"
+#include "CompileFeatures.h"
 
 namespace JACKIE_INET
 {
 	/// Forward declarations
 	class   INetApplication;
 	class   JackieBits;
-	struct  Packet;
+	struct  JackiePacket;
 	struct  JackieAddress;
 	struct  JackieGUID;
 	class JackieINetSocket;
@@ -155,7 +156,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 
 	/// Used with the PublicKey structure
-	enum PublicKeyMode
+	enum SecureConnectionMode
 	{
 		/// The connection is insecure. 
 		/// You can also just pass 0 for the pointer to PublicKey in ServerApplication::Connect()
@@ -180,10 +181,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 
 	/// Passed to ServerApplication::Connect()
-	struct  JACKIE_EXPORT JACKIE_Public_Key
+	struct  JACKIE_EXPORT JackiePublicKey
 	{
 		/// How to interpret the public key, see above
-		PublicKeyMode publicKeyMode;
+		SecureConnectionMode publicKeyMode;
 
 		/// Pointer to a public key of length cat::EasyHandshake::PUBLIC_KEY_BYTES. 
 		/// See the Encryption sample.
@@ -467,7 +468,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			guid = JACKIE_NULL_GUID;
 			systemAddress = input;
 		}
-		JackieAddressGuidWrapper(const Packet& packet);
+		JackieAddressGuidWrapper(const JackiePacket& packet);
 		JackieAddressGuidWrapper(const JackieGUID& input)
 		{
 			guid = input;
@@ -774,7 +775,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 
 	/// This is the smallest unit that represents a meaningful user-created logic data
-	struct JACKIE_EXPORT Packet
+	struct JACKIE_EXPORT JackiePacket
 	{
 		/// The system that send this packet.
 		JackieAddress systemAddress;
@@ -810,7 +811,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	/// for internally use
 	/// All the information representing a connected remote end point
-	struct JACKIE_EXPORT RemoteEndPoint
+	struct JACKIE_EXPORT JackieRemoteSystem
 	{
 		// Is this structure in use?
 		bool isActive;
@@ -821,7 +822,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Their internal IP, behind the LAN
 		JackieAddress theirInternalSystemAddress[MAX_COUNT_LOCAL_IP_ADDR];
 		/// The reliability layer associated with this player
-		ReliabilityLayer reliabilityLayer;
+		JackieReliabler reliabilityLayer;
 		/// True if we started this connection via Connect.  
 		/// False if someone else connected to us.
 		bool locallyInitiateConnection;
@@ -847,7 +848,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JackieINetSocket* socket2use;
 		SystemIndex remoteSystemIndex;
 
-#if LIBCAT_SECURITY==1
+#if ENABLE_SECURE_HAND_SHAKE==1
 		// Cached answer used internally by JackieNet
 		/// to prevent DoS attacks based on the connetion handshake
 		char answer[cat::EasyHandshake::ANSWER_BYTES];
@@ -868,10 +869,11 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			CONNECTED
 		} connectMode;
 	};
-	struct JACKIE_EXPORT RemoteEndPointIndex
+
+	struct JACKIE_EXPORT JackieRemoteIndex
 	{
 		unsigned int index;
-		RemoteEndPointIndex *next;
+		JackieRemoteIndex *next;
 	};
 
 	struct JACKIE_EXPORT Command
@@ -882,7 +884,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		char orderingChannel;
 		JackieAddressGuidWrapper systemIdentifier;
 		bool broadcast;
-		RemoteEndPoint::ConnectMode repStatus;
+		JackieRemoteSystem::ConnectMode repStatus;
 		NetworkID networkID;
 		bool blockingCommand; // Only used for RPC
 		char *data;
@@ -918,16 +920,16 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		unsigned int connAttemptTimes;
 		unsigned int connAttemptIntervalMS;
 		TimeMS timeout;
-		PublicKeyMode publicKeyMode;
+		SecureConnectionMode publicKeyMode;
 		JackieINetSocket* socket;
-		enum
+		enum ActionToTake : unsigned char
 		{
 			CONNECT = 1,
 			PING = 2,
 			PING_OPEN_CONNECTIONS = 4,
 			ADVERTISE_SYSTEM = 2
-		} actionToTake;
-#if LIBCAT_SECURITY==1
+	} actionToTake;
+#if ENABLE_SECURE_HAND_SHAKE ==1
 		char handshakeChallenge[cat::EasyHandshake::CHALLENGE_BYTES];
 		cat::ClientEasyHandshake *client_handshake;
 		char remote_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];

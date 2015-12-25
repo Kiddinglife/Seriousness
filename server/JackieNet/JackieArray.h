@@ -24,7 +24,7 @@ namespace DataStructures
 	/// @note ONLY USE THIS FOR SHALLOW COPIES.  I don't bother with operator= to improve performance.
 	/// Slow Insert and remove middle element but fast to random get the element by index
 	template <class ElementType, unsigned int QUEUE_INIT_SIZE = 32>
-	class JACKIE_EXPORT Array
+	class JACKIE_EXPORT JackieArray
 	{
 	private:
 		/// An array of user values
@@ -35,8 +35,8 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 	public:
-		Array() : allocation_size(0), listArray(0), list_size(0){}
-		~Array()
+		JackieArray() : allocation_size(0), listArray(0), list_size(0){}
+		~JackieArray()
 		{
 			if (allocation_size > 0)
 			{
@@ -45,7 +45,7 @@ namespace DataStructures
 			}
 		}
 
-		Array(const Array& original_copy)
+		JackieArray(const JackieArray& original_copy)
 		{
 			/// allocate memory for copying the elements from @param original_copy
 			if (original_copy.list_size == 0)
@@ -63,7 +63,7 @@ namespace DataStructures
 
 			list_size = allocation_size = original_copy.list_size;
 		}
-		Array<ElementType>& operator= (const Array& originalCopy)
+		JackieArray<ElementType>& operator= (const JackieArray& originalCopy)
 		{
 			if (this == &originalCopy) return *this;
 

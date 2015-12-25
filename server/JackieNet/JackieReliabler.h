@@ -6,19 +6,19 @@
 
 namespace JACKIE_INET
 {
-	class RemoteEndPoint;
+	class JackieRemoteSystem;
 	class JISRecvParams;
-	class ServerApplication;
+	class JackieApplication;
 	class JackieBits;
 
-	class JACKIE_EXPORT ReliabilityLayer
+	class JACKIE_EXPORT JackieReliabler
 	{
 	private:
-		RemoteEndPoint* remoteEndpoint;
+		JackieRemoteSystem* remoteEndpoint;
 
 		public:
-		ReliabilityLayer();
-		~ReliabilityLayer();
+		JackieReliabler();
+		~JackieReliabler();
 
 		void ApplyNetworkSimulator(double _packetloss, unsigned short _minExtraPing, unsigned short _extraPingVariance);
 
@@ -28,7 +28,7 @@ namespace JACKIE_INET
 		//connected.  The game should not use that data directly
 		// because some data is used internally, such as packet acknowledgment and
 		//split packets
-		bool ProcessOneConnectedRecvParams(ServerApplication* serverApp,
+		bool ProcessOneConnectedRecvParams(JackieApplication* serverApp,
 			JISRecvParams* recvParams, unsigned mtuSize);
 		void Reset(bool param1, int MTUSize, bool client_has_security);
 		void SetSplitMessageProgressInterval(int splitMessageProgressInterval);

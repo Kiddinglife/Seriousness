@@ -1,7 +1,7 @@
 #ifndef __ORDER_ARRARY_LIST_H__
 #define __ORDER_ARRARY_LIST_H__
 
-#include "Array.h"
+#include "JackieArray.h"
 
 /// The namespace DataStructures was only added to avoid compiler errors for commonly named data structures
 /// As these data structures are stand-alone, you can use them outside of RakNet for your own projects if you wish.
@@ -19,7 +19,7 @@ namespace DataStructures
 	class JACKIE_EXPORT OrderArray
 	{
 	protected:
-		Array<data_type> orderedList;
+		JackieArray<data_type> orderedList;
 
 	public:
 		static void IMPLEMENT_DEFAULT_COMPARISON(void)

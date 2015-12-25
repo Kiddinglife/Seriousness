@@ -4,7 +4,7 @@
 #include "DLLExport.h"
 #include "NetTypes.h"
 #include "CompileFeatures.h"
-#include "ServerApplication.h"
+#include "JackieApplication.h"
 #include "EasyLog.h"
 
 namespace JACKIE_INET
@@ -55,26 +55,26 @@ namespace JACKIE_INET
 		CAFR_PUBLIC_KEY_MISMATCH
 	};
 
-	struct JACKIE_EXPORT IPlugin
+	struct JACKIE_EXPORT JackieIPlugin
 	{
 		// Filled automatically in when attached
-		ServerApplication* serverApplication;
+		JackieApplication* serverApplication;
 
 #if JackieNet_SUPPORT_PacketizedTCP==1 && JackieNet_SUPPORT_TCPInterface==1
 		TCPInterface *tcpInterface;
 #endif
 
-		IPlugin()
+		JackieIPlugin()
 		{
 			serverApplication = 0;
 #if JackieNet_SUPPORT_PacketizedTCP==1 && JackieNet_SUPPORT_TCPInterface==1
 			tcpInterface = 0;
 #endif
 		}
-		virtual ~IPlugin() { }
+		virtual ~JackieIPlugin() { }
 
 
-		ServerApplication *GetServerApplication(void) const { return serverApplication; }
+		JackieApplication *GetServerApplication(void) const { return serverApplication; }
 		JackieGUID GetMyGUIDUnified(void) const
 		{
 			if (serverApplication != 0)
@@ -114,7 +114,7 @@ namespace JACKIE_INET
 		/// @param[in] packet the packet that is being returned to the user
 		/// @return True to allow the game and other plugins to get this message, 
 		/// false to absorb it
-		virtual PluginActionType OnRecvPacket(Packet *packet)
+		virtual PluginActionType OnRecvPacket(JackiePacket *packet)
 		{
 			return PROCESSED_BY_OTHERS;
 		}
@@ -141,7 +141,7 @@ namespace JACKIE_INET
 		/// Called when a connection attempt fails
 		/// @param[in] packet Packet to be returned to the user
 		/// @param[in] failedConnectionReason Why the connection failed
-		virtual void OnFailedConnectionAttempt(Packet *packet,
+		virtual void OnFailedConnectionAttempt(JackiePacket *packet,
 			ConnectionAttemptFailReason failedConnectionAttemptReason)
 		{
 			JINFO << "User Thread calls Plugin CB of OnFailedConnectionAttempt()";

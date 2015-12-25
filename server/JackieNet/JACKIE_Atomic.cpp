@@ -1,11 +1,11 @@
 ﻿#include "JACKIE_Atomic.h"
 
 
-JACKIE_ATOMIC_LONG::JACKIE_ATOMIC_LONG() : value(0) { }
-JACKIE_ATOMIC_LONG::JACKIE_ATOMIC_LONG(unsigned int initial) : value(initial) { }
-JACKIE_ATOMIC_LONG::~JACKIE_ATOMIC_LONG() { }
+JackieAtomicLong::JackieAtomicLong() : value(0) { }
+JackieAtomicLong::JackieAtomicLong(unsigned int initial) : value(initial) { }
+JackieAtomicLong::~JackieAtomicLong() { }
 
-unsigned int JACKIE_ATOMIC_LONG::Increment(void)
+unsigned int JackieAtomicLong::Increment(void)
 {
 #ifdef _WIN32
 	return (unsigned int) InterlockedIncrement(&value);
@@ -20,7 +20,7 @@ unsigned int JACKIE_ATOMIC_LONG::Increment(void)
 	return __sync_fetch_and_add(&value, (unsigned int) 1);
 #endif
 }
-unsigned int JACKIE_ATOMIC_LONG::Decrement(void)
+unsigned int JackieAtomicLong::Decrement(void)
 {
 #ifdef _WIN32
 	return (unsigned int) InterlockedDecrement(&value);

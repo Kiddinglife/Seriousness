@@ -11,7 +11,7 @@
 #include "JACKIE_Simple_Mutex.h"
 #endif
 
-class JACKIE_EXPORT JACKIE_ATOMIC_LONG
+class JACKIE_EXPORT JackieAtomicLong
 {
 	protected:
 #ifdef _WIN32
@@ -25,9 +25,9 @@ class JACKIE_EXPORT JACKIE_ATOMIC_LONG
 #endif
 
 	public:
-	JACKIE_ATOMIC_LONG();
-	explicit JACKIE_ATOMIC_LONG(unsigned int initial);
-	~JACKIE_ATOMIC_LONG();
+	JackieAtomicLong();
+	explicit JackieAtomicLong(unsigned int initial);
+	~JackieAtomicLong();
 
 	// Returns variable value after changing it
 	unsigned int Increment(void);

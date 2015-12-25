@@ -43,8 +43,8 @@
 // #define JackieNet_SUPPORT_TwoWayAuthentication 0
 
 // SET DEFAULTS IF UNDEFINED
-#ifndef LIBCAT_SECURITY
-#define LIBCAT_SECURITY 0
+#ifndef ENABLE_SECURE_HAND_SHAKE
+#define ENABLE_SECURE_HAND_SHAKE 1
 #endif
 #ifndef JackieNet_SUPPORT_ConnectionGraph2
 #define JackieNet_SUPPORT_ConnectionGraph2 1

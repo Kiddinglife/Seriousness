@@ -145,7 +145,7 @@ namespace JACKIE_INET
 		int setIPHdrIncl;
 		int doNotFragment;
 		int pollingThreadPriority;
-		ServerApplication *eventHandler;
+		JackieApplication *eventHandler;
 		unsigned short remotePortJackieNetWasStartedOn_PS3_PS4_PSP2;
 	};
 
@@ -176,7 +176,7 @@ namespace JACKIE_INET
 
 		JISBerkleyBindParams binding;
 		JACKIE_ISocketTransceiver *jst;
-		JACKIE_ATOMIC_LONG isRecvFromLoopThreadActive;
+		JackieAtomicLong isRecvFromLoopThreadActive;
 
 		JISSocket rns2Socket;
 #if defined(__APPLE__)

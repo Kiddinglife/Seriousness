@@ -597,7 +597,7 @@ namespace JACKIE_INET
 		return true;
 	}
 
-	JackieAddressGuidWrapper::JackieAddressGuidWrapper(const Packet& packet)
+	JackieAddressGuidWrapper::JackieAddressGuidWrapper(const JackiePacket& packet)
 	{
 		guid = packet.guid;
 		systemAddress = packet.systemAddress;

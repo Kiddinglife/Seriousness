@@ -1,6 +1,6 @@
 ﻿#include "JackieINetSocket.h"
 #include "WSAStartupSingleton.h"
-#include "ServerApplication.h"
+#include "JackieApplication.h"
 //#include "EasyLog.h"
 
 namespace JACKIE_INET

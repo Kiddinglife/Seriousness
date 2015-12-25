@@ -44,19 +44,7 @@
     <ClCompile Include="NetTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ServerApplication.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ThreadConditionSignalEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RandomSeedCreator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IPlugin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ReliabilityLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JackieINetSocket.cpp">
@@ -80,6 +68,18 @@
     <ClCompile Include="JackieString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JackieApplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieReliabler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieWaitEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JackieIPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NetTypes.h">
@@ -88,16 +88,7 @@
     <ClInclude Include="IServerApplication.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ServerApplication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryPool.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
     <ClInclude Include="atomic_ops.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="LockFreeQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="CompileFeatures.h">
@@ -136,9 +127,6 @@
     <ClInclude Include="GlobalFunctions.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadConditionSignalEvent.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
     <ClInclude Include="JACKIE_Thread.h">
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
@@ -146,9 +134,6 @@
       <Filter>Header Files\Ultils</Filter>
     </ClInclude>
     <ClInclude Include="RandomSeedCreator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="980easylogging++.h">
@@ -160,17 +145,11 @@
     <ClInclude Include="MessageID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ReliabilityLayer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="JackieINetSocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="JackieSimpleMutex.h">
       <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="ArraryQueue.h">
-      <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
     <ClInclude Include="SecurityHandShake.h">
       <Filter>Header Files</Filter>
@@ -199,10 +178,31 @@
     <ClInclude Include="DoubleLinkedList.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="Array.h">
+    <ClInclude Include="OrderArray.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
-    <ClInclude Include="OrderArray.h">
+    <ClInclude Include="JackieApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieReliabler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieWaitEvent.h">
+      <Filter>Header Files\Ultils</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieMemoryPool.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieArraryQueue.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieArray.h">
+      <Filter>Header Files\DataStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieIPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JackieSPSCQueue.h">
       <Filter>Header Files\DataStructures</Filter>
     </ClInclude>
   </ItemGroup>

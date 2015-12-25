@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <cstdio>
 #include "DLLExport.h"
-#include "Array.h"
+#include "JackieArray.h"
 #include "NetTypes.h" // int64_t
 #include "OrderListMap.h"
 
@@ -127,7 +127,7 @@ namespace JACKIE_INET
 
 		/// \internal
 		/// List of free objects to reduce memory reallocations
-		static DataStructures::Array<SharedString*> freeList;
+		static DataStructures::JackieArray<SharedString*> freeList;
 
 		/// \internal
 		static SharedString emptyString;

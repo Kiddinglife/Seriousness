@@ -207,7 +207,7 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	}
 }
 
-#include "JackieNet/MemoryPool.h"
+#include "JackieNet/JackieMemoryPool.h"
 struct TestMemoryPool
 {
 	int allocationId;
@@ -215,7 +215,7 @@ struct TestMemoryPool
 static void test_MemoryPool_funcs()
 {
 	std::cout << "test_MemoryPool_funcs starts...\n";
-	DataStructures::MemoryPool<TestMemoryPool> memoryPool;
+	DataStructures::JackieMemoryPool<TestMemoryPool> memoryPool;
 	for (int i = 0; i < 100000; i++)
 	{
 		TestMemoryPool* test = memoryPool.Allocate();
@@ -225,10 +225,10 @@ static void test_MemoryPool_funcs()
 	}
 }
 
-#include "JackieNet/ArraryQueue.h"
-#include "JackieNet/LockFreeQueue.h"
+#include "JackieNet/JackieArraryQueue.h"
+#include "JackieNet/JackieSPSCQueue.h"
 #include "JackieNet/EasyLog.h"
-#include "JackieNet/Array.h"
+#include "JackieNet/JackieArray.h"
 #include "JackieNet/OrderArray.h"
 #include "JackieNet/OrderListMap.h"
 #include "JackieNet/DoubleLinkedList.h"
@@ -238,7 +238,7 @@ JACKIE_THREAD_DECLARATION(lockfreeproducer)
 	TIMED_FUNC();
 	for (int i = 0; i < 10; i++)
 	{
-		((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->PushTail(i);
+		((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->PushTail(i);
 	}
 	return 0;
 }
@@ -246,11 +246,11 @@ JACKIE_THREAD_DECLARATION(lockfreeproducer)
 JACKIE_THREAD_DECLARATION(lockfreeconsumer)
 {
 
-	for (int i = 0; i < ((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->Size()
+	for (int i = 0; i < ((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->Size()
 		; i++)
 	{
 		int t;
-		((DataStructures::LockFreeQueue<int, 4 * 100000>*)arguments)->PopHead(t);
+		((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->PopHead(t);
 	}
 	return 0;
 }
@@ -259,8 +259,8 @@ static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
 
-	DataStructures::LockFreeQueue<int, 4 * 100000> lockfree;
-	TIMED_BLOCK(LockFreeQueueTimer, "LockFreeQueue")
+	DataStructures::JackieSPSCQueue<int, 4 * 100000> lockfree;
+	TIMED_BLOCK(LockFreeQueueTimer, "JackieSPSCQueue")
 	{
 		for (int i = 0; i < 10; i++)
 		{
@@ -277,7 +277,7 @@ static void test_Queue_funcs()
 		}
 	}
 
-	DataStructures::ArraryQueue<int, 100001> queuee;
+	DataStructures::JackieArraryQueue<int, 100001> queuee;
 	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
 	{
 		for (int i = 0; i < 100000; i++)
@@ -291,7 +291,7 @@ static void test_Queue_funcs()
 		}
 	}
 
-	DataStructures::Array<int, 100001> list;
+	DataStructures::JackieArray<int, 100001> list;
 	TIMED_BLOCK(ListTimer, "ListTimer")
 	{
 		for (int i = 0; i < 5000; i++)
@@ -419,9 +419,9 @@ static bool IncomeDatagramEventHandler(JISRecvParams *param)
 
 	return true;
 }
-#include "JackieNet/ServerApplication.h"
+#include "JackieNet/JackieApplication.h"
 #include "JackieNet/MessageID.h"
-#include "JackieNet/IPlugin.h"
+#include "JackieNet/JackieIPlugin.h"
 static const unsigned char OFFLINE_MESSAGE_DATA_ID[16] =
 {
 	0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
@@ -431,18 +431,18 @@ static void test_ServerApplication_funcs()
 {
 	JINFO << "test_ServerApplication_funcs STARTS...";
 
-	JACKIE_INET::ServerApplication* app = JACKIE_INET::ServerApplication::GetInstance();
-	IPlugin plugin;
+	JACKIE_INET::JackieApplication* app = JACKIE_INET::JackieApplication::GetInstance();
+	JackieIPlugin plugin;
 	app->AttachOnePlugin(&plugin);
 
 	JACKIE_INET::BindSocket socketDescriptor("", 38000);
-	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET ;
+	socketDescriptor.blockingSocket = USE_NON_BLOBKING_SOCKET;
 	//USE_BLOBKING_SOCKET;
 	app->Start(1000, &socketDescriptor, 1);
 
 	//app->Connect("localhost", 38000);
 
-	Packet* packet = 0;
+	JackiePacket* packet = 0;
 	while (1)
 	{
 		// This sleep keeps RakNet responsive

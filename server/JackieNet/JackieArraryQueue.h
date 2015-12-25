@@ -13,7 +13,7 @@ namespace DataStructures
 {
 	/// \brief A queue implemented as an array with a read and write index.
 	template <typename queue_type, unsigned int QUEUE_INIT_SIZE = 32>
-	class JACKIE_EXPORT ArraryQueue
+	class JACKIE_EXPORT JackieArraryQueue
 	{
 	private:
 		queue_type* queueArrary;
@@ -22,12 +22,12 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 	public:
-		ArraryQueue()
+		JackieArraryQueue()
 		{
 			allocation_size = head = tail = 0;
 			queueArrary = 0;
 		}
-		~ArraryQueue()
+		~JackieArraryQueue()
 		{
 			if (allocation_size > 0)
 				JACKIE_INET::OP_DELETE_ARRAY(queueArrary, TRACE_FILE_AND_LINE_);
@@ -35,7 +35,7 @@ namespace DataStructures
 			queueArrary = 0;
 			allocation_size = head = tail = 0;
 		}
-		ArraryQueue(ArraryQueue& original_copy)
+		JackieArraryQueue(JackieArraryQueue& original_copy)
 		{
 			// Allocate memory for copy
 			if (original_copy.Size() == 0)
@@ -58,7 +58,7 @@ namespace DataStructures
 			allocation_size = original_copy.Size() + 1;
 		}
 
-		bool operator= (const ArraryQueue& original_copy)
+		bool operator= (const JackieArraryQueue& original_copy)
 		{
 			if ((&original_copy) == this) return false;
 

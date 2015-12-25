@@ -1,4 +1,4 @@
-#include "IPlugin.h"
+#include "JackieIPlugin.h"
 
 namespace JACKIE_INET
 {

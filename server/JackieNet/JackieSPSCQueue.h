@@ -4,7 +4,7 @@
 namespace DataStructures
 {
 	template <typename elementType, unsigned int  nSize = 128>
-	class LockFreeQueue
+	class JackieSPSCQueue
 	{
 	public:
 		/// this is used to simulate removeAtIndex()
@@ -12,7 +12,7 @@ namespace DataStructures
 		/// in this way, we do not need add locks for remove functions
 		struct Element { elementType ele;  bool valid; };
 
-		LockFreeQueue() :
+		JackieSPSCQueue() :
 			m_pBuffer(0),
 			m_nSize(nSize),
 			m_ElementSize(sizeof(elementType)),
@@ -24,7 +24,7 @@ namespace DataStructures
 			m_pBuffer = (char*)jackieMalloc_Ex(m_nSize, __FILE__, __LINE__);
 			m_nIn = m_nOut = 0;
 		}
-		virtual ~LockFreeQueue()
+		virtual ~JackieSPSCQueue()
 		{
 			if (0 != m_pBuffer) { jackieFree_Ex(m_pBuffer, __FILE__, __LINE__); m_pBuffer = 0; }
 		}

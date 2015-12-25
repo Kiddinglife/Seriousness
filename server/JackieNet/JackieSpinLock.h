@@ -4,7 +4,7 @@
 class JackieSpinLock
 {
 	public:
-	JACKIE_ATOMIC_LONG flag;
+	JackieAtomicLong flag;
 	JackieSpinLock();
 	~JackieSpinLock();
 	void lock(void)
