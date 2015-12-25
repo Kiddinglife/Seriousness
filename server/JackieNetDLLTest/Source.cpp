@@ -1,5 +1,7 @@
 #include "BasicTypes.h"
 #include "GlobalFunctions.h"
+#include "NetTypes.h"
+#include "JackieINetSocket.h"
 int main(void)
 {
 	char ip[65];

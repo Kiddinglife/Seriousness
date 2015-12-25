@@ -22,7 +22,7 @@
     <ProjectGuid>{D4217985-7F10-4299-8DC3-873AF7A92066}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>JackieNet</RootNamespace>
-    <ProjectName>JackieNetLib</ProjectName>
+    <ProjectName>StaticLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -81,6 +81,7 @@
     <IntDir>$(SolutionDir)IntermediateDir\</IntDir>
     <OutDir>$(SolutionDir)Lib\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
+    <SourcePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Lib\</OutDir>
@@ -93,12 +94,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_RAKNET_LIB;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;JACIE_HAS_STATIC_LIB;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../ThirdParty;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../source/;../thirdparty/;thirdparty/openssl-1.0.0d/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,11 +141,11 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;JACIE_HAS_STATIC_LIB;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ProgramDataBaseFileName>$(OutDir)$(SolutionName)_$(ProjectName)_$(Configuration)_$(Platform).pdb</ProgramDataBaseFileName>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <AdditionalIncludeDirectories>../ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>y/;thirdparty/openssl-1.0.0d/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -180,71 +181,71 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Text Include="..\source\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="JackieSlidingWindows.cpp" />
-    <ClCompile Include="JackieSpinLock.cpp" />
-    <ClCompile Include="JackieBits.cpp" />
-    <ClCompile Include="GlobalFunctions.cpp" />
-    <ClCompile Include="JackieIPlugin.cpp" />
-    <ClCompile Include="JackieString.cpp" />
-    <ClCompile Include="JACKIE_Atomic.cpp" />
-    <ClCompile Include="JackieINetSocket.cpp" />
-    <ClCompile Include="JackieSimpleMutex.cpp" />
-    <ClCompile Include="JACKIE_Thread.cpp" />
-    <ClCompile Include="NetTime.cpp" />
-    <ClCompile Include="NetTypes.cpp" />
-    <ClCompile Include="OverrideMemory.cpp" />
-    <ClCompile Include="RandomSeedCreator.cpp" />
-    <ClCompile Include="JackieReliabler.cpp" />
-    <ClCompile Include="SecurityHandShake.cpp" />
-    <ClCompile Include="JackieApplication.cpp" />
-    <ClCompile Include="JackieWaitEvent.cpp" />
-    <ClCompile Include="WSAStartupSingleton.cpp" />
+    <ClInclude Include="..\source\980easylogging++.h" />
+    <ClInclude Include="..\source\atomic_ops.h" />
+    <ClInclude Include="..\source\BasicTypes.h" />
+    <ClInclude Include="..\source\CompileFeatures.h" />
+    <ClInclude Include="..\source\CompileFeaturesOverride.h" />
+    <ClInclude Include="..\source\DefaultNetDefines.h" />
+    <ClInclude Include="..\source\DLLExport.h" />
+    <ClInclude Include="..\source\DoubleLinkedList.h" />
+    <ClInclude Include="..\source\EasyLog.h" />
+    <ClInclude Include="..\source\GlobalFunctions.h" />
+    <ClInclude Include="..\source\IServerApplication.h" />
+    <ClInclude Include="..\source\JackieApplication.h" />
+    <ClInclude Include="..\source\JackieArraryQueue.h" />
+    <ClInclude Include="..\source\JackieArray.h" />
+    <ClInclude Include="..\source\JackieBits.h" />
+    <ClInclude Include="..\source\JackieINetSocket.h" />
+    <ClInclude Include="..\source\JackieINetVersion.h" />
+    <ClInclude Include="..\source\JackieIPlugin.h" />
+    <ClInclude Include="..\source\JackieMemoryPool.h" />
+    <ClInclude Include="..\source\JackieReliabler.h" />
+    <ClInclude Include="..\source\JackieSimpleMutex.h" />
+    <ClInclude Include="..\source\JackieSlidingWindows.h" />
+    <ClInclude Include="..\source\JackieSpinLock.h" />
+    <ClInclude Include="..\source\JackieSPSCQueue.h" />
+    <ClInclude Include="..\source\JackieString.h" />
+    <ClInclude Include="..\source\JackieWaitEvent.h" />
+    <ClInclude Include="..\source\JACKIE_Atomic.h" />
+    <ClInclude Include="..\source\JACKIE_Thread.h" />
+    <ClInclude Include="..\source\MessageID.h" />
+    <ClInclude Include="..\source\NetTime.h" />
+    <ClInclude Include="..\source\NetTypes.h" />
+    <ClInclude Include="..\source\OrderArray.h" />
+    <ClInclude Include="..\source\OrderListMap.h" />
+    <ClInclude Include="..\source\OverrideMemory.h" />
+    <ClInclude Include="..\source\OverrideNetDefines.h" />
+    <ClInclude Include="..\source\RandomSeedCreator.h" />
+    <ClInclude Include="..\source\SecurityHandShake.h" />
+    <ClInclude Include="..\source\SocketDefines.h" />
+    <ClInclude Include="..\source\SockOSIncludes.h" />
+    <ClInclude Include="..\source\WindowsIncludes.h" />
+    <ClInclude Include="..\source\WSAStartupSingleton.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="980easylogging++.h" />
-    <ClInclude Include="JackieArray.h" />
-    <ClInclude Include="atomic_ops.h" />
-    <ClInclude Include="DoubleLinkedList.h" />
-    <ClInclude Include="OrderArray.h" />
-    <ClInclude Include="JackieINetVersion.h" />
-    <ClInclude Include="JackieSlidingWindows.h" />
-    <ClInclude Include="JackieSpinLock.h" />
-    <ClInclude Include="JackieBits.h" />
-    <ClInclude Include="EasyLog.h" />
-    <ClInclude Include="JackieString.h" />
-    <ClInclude Include="MessageID.h" />
-    <ClInclude Include="JackieIPlugin.h" />
-    <ClInclude Include="JackieSPSCQueue.h" />
-    <ClInclude Include="OrderListMap.h" />
-    <ClInclude Include="RandomSeedCreator.h" />
-    <ClInclude Include="JackieArraryQueue.h" />
-    <ClInclude Include="BasicTypes.h" />
-    <ClInclude Include="CompileFeatures.h" />
-    <ClInclude Include="CompileFeaturesOverride.h" />
-    <ClInclude Include="DefaultNetDefines.h" />
-    <ClInclude Include="DLLExport.h" />
-    <ClInclude Include="GlobalFunctions.h" />
-    <ClInclude Include="IServerApplication.h" />
-    <ClInclude Include="JACKIE_Atomic.h" />
-    <ClInclude Include="JackieINetSocket.h" />
-    <ClInclude Include="JackieSimpleMutex.h" />
-    <ClInclude Include="JACKIE_Thread.h" />
-    <ClInclude Include="JackieMemoryPool.h" />
-    <ClInclude Include="NetTime.h" />
-    <ClInclude Include="NetTypes.h" />
-    <ClInclude Include="OverrideMemory.h" />
-    <ClInclude Include="OverrideNetDefines.h" />
-    <ClInclude Include="JackieReliabler.h" />
-    <ClInclude Include="SecurityHandShake.h" />
-    <ClInclude Include="JackieApplication.h" />
-    <ClInclude Include="SocketDefines.h" />
-    <ClInclude Include="SockOSIncludes.h" />
-    <ClInclude Include="JackieWaitEvent.h" />
-    <ClInclude Include="WindowsIncludes.h" />
-    <ClInclude Include="WSAStartupSingleton.h" />
+    <ClCompile Include="..\source\GlobalFunctions.cpp" />
+    <ClCompile Include="..\source\JackieApplication.cpp" />
+    <ClCompile Include="..\source\JackieBits.cpp" />
+    <ClCompile Include="..\source\JackieINetSocket.cpp" />
+    <ClCompile Include="..\source\JackieIPlugin.cpp" />
+    <ClCompile Include="..\source\JackieReliabler.cpp" />
+    <ClCompile Include="..\source\JackieSimpleMutex.cpp" />
+    <ClCompile Include="..\source\JackieSlidingWindows.cpp" />
+    <ClCompile Include="..\source\JackieSpinLock.cpp" />
+    <ClCompile Include="..\source\JackieString.cpp" />
+    <ClCompile Include="..\source\JackieWaitEvent.cpp" />
+    <ClCompile Include="..\source\JACKIE_Atomic.cpp" />
+    <ClCompile Include="..\source\JACKIE_Thread.cpp" />
+    <ClCompile Include="..\source\NetTime.cpp" />
+    <ClCompile Include="..\source\NetTypes.cpp" />
+    <ClCompile Include="..\source\OverrideMemory.cpp" />
+    <ClCompile Include="..\source\RandomSeedCreator.cpp" />
+    <ClCompile Include="..\source\SecurityHandShake.cpp" />
+    <ClCompile Include="..\source\WSAStartupSingleton.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

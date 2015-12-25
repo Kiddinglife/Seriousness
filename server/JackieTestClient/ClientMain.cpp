@@ -4,17 +4,19 @@
 #define ELPP_THREAD_SAFE 
 //#define ELPP_FORCE_USE_STD_THREAD
 //#define ELPP_DISABLE_INFO_LOGS
-#include "../JackieNet/EasyLog.h"
+#include "EasyLog.h"
 INITIALIZE_EASYLOGGINGPP
 
-#include "JackieNet/DefaultNetDefines.h"
+#include "DefaultNetDefines.h"
+#include "JackieApplication.h"
+#include "MessageID.h"
+#include "JackieIPlugin.h"
 
-#include "JackieNet/JackieApplication.h"
-#include "JackieNet/MessageID.h"
-#include "JackieNet/JackieIPlugin.h"
+#if ENABLE_SECURE_HAND_SHAKE==1
+#include "SecurityHandShake.h"
+#endif
 
 using namespace JACKIE_INET;
-
 int main(int argc, char** argv)
 {
 
@@ -49,7 +51,6 @@ int main(int argc, char** argv)
 	// execution
 	defaultConf.clear();
 
-
 	JINFO << "Start Client..";
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
@@ -82,7 +83,7 @@ int main(int argc, char** argv)
 			JINFO << i + 1 << ". " << client->GetLocalIPAddr(i);
 		}
 
-		JINFO << " My GUID " << client->GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS);
+		JINFO << " My GUID " << client->GetGuidFromSystemAddress(JACKIE_NULL_ADDRESS).g;
 
 		JackiePacket* packet = 0;
 

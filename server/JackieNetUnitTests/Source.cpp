@@ -4,12 +4,12 @@
 #define ELPP_THREAD_SAFE 
 #define ELPP_FORCE_USE_STD_THREAD
 //#define ELPP_DISABLE_INFO_LOGS
-#include "980easylogging++.h"
+#include "EasyLog.h"
 INITIALIZE_EASYLOGGINGPP
 
-#include "JackieNet\WSAStartupSingleton.h"
-#include "JackieNet\NetTypes.h"
-#include "JackieNet\GlobalFunctions.h"
+#include "WSAStartupSingleton.h"
+#include "NetTypes.h"
+#include "GlobalFunctions.h"
 
 using namespace JACKIE_INET;
 
@@ -55,7 +55,7 @@ static void test_DomainNameToIP_func()
 	std::cout << "\nvalue(ZMD-SERVER)=ip " << ip << "\n"; // = return 192.168.1.107
 }
 
-#include "JackieNet\NetTypes.h"
+#include "NetTypes.h"
 static void test_size_func()
 {
 	std::cout << "JACKIE_INET_Address::test_size_func() starts...\n";
@@ -166,7 +166,7 @@ static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
 		JACKIE_INET::JackieAddressGuidWrapper::ToHashCode(wrapper1));
 }
 
-#include "JackieNet/NetTime.h"
+#include "NetTime.h"
 static void test_NetTime_h_All_funcs()
 {
 	std::cout << "Test_NetTime_h_All_funcs starts...\n";
@@ -195,7 +195,7 @@ static void test_NetTime_h_All_funcs()
 }
 
 using namespace JACKIE_INET;
-#include "JackieNet/JackieINetSocket.h"
+#include "JackieINetSocket.h"
 static void test_GetMyIP_Wins_Linux_funcs()
 {
 	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
@@ -207,7 +207,7 @@ static void test_GetMyIP_Wins_Linux_funcs()
 	}
 }
 
-#include "JackieNet/JackieMemoryPool.h"
+#include "JackieMemoryPool.h"
 struct TestMemoryPool
 {
 	int allocationId;
@@ -225,13 +225,13 @@ static void test_MemoryPool_funcs()
 	}
 }
 
-#include "JackieNet/JackieArraryQueue.h"
-#include "JackieNet/JackieSPSCQueue.h"
-#include "JackieNet/EasyLog.h"
-#include "JackieNet/JackieArray.h"
-#include "JackieNet/OrderArray.h"
-#include "JackieNet/OrderListMap.h"
-#include "JackieNet/DoubleLinkedList.h"
+#include "JackieArraryQueue.h"
+#include "JackieSPSCQueue.h"
+#include "EasyLog.h"
+#include "JackieArray.h"
+#include "OrderArray.h"
+#include "OrderListMap.h"
+#include "DoubleLinkedList.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
 {
@@ -409,7 +409,7 @@ static void test_Queue_funcs()
 	}
 }
 
-#include "JackieNet/JackieBits.h"
+#include "JackieBits.h"
 static bool IncomeDatagramEventHandler(JISRecvParams *param)
 {
 	JackieBits jb((UInt8*)param->data, param->bytesRead, false);
@@ -419,9 +419,11 @@ static bool IncomeDatagramEventHandler(JISRecvParams *param)
 
 	return true;
 }
-#include "JackieNet/JackieApplication.h"
-#include "JackieNet/MessageID.h"
-#include "JackieNet/JackieIPlugin.h"
+#include "JackieApplication.h"
+#include "MessageID.h"
+#include "JackieIPlugin.h"
+#include "SecurityHandShake.h"
+
 static const unsigned char OFFLINE_MESSAGE_DATA_ID[16] =
 {
 	0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE,
@@ -442,7 +444,7 @@ static void test_ServerApplication_funcs()
 		char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 		char private_key[cat::EasyHandshake::PRIVATE_KEY_BYTES];
 		handshake.GenerateServerKey(public_key, private_key);
-		server->InitializeSecurity(public_key, private_key, false);
+		server->EnableSecureIncomingConnections(public_key, private_key, false);
 		FILE *fp = fopen("publicKey.dat", "wb");
 		fwrite(public_key, sizeof(public_key), 1, fp);
 		fclose(fp);
@@ -472,7 +474,7 @@ static void test_ServerApplication_funcs()
 	server->StopNetworkUpdateThread();
 }
 
-#include "JackieNet/JackieBits.h"
+#include "JackieBits.h"
 struct vec{ float x, y, z; };
 static void test_JackieStream__funcs()
 {

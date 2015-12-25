@@ -31,7 +31,6 @@
 
 #include <cat/Platform.hpp>
 #include <cat/port/FastDelegate.h>
-
 #if defined(CAT_OS_WINDOWS)
 # include <cat/port/WindowsInclude.hpp>
 #endif

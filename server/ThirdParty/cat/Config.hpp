@@ -34,14 +34,14 @@ namespace cat {
 
 // This definition overrides CAT_BUILD_DLL below.  Neuters CAT_EXPORT macro so symbols are
 // neither exported or imported.
-//#define CAT_NEUTER_EXPORT
+#define CAT_NEUTER_EXPORT
 
 // This definition changes the meaning of the CAT_EXPORT macro on Windows.  When defined,
 // the CAT_EXPORT macro will export the associated symbol.  When undefined, it will import it.
 //#define CAT_BUILD_DLL
 
 // If you want to remove server-side code from a binary distribution of a client program:
-//#define CAT_OMIT_SERVER_CODE
+#define CAT_OMIT_SERVER_CODE
 
 // If you know the endianness of your target, uncomment one of these for better performance.
 //#define __LITTLE_ENDIAN__

@@ -9,201 +9,192 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Header Files\DataStructures">
-      <UniqueIdentifier>{dcee10b2-b287-423c-9e2b-925a601f8eb7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Ultils">
-      <UniqueIdentifier>{17a16f5a-ca71-4fde-96ad-145cc5c310d6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Configs">
-      <UniqueIdentifier>{fe75a1ae-3791-473e-a2e5-93140c209088}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Text Include="..\source\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GlobalFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JACKIE_Thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OverrideMemory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NetTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JACKIE_Atomic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WSAStartupSingleton.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NetTime.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RandomSeedCreator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieINetSocket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieSimpleMutex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SecurityHandShake.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieSpinLock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieBits.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieSlidingWindows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieApplication.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieReliabler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieWaitEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JackieIPlugin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="..\source\980easylogging++.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\atomic_ops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\BasicTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\CompileFeatures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\CompileFeaturesOverride.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\DefaultNetDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\DLLExport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\DoubleLinkedList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\EasyLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\GlobalFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\IServerApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JACKIE_Atomic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JACKIE_Thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieArraryQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieBits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieINetSocket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieINetVersion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieIPlugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieMemoryPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieReliabler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieSimpleMutex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieSlidingWindows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieSpinLock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieSPSCQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieWaitEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\MessageID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\NetTime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\NetTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\OrderArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\OrderListMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\OverrideMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\OverrideNetDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\RandomSeedCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\SecurityHandShake.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\SocketDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\SockOSIncludes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\WindowsIncludes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\WSAStartupSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NetTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IServerApplication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="atomic_ops.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="CompileFeatures.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="CompileFeaturesOverride.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultNetDefines.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="OverrideMemory.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="OverrideNetDefines.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="SockOSIncludes.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="SocketDefines.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowsIncludes.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="BasicTypes.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="DLLExport.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="WSAStartupSingleton.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalFunctions.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="JACKIE_Thread.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="NetTime.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="RandomSeedCreator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="980easylogging++.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="EasyLog.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="MessageID.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieINetSocket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieSimpleMutex.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="SecurityHandShake.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieSpinLock.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="JACKIE_Atomic.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieBits.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieINetVersion.h">
-      <Filter>Header Files\Configs</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieSlidingWindows.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OrderListMap.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="DoubleLinkedList.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="OrderArray.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieApplication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieReliabler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieWaitEvent.h">
-      <Filter>Header Files\Ultils</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieMemoryPool.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieArraryQueue.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieArray.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieIPlugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JackieSPSCQueue.h">
-      <Filter>Header Files\DataStructures</Filter>
-    </ClInclude>
+    <ClCompile Include="..\source\GlobalFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JACKIE_Atomic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JACKIE_Thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieApplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieBits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieINetSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieIPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieReliabler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieSimpleMutex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieSlidingWindows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieSpinLock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieWaitEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\NetTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\NetTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\OverrideMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\RandomSeedCreator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\SecurityHandShake.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\WSAStartupSingleton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
