@@ -11,18 +11,15 @@
 #include "DLLExport.h"
 #include "OverrideMemory.h"
 
-/// Maximum unsigned long
-static const unsigned int MAX_UNSIGNED_LONG = 4294967295U;
-static const unsigned int MAX_COUNT_ELEMENTS_CLEAR = 521;
-
-/// The namespace DataStructures was only added to avoid compiler errors for commonly
-/// named data structures  As these data structures are stand-alone, you can use them 
-/// outside  of JACKIE_INet for your own projects if you wish.
 namespace DataStructures
 {
-	/// @brief Array based implementation of a list.
+	/// Maximum unsigned long
+	static const unsigned int MAX_UNSIGNED_LONG = 4294967295U;
+	static const unsigned int MAX_COUNT_ELEMENTS_CLEAR = 521;
+
+	/// @brief 
+	/// used as list, slow insert and remove middle element but fast to random get the element by index
 	/// @note ONLY USE THIS FOR SHALLOW COPIES.  I don't bother with operator= to improve performance.
-	/// Slow Insert and remove middle element but fast to random get the element by index
 	template <class ElementType, unsigned int QUEUE_INIT_SIZE = 32>
 	class JACKIE_EXPORT JackieArray
 	{
@@ -71,7 +68,7 @@ namespace DataStructures
 			if (originalCopy.list_size == 0)
 			{
 				Clear();
-				return;
+				return *this;
 			}
 
 			if (originalCopy.list_size > allocation_size)
@@ -91,10 +88,7 @@ namespace DataStructures
 		}
 		inline ElementType& operator[] (const unsigned int position) const
 		{
-#ifdef _DEBUG
 			assert(position < list_size);
-#endif // _DEBUG
-
 			return listArray[position];
 		}
 

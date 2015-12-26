@@ -4341,7 +4341,7 @@ namespace el
 		inline base::type::VerboseLevel verboseLevel(void) const { return m_verboseLevel; }
 		inline Logger* logger(void) const { return m_logger; }
 		inline const base::type::string_t& message(void) const { return m_message; }
-		private:
+
 		Level m_level;
 		std::string m_file;
 		unsigned long int m_line;

@@ -45,13 +45,15 @@ int main(int argc, char** argv)
 	el::Loggers::reconfigureLogger("default", defaultConf);
 	el::Loggers::reconfigureLogger(JackieNetName, defaultConf);
 	el::Loggers::reconfigureLogger("performance", defaultConf);
+	el::Loggers::reconfigureLogger("RemoteLogger", defaultConf);
+	el::Helpers::installLogDispatchCallback<RemoteLogger>("RemoteLogger");
 
 	// Clears everything because configurations uses heap so we want to retain it.
 	// otherwise it is retained by internal memory management at the end of program
 	// execution
 	defaultConf.clear();
 
-	JINFO << "Start Client..";
+	RINF << "Starting Client..";
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
 	JackieIPlugin plugin;

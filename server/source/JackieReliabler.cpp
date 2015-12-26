@@ -1,7 +1,8 @@
 #include "JackieReliabler.h"
 #include "JackieApplication.h"
 #include "JackieBits.h"
-#include "secure_connection/CookieJar.hpp"
+//#include "secure_connection/CookieJar.hpp"
+
 namespace JACKIE_INET
 {
 	JackieReliabler::JackieReliabler() { }

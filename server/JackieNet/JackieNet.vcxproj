@@ -246,6 +246,7 @@
     <ClCompile Include="..\source\RandomSeedCreator.cpp" />
     <ClCompile Include="..\source\SecurityHandShake.cpp" />
     <ClCompile Include="..\source\WSAStartupSingleton.cpp" />
+    <ClCompile Include="EasyLog.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

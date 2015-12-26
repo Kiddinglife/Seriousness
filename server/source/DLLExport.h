@@ -1,13 +1,7 @@
-﻿/*
- *  Export.h
- *  This source code is licensed under the BSD-style license found in the
- *  LICENSE file in the root directory of this source tree. An additional grant
- *  of patent rights can be found in the PATENTS file in the same directory.
- */
-#ifndef DLL_EXPORT_H_
+﻿#ifndef DLL_EXPORT_H_
 #define DLL_EXPORT_H_
 
-#include"DefaultNetDefines.h"
+//#include"DefaultNetDefines.h"
 
 #if defined(_WIN32) && !(defined(__GNUC__)  || defined(__GCCXML__)) && !defined(JACIE_HAS_STATIC_LIB) && defined(JACIE_HAS_DYNAMIC_LIB)
 #define JACKIE_EXPORT __declspec(dllexport)
