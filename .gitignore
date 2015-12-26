@@ -12,7 +12,8 @@
 /server/Lib
 /server/IntermediateDir
 *.log
- 
+*.pk
+
 ExportedObj/
 *.svd
 *.userprefs
