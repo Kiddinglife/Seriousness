@@ -29,7 +29,7 @@ else use congestion avoidance
 #include "NetTypes.h"
 #include "JackieArraryQueue.h"
 
-#define UDP_HEADER_SIZE 28 ///< Sizeof an UDP header in byte
+const  UInt16 UDP_HEADER_SIZE = 28; ///IP HEADER 20 + UDP HEADER 8 = 28 BYTES
 
 namespace JACKIE_INET
 {

@@ -1,7 +1,5 @@
 #include "JackieReliabler.h"
 #include "JackieApplication.h"
-#include "JackieBits.h"
-//#include "secure_connection/CookieJar.hpp"
 
 namespace JACKIE_INET
 {
@@ -38,10 +36,4 @@ namespace JACKIE_INET
 		//throw std::logic_error("The method or operation is not implemented.");
 	}
 
-#if ENABLE_SECURE_HAND_SHAKE == 1
-	cat::AuthenticatedEncryption* JackieReliabler::GetAuthenticatedEncryption()
-	{
-		throw std::logic_error("The method or operation is not implemented.");
-	}
-#endif
 }

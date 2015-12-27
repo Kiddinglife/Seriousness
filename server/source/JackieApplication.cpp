@@ -15,13 +15,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																				{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																				{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -846,32 +846,34 @@ void JackieApplication::IsOfflineRecvParams(
 			}
 			break;
 		case ID_OPEN_CONNECTION_REPLY_1:
+			// isOfflinerecvParams ?
 			if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
 				sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size() + sizeof(UInt16))
 			{
 				*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
 					OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 			}
-			UNCONNECTED_RECVPARAMS_HANDLER2;
-			if (*isOfflinerecvParams)
+			if (*isOfflinerecvParams) // only process offline msg
 			{
-				JackieBits fromClientReader((UInt8*)recvParams->data, recvParams->bytesRead);
-				fromClientReader.ReadSkipBytes(sizeof(MessageID));
-				fromClientReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
-				JackieGUID serverGuid;
-				fromClientReader.ReadMini(serverGuid);
-				bool serverHasSecurity;
-				fromClientReader.ReadMini(serverHasSecurity);
-				UInt32 cookie;
-				// Even if the server has security,
-				// it may not be required of us if we are in the security exception list
-				if (serverHasSecurity)
-				{
-					fromClientReader.Read(cookie);
-				}
+				JDEBUG << "Client starts to handle ID_OPEN_CONNECTION_REPLY_1";
+				for (index = 0; index < pluginListNTS.Size(); index++)
+					pluginListNTS[index]->OnDirectSocketReceive(recvParams);
 
-				UInt16 mtu;
-				fromClientReader.ReadMini(mtu);
+				JackieBits fromServerReader((UInt8*)recvParams->data, recvParams->bytesRead);
+				fromServerReader.ReadSkipBytes(sizeof(MessageID));
+				fromServerReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+
+				JackieGUID serverGuid;
+				fromServerReader.ReadMini(serverGuid);
+
+				bool serverRequiresSecureConn;
+				fromServerReader.ReadMini(serverRequiresSecureConn);
+
+				UInt32 cookie;
+				if (serverRequiresSecureConn)
+				{
+					fromServerReader.ReadMini(cookie);
+				}
 
 				ConnectionRequest *connectionRequest;
 				connReqQLock.Lock();
@@ -888,84 +890,87 @@ void JackieApplication::IsOfflineRecvParams(
 						JackieBits toServerWriter;
 						toServerWriter.Write((MessageID)ID_OPEN_CONNECTION_REQUEST_2);
 						toServerWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-						if (serverHasSecurity)
-							toServerWriter.Write(cookie);
 
-						if (serverHasSecurity)
+						// server require secure connection
+						if (serverRequiresSecureConn)
 						{
-#if ENABLE_SECURE_HAND_SHAKE==1
-							unsigned char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
-							fromClientReader.ReadAlignedBytes(public_key, sizeof(public_key));
+							toServerWriter.WriteMini(cookie);
 
+#if ENABLE_SECURE_HAND_SHAKE==1
+							unsigned char publicKeyReceivedFromServer[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+							fromServerReader.ReadAlignedBytes(publicKeyReceivedFromServer, sizeof(publicKeyReceivedFromServer));
+
+							//  locally stored the received public key from server if ACCEPT_ANY_PUBLIC_KEY is enabled
 							if (connectionRequest->publicKeyMode == ACCEPT_ANY_PUBLIC_KEY)
 							{
-								memcpy(connectionRequest->remote_public_key, public_key, cat::EasyHandshake::PUBLIC_KEY_BYTES);
-								if (!connectionRequest->client_handshake->Initialize(public_key) ||
+								memcpy(connectionRequest->remote_public_key, publicKeyReceivedFromServer, cat::EasyHandshake::PUBLIC_KEY_BYTES);
+								if (!connectionRequest->client_handshake->Initialize(publicKeyReceivedFromServer) ||
 									!connectionRequest->client_handshake->GenerateChallenge(connectionRequest->handshakeChallenge))
 								{
-									JDEBUG << "AUDIT: Server passed a bad public key with PKM_ACCEPT_ANY_PUBLIC_KEY";
+									JERROR << "AUDIT: client_handshake :: server passed a bad public key with ACCEPT_ANY_PUBLIC_KEY and generate challenge failed";
 									return;
 								}
 							}
 
-							if (cat::SecureEqual(public_key,
-								connectionRequest->remote_public_key,
-								cat::EasyHandshake::PUBLIC_KEY_BYTES) == false)
+							// compare received and locally stored server public keys
+							if (!cat::SecureEqual(publicKeyReceivedFromServer, connectionRequest->remote_public_key, cat::EasyHandshake::PUBLIC_KEY_BYTES))
 							{
-								connReqQLock.Unlock();
 								JDEBUG << "AUDIT: Expected public key does not match what was sent by server -- Reporting back ID_PUBLIC_KEY_MISMATCH to user";
 								msgid = ID_PUBLIC_KEY_MISMATCH;  // Attempted a connection and couldn't
 								packet = AllocPacket(sizeof(MessageID), &msgid);
 								packet->systemAddress = connectionRequest->receiverAddr;
 								packet->guid = serverGuid;
-								allocPacketQ.PushTail(packet);
+								DCHECK(allocPacketQ.PushTail(packet) == true);
 								return;
 							}
 
+							// client contains no challenge  We might still pass if we are in the security exception list
 							if (connectionRequest->client_handshake == 0)
 							{
-								// Message does not contain a challenge
-								// We might still pass if we are in the security exception list
-								toServerWriter.Write((unsigned char)0);
+								toServerWriter.WriteMini(false);
 							}
-							else
+							else 	// client contains  a challenge 
 							{
-								// Message contains a challenge
-								toServerWriter.Write((unsigned char)1);
-								// challenge
-								JDEBUG << "AUDIT: Sending challenge";
+								toServerWriter.WriteMini(true);
 								toServerWriter.WriteAlignedBytes((const unsigned char*)connectionRequest->handshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
+								JDEBUG << "AUDIT: client contains a challenge and WriteAlignedBytes(connectionRequest->handshakeChallenge) to server";
 							}
 #else // ENABLE_SECURE_HAND_SHAKE
-							// Message does not contain a challenge
+							// client contain a challenge
+							assert(connectionRequest->client_handshake == 0);
 							toServerWriter.WriteMini(false);
-#endif // ENABLE_SECURE_HAND_SHAKE
+#endif
 						}
-						else
+						else 	// Server does not need security
 						{
-							// Server does not need security
 #if ENABLE_SECURE_HAND_SHAKE==1
+							// Security disabled by server but client expects security (indicated by client_handshake not null) so failing
 							if (connectionRequest->client_handshake != 0)
 							{
-								connReqQLock.Unlock();
-								JDEBUG << "AUDIT: Security disabled by server but we expected security (indicated by client_handshake not null) so failing!";
-
-								msgid = ID_OUR_SYSTEM_REQUIRES_SECURITY; // Attempted a connection and couldn't
-								packet = AllocPacket(sizeof(MessageID));
+								JDEBUG << "AUDIT: Security disabled by server but client expects security (indicated by client_handshake not null) so failing!";
+								msgid = ID_WECLI_SECURE_BUT_SRV_NO; // Attempted a connection and couldn't
+								packet = AllocPacket(sizeof(MessageID), &msgid);
 								packet->systemAddress = connectionRequest->receiverAddr;
 								packet->guid = serverGuid;
-								allocPacketQ.PushTail(packet);
+								DCHECK(allocPacketQ.PushTail(packet) == true);
 								return;
 							}
-#endif // ENABLE_SECURE_HAND_SHAKE
+#endif
 						}
 
 						// echo server's bound address
 						toServerWriter.WriteMini(connectionRequest->receiverAddr);
+						JDEBUG << "client WriteMini(connectionRequest->receiverAddr) to server";
+
 						// echo MTU
+						UInt16 mtu;
+						fromServerReader.ReadMini(mtu);
 						toServerWriter.WriteMini(mtu);
+						JDEBUG << "client WriteMini(mtu)" << mtu << " to server";
+
 						// echo Our guid
 						toServerWriter.WriteMini(myGuid);
+						JDEBUG << "client WriteMini(myGuid) " << myGuid.g << " to server ";
 
 						JISSendParams outcome_data;
 						outcome_data.data = toServerWriter.DataInt8();
@@ -987,18 +992,10 @@ void JackieApplication::IsOfflineRecvParams(
 			UNCONNECTED_RECVPARAMS_HANDLER2;
 			if (*isOfflinerecvParams)
 			{
-				JDEBUG << "client recv ID_OPEN_CONNECTION_REPLY_2";
-				//JackieBits clientReplay2Writer;
-				//clientReplay2Writer.Write(ID_OPEN_CONNECTION_REPLY_2);
-				//clientReplay2Writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
-				//	sizeof(OFFLINE_MESSAGE_DATA_ID));
-				//clientReplay2Writer.WriteMini(myGuid);
-				//clientReplay2Writer.WriteMini(recvParams->senderINetAddress);
-				//clientReplay2Writer.WriteMini(mtu);
-				//clientReplay2Writer.WriteMini(client_has_security);
-
+				JDEBUG << "Client handle  ID_OPEN_CONNECTION_REPLY_2 STARTS";
 				for (index = 0; index < pluginListNTS.Size(); index++)
 					pluginListNTS[index]->OnDirectSocketReceive(recvParams);
+
 
 			}
 			break;
@@ -1012,12 +1009,14 @@ void JackieApplication::IsOfflineRecvParams(
 
 			if (*isOfflinerecvParams == true)
 			{
+				JDEBUG << "server start to handle ID_OPEN_CONNECTION_REQUEST_1";
+
 				for (index = 0; index < pluginListNTS.Size(); index++)
 					pluginListNTS[index]->OnDirectSocketReceive(recvParams);
 
-				unsigned char remote_system_protcol = recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
-
 				JackieBits writer;
+				unsigned char remote_system_protcol = (unsigned char)recvParams->data[sizeof(MessageID) + sizeof(OFFLINE_MESSAGE_DATA_ID)];
+
 				// see if the protocol is up-to-date
 				if (remote_system_protcol != (MessageID)JACKIE_INET_PROTOCOL_VERSION)
 				{
@@ -1035,10 +1034,11 @@ void JackieApplication::IsOfflineRecvParams(
 
 					/// we do not need test 10040 error because it is only 24 bytes length
 					/// impossible to exceed the max mtu
-					recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_);
-
-					for (index = 0; index < pluginListNTS.Size(); index++)
-						pluginListNTS[index]->OnDirectSocketSend(&data2send);
+					if (recvParams->localBoundSocket->Send(&data2send, TRACE_FILE_AND_LINE_) > 0)
+					{
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&data2send);
+					}
 				}
 				else
 				{
@@ -1055,36 +1055,43 @@ void JackieApplication::IsOfflineRecvParams(
 					if (secureIncomingConnectionEnabled)
 					{
 						writer.WriteMini(true);  // HasCookie on
+						JDEBUG << "AUDIT: server WriteMini(HasCookie On true) to client";
 						// Write cookie
 						UInt32 cookie = serverCookie->Generate(&recvParams->senderINetAddress.address, sizeof(recvParams->senderINetAddress.address));
-						JDEBUG << "AUDIT: serverCookie created a  cookie of " << cookie << " to " << recvParams->senderINetAddress.ToString();
-						writer.Write(cookie);
+						writer.WriteMini(cookie);
+						JDEBUG << "AUDIT: server WriteMini(cookie " << cookie << ") to client";
 						// Write my public key
-						writer.Write((const unsigned char *)my_public_key, sizeof(my_public_key));
+						writer.WriteAlignedBytes((const unsigned char *)my_public_key, sizeof(my_public_key));
+						JDEBUG << "AUDIT: server WriteAlignedBytes(my_public_key) to client";
 					}
-					else
-#endif // ENABLE_SECURE_HAND_SHAKE
-						writer.WriteMini(false);  // HasCookie off
-
+#else // ENABLE_SECURE_HAND_SHAKE
+					writer.WriteMini(false);  // HasCookie off
+					JDEBUG << "AUDIT: server WriteMini(HasCookie Off false) to client";
+#endif
 					// MTU. Lower MTU if it exceeds our own limit.
 					// because the size clients send us is hardcoded as 
 					// bitStream.PadZero2LengthOf(mtuSizes[MTUSizeIndex] -
 					// UDP_HEADER_SIZE);  see connect() for details
-					UInt16 client_max_mtu = (recvParams->bytesRead + UDP_HEADER_SIZE >= MAXIMUM_MTU_SIZE) ? MAXIMUM_MTU_SIZE : recvParams->bytesRead + UDP_HEADER_SIZE;
-					writer.WriteMini(client_max_mtu);
+					UInt16 newClientMTU = (recvParams->bytesRead + UDP_HEADER_SIZE >= MAXIMUM_MTU_SIZE) ? MAXIMUM_MTU_SIZE : recvParams->bytesRead + UDP_HEADER_SIZE;
+					writer.WriteMini(newClientMTU);
+					JDEBUG << "AUDIT: server WriteMini(newClientMTU)" << newClientMTU << " to client";
 					// Pad response with zeros to MTU size
 					// so the connection's MTU will be tested in both directions
-					writer.PadZero2LengthOf(client_max_mtu - writer.GetWrittenBytesCount());
+					// writer.PadZero2LengthOf(newClientMTU - writer.GetWrittenBytesCount()); //this is wrong 
+					writer.PadZero2LengthOf(newClientMTU - UDP_HEADER_SIZE);
+					JDEBUG << "AUDIT: server PadZero2LengthOf " << newClientMTU - UDP_HEADER_SIZE;
 
 					JISSendParams bsp;
 					bsp.data = writer.DataInt8();
 					bsp.length = writer.GetWrittenBytesCount();
 					bsp.receiverINetAddress = recvParams->senderINetAddress;
 
-					recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
-
-					for (index = 0; index < pluginListNTS.Size(); index++)
-						pluginListNTS[index]->OnDirectSocketSend(&bsp);
+					// this send will never return 10040 error because bsp.length must be <= MAXIMUM_MTU_SIZE
+					if (recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_) > 0)
+					{
+						for (index = 0; index < pluginListNTS.Size(); index++)
+							pluginListNTS[index]->OnDirectSocketSend(&bsp);
+					}
 
 #if !defined(__native_client__) && !defined(WINDOWS_STORE_RT)
 					if (recvParams->localBoundSocket->IsBerkleySocket())
@@ -1097,179 +1104,190 @@ void JackieApplication::IsOfflineRecvParams(
 			break;
 		case ID_OPEN_CONNECTION_REQUEST_2:
 			UNCONNETED_RECVPARAMS_HANDLER0;
-			UNCONNECTED_RECVPARAMS_HANDLER2;
 			if (*isOfflinerecvParams)
 			{
-				JDEBUG << "ID_OPEN_CONNECTION_REQUEST_2";
-				JackieBits fromClientReader((UInt8*)recvParams->data,
-					recvParams->bytesRead);
-				MessageID msgid;
-				fromClientReader.Read(msgid);
-				JDEBUG << "recv msg id " << (int)msgid;
+				JDEBUG << "Server handles ID_OPEN_CONNECTION_REQUEST_2 STARTS";
+
+				for (index = 0; index < pluginListNTS.Size(); index++)
+				{
+					pluginListNTS[index]->OnDirectSocketReceive(recvParams);
+				}
+
+				JackieBits fromClientReader((UInt8*)recvParams->data, recvParams->bytesRead);
+				fromClientReader.ReadSkipBytes(sizeof(MessageID));
 				fromClientReader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
 
 				bool clientSecureConnectionEnabled = false;
-				bool serverRequiresThisClient2HaveSecureConnection = false;
+				bool clientSecureRequiredbyServer = false;
 
 #if ENABLE_SECURE_HAND_SHAKE == 1
-				char remoteHandshakeChallenge[cat::EasyHandshake::CHALLENGE_BYTES];
+				char receivedChallengeFromClient[cat::EasyHandshake::CHALLENGE_BYTES];
+
+				// prepare 
 				if (this->secureIncomingConnectionEnabled)
 				{
 					char str1[65];
 					recvParams->senderINetAddress.ToString(false, str1);
-					serverRequiresThisClient2HaveSecureConnection = this->IsInSecurityExceptionList(recvParams->senderINetAddress) == false;
+					clientSecureRequiredbyServer = this->IsInSecurityExceptionList(recvParams->senderINetAddress) == false;
 
 					UInt32 cookie;
-					fromClientReader.Read(cookie);
-
-					JDEBUG << "AUDIT: Got cookie" << cookie << "from " <<
-						recvParams->senderINetAddress.ToString();
-
+					fromClientReader.ReadMini(cookie);
 					if (this->serverCookie->Verify(&recvParams->senderINetAddress.address, sizeof(recvParams->senderINetAddress.address), cookie) == false)
 					{
-						JDEBUG << "Server NOT verified Cookie from client !";
+						RWAR << "Server NOT verifies Cookie" << cookie << " from client of " << recvParams->senderINetAddress.ToString();
 						return;
 					}
-
 					JDEBUG << "Server verified Cookie from client !";
 
 					fromClientReader.Read(clientSecureConnectionEnabled);
-
-					if (serverRequiresThisClient2HaveSecureConnection == true && !clientSecureConnectionEnabled)
+					if (clientSecureRequiredbyServer && !clientSecureConnectionEnabled)
 					{
-						JDEBUG << "Fail, This client doesn't enable security connection, but server says this client is needing secure connect";
+						RWAR << "Fail, This client doesn't enable security connection, but server says this client is needing secure connect";
 						return;
 					}
 
 					if (clientSecureConnectionEnabled)
 					{
-						fromClientReader.ReadAlignedBytes((unsigned char*)remoteHandshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
+						fromClientReader.ReadAlignedBytes((unsigned char*)receivedChallengeFromClient, cat::EasyHandshake::CHALLENGE_BYTES);
 #ifdef _DEBUG
 						char ouput[cat::EasyHandshake::CHALLENGE_BYTES * 4];
-						JackieBits::PrintHex(ouput, sizeof(remoteHandshakeChallenge) * 8, (UInt8*)remoteHandshakeChallenge);
-						JDEBUG << "Server received changendge: \n" << ouput;
+						JackieBits::PrintHex(ouput, sizeof(receivedChallengeFromClient) * 8, (UInt8*)receivedChallengeFromClient);
+						JDEBUG << "Server receives changendge from secured client: " << ouput;
 #endif // _DEBUG
 					}
 				}
 #endif // ENABLE_SECURE_HAND_SHAKE
 
-				JDEBUG << "clientSecureConnectionEnabled " << (int)clientSecureConnectionEnabled;
-				JDEBUG << "serverRequiresThisClient2HaveSecureConnection " << (int)serverRequiresThisClient2HaveSecureConnection;
-
-				JackieAddress server_bound_addr;
-				fromClientReader.ReadMini(server_bound_addr);
-				JDEBUG << "bound_addr " << server_bound_addr.ToString();
+				JackieAddress recvivedBoundAddrFromClient;
+				fromClientReader.ReadMini(recvivedBoundAddrFromClient);
+				JDEBUG << "serverReadMini(server_bound_addr) " << recvivedBoundAddrFromClient.ToString();
 				UInt16 mtu;
 				fromClientReader.ReadMini(mtu);
-				JDEBUG << "mtu " << mtu;
+				JDEBUG << "server ReadMini(mtu) " << mtu;
 				JackieGUID guid;
 				fromClientReader.ReadMini(guid);
-				JDEBUG << "guid " << guid.g;
+				JDEBUG << "server ReadMini(client guid) " << guid.g;
 
-				// addr_in_use, guid_in_use, outcome
-				// TRUE,	  , TRUE	 , ID_OPEN_CONNECTION_REPLY if they are the same, else ID_ALREADY_CONNECTED
-				// FALSE,     , TRUE     , ID_ALREADY_CONNECTED (someone else took this guid)
-				// TRUE,	  , FALSE	 , ID_ALREADY_CONNECTED (silently disconnected, restarted rakNet)
-				// FALSE	  , FALSE	 , Allow connection
 				int outcome;
-				JackieRemoteSystem* addr_rep = GetRemoteSystem(recvParams->senderINetAddress, true, true);
-				bool IPAddrInUse = addr_rep != 0 && addr_rep->isActive;
-				JackieRemoteSystem* guid_rep = GetRemoteSystem(guid, true);
-				bool GUIDInUse = guid_rep != 0 && guid_rep->isActive;
-				if (IPAddrInUse == true && GUIDInUse == true)
+				JackieRemoteSystem* rsysaddr = GetRemoteSystem(recvParams->senderINetAddress, true, true);
+				bool usedAddr = rsysaddr != 0 && rsysaddr->isActive;
+
+				JackieRemoteSystem* rsysguid = GetRemoteSystem(guid, true);
+				bool usedGuid = rsysguid != 0 && rsysguid->isActive;
+
+				// usedAddr, usedGuid, outcome
+				// TRUE,	  , TRUE	 , ID_OPEN_CONNECTION_REPLY if they are the same, 1, else ID_ALREADY_CONNECTED, 2;
+				// FALSE,   , TRUE  , ID_ALREADY_CONNECTED (someone else took this guid), 3;
+				// TRUE,	  , FALSE	 , ID_ALREADY_CONNECTED (silently disconnected, restarted rakNet), 4;
+				// FALSE	  , FALSE	 , Allow connection, 0;
+				if (usedAddr && usedGuid)
 				{
-					if (addr_rep == addr_rep &&
-						addr_rep->connectMode == JackieRemoteSystem::UNVERIFIED_SENDER)
+					if (rsysaddr == rsysguid && rsysaddr->connectMode == JackieRemoteSystem::UNVERIFIED_SENDER)
 					{
-						// ID_OPEN_CONNECTION_REPLY if they are the same
+						// @return ID_OPEN_CONNECTION_REPLY to client if they are the same
 						outcome = 1;
 
-						// Note to self: If REQUESTED_CONNECTION, this means two systems attempted to connect to each other at the same time, and one finished first.
+						// Note to self: 
+						// If  rsysaddr->connectMode == REQUESTED_CONNECTION, 
+						// this means two systems attempted to connect to each other at the same time, and one finished first.
 						// Returns ID)_CONNECTION_REQUEST_ACCEPTED to one system, and ID_ALREADY_CONNECTED followed by ID_NEW_INCOMING_CONNECTION to another
 					}
 					else
 					{
-						// return client with ID_ALREADY_CONNECTED 
-						// (restarted jackieinet, connected again from same ip, 
-						// plus someone else took this guid)
+						// @remarks we take all cases below as same connected client
+						// @case client restarted jackie application and do not call disconnect() as normal, 
+						// but silently disconnected in server. so same  @rsysaddr but differnet  @rsysguid
+						// @case client connects again from same ip with open another  jackie application
+						// to connect to us and so same @rsysaddr but differnet @rsysguid
+						// @case someone else took this guid and use it to connect to us 
+						// and so different @rsysaddr but same @rsysguid
+						// @return 	ID_ALREADY_CONNECTED to client
 						outcome = 2;
 					}
 				}
-				else if (IPAddrInUse == false && GUIDInUse == true)
+				else if (!usedAddr&& usedGuid)
 				{
-					// this happend when someone else took client's guid
-					// and try to connect to server with different ip address
-					// we take this as same connected client
-					// return client msg id of ID_ALREADY_CONNECTED
+					// @remarks we take all cases below as same connected client
+					// @case someone else took this guid and use it to connect to us 
+					// and so different @rsysaddr but same @rsysguid
+					// @return ID_ALREADY_CONNECTED to client
 					outcome = 3;
 				}
-				else if (IPAddrInUse == true && GUIDInUse == false)
+				else if (usedAddr && !usedGuid)
 				{
-					// this happend when client restart jackieineinstance and get a new guid
-					// client is silently disconnected in server
-					//  return client msg id of ID_ALREADY_CONNECTED
+					// @remarks we take all cases below as same connected client
+					// @case client restarted jackie application and do not call disconnect() as normal, 
+					// but silently disconnected in server. so same  @rsysaddr but differnet  @rsysguid
+					// @return ID_ALREADY_CONNECTED to client
 					outcome = 4;
 				}
 				else
 				{
 					// this client is totally new client and  new connection is allowed
 					outcome = 0;
-					JDEBUG << " new connection is allowed ";
+					JDEBUG << " sever allowed new connection for this client";
 				}
 
-				JackieBits clientReplay2Writer;
-				clientReplay2Writer.Write(ID_OPEN_CONNECTION_REPLY_2);
-				clientReplay2Writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+				JackieBits toClientReplay2Writer;
+				toClientReplay2Writer.Write(ID_OPEN_CONNECTION_REPLY_2);
+				toClientReplay2Writer.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 					sizeof(OFFLINE_MESSAGE_DATA_ID));
-				clientReplay2Writer.WriteMini(myGuid);
-				clientReplay2Writer.WriteMini(recvParams->senderINetAddress);
-				clientReplay2Writer.WriteMini(mtu);
-				clientReplay2Writer.WriteMini(serverRequiresThisClient2HaveSecureConnection);
+				toClientReplay2Writer.WriteMini(myGuid);
+				toClientReplay2Writer.WriteMini(recvParams->senderINetAddress);
+				toClientReplay2Writer.WriteMini(mtu);
+				toClientReplay2Writer.WriteMini(clientSecureRequiredbyServer);
 
+				//return ID_OPEN_CONNECTION_REPLY if they are the same
 				if (outcome == 1)
 				{
+					JDEBUG << "Server return ID_OPEN_CONNECTION_REPLY_2 to client";
 					// Duplicate connection request packet from packetloss
 					// Send back the same answer
 #if ENABLE_SECURE_HAND_SHAKE==1
-					if (serverRequiresThisClient2HaveSecureConnection)
+					if (clientSecureRequiredbyServer)
 					{
 						JDEBUG << "AUDIT: Resending public key and answer from packetloss.  Sending ID_OPEN_CONNECTION_REPLY_2";
-						clientReplay2Writer.WriteAlignedBytes((const unsigned char *)addr_rep->answer, sizeof(addr_rep->answer));
+						toClientReplay2Writer.WriteAlignedBytes((const unsigned char *)rsysaddr->answer, sizeof(rsysaddr->answer));
 					}
 #endif // ENABLE_SECURE_HAND_SHAKE
 
 					JISSendParams bsp;
-					bsp.data = clientReplay2Writer.DataInt8();
-					bsp.length = clientReplay2Writer.GetWrittenBytesCount();
+					bsp.data = toClientReplay2Writer.DataInt8();
+					bsp.length = toClientReplay2Writer.GetWrittenBytesCount();
 					bsp.receiverINetAddress = recvParams->senderINetAddress;
 					recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
 
 					for (index = 0; index < pluginListNTS.Size(); index++)
 						pluginListNTS[index]->OnDirectSocketSend(&bsp);
 				}
+				// return ID_ALREADY_CONNECTED
 				else if (outcome != 0)
 				{
-					JackieBits toClientWriter;
-					toClientWriter.Write(ID_ALREADY_CONNECTED);
-					toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+					JDEBUG << "Server return ID_ALREADY_CONNECTED to client";
+					JackieBits toClientAlreadyConnectedWriter;
+					toClientAlreadyConnectedWriter.Write(ID_ALREADY_CONNECTED);
+					toClientAlreadyConnectedWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
-					toClientWriter.Write(myGuid);
+					toClientAlreadyConnectedWriter.Write(myGuid);
 
 					JISSendParams bsp;
-					bsp.data = toClientWriter.DataInt8();
-					bsp.length = toClientWriter.GetWrittenBytesCount();
+					bsp.data = toClientAlreadyConnectedWriter.DataInt8();
+					bsp.length = toClientAlreadyConnectedWriter.GetWrittenBytesCount();
 					bsp.receiverINetAddress = recvParams->senderINetAddress;
 					recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
 
 					for (index = 0; index < pluginListNTS.Size(); index++)
 						pluginListNTS[index]->OnDirectSocketSend(&bsp);
 				}
-				else if (outcome == 0) /// start to handle new connection from client
+				/// start to handle new connection from client
+				else if (outcome == 0)
 				{
 					JackieBits toClientWriter;
 
-					if (CanAcceptIncomingConnection() == false)
-					{/// no more incoming conn accepted
+					// no more incoming conn accepted
+					if (!CanAcceptIncomingConnection())
+					{
+						JDEBUG << "Server return ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS to client";
 						toClientWriter.Write(ID_CANNOT_ACCEPT_INCOMING_CONNECTIONS);
 						toClientWriter.Write((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 							sizeof(OFFLINE_MESSAGE_DATA_ID));
@@ -1284,15 +1302,19 @@ void JackieApplication::IsOfflineRecvParams(
 						for (index = 0; index < pluginListNTS.Size(); index++)
 							pluginListNTS[index]->OnDirectSocketSend(&bsp);
 					}
+					// Assign this client to Remote System List
 					else
 					{
 						assert(recvParams->senderINetAddress != JACKIE_NULL_ADDRESS);
-
 						TimeMS time = GetTimeMS();
-						//Assign this client to Remote System List
-						bool thisIPFloodsConnRequest = false;
 						UInt32 i, j, index2use;
 
+						// test if this client is flooding connection
+						// Attackers can flood ID_OPEN_CONNECTION_REQUEST_1 or 2 
+						// by openning many new jackie application instances to connect to us 
+						// in order to use up all available connection slots of us
+						// Ignore connection attempts if this IP address (port exclusive ) connected within the last 100 ms
+						bool thisIPFloodsConnRequest = false;
 						if (limitConnFrequencyOfSameClient)
 						{
 							if (!IsLoopbackAddress(recvParams->senderINetAddress, false))
@@ -1305,51 +1327,46 @@ void JackieApplication::IsOfflineRecvParams(
 										time - remoteSystemList[i].connectionTime < 100
 										)
 									{
-										// Attackers can flood ID_OPEN_CONNECTION_REQUEST and use up all available connection slots
-										// Ignore connection attempts if this IP address connected within the last 100 ms
 										thisIPFloodsConnRequest = true;
 										//ValidateRemoteSystemLookup();
-										addr_rep = 0;
+										rsysaddr = 0;
 									}
 								}
 							}
 						} ///end of  limitConnFrequencyOfSameClient
 
-						// Don't use a different port than what we received on
-						// so we set received bound address
-						server_bound_addr.SetPortNetworkOrder(recvParams->localBoundSocket->GetBoundAddress().GetPortNetworkOrder());
-
-						JackieRemoteSystem* remoteClient;
-						thisIPFloodsConnRequest = false;
+						// make sure we are using the same port on what we received
+						recvivedBoundAddrFromClient.SetPortNetworkOrder(recvParams->localBoundSocket->GetBoundAddress().GetPortNetworkOrder());
 
 						// AssignSystemAddressToRemoteSystemList
+						JackieRemoteSystem* free_rs;
 						for (index2use = 0; index2use < maxConnections; index2use++)
 						{
 							if (remoteSystemList[index2use].isActive == false)
 							{
-								JDEBUG << recvParams->senderINetAddress.ToString() << " has become active";
-
-								remoteClient = remoteSystemList + index2use;
 								RefRemoteEndPoint(recvParams->senderINetAddress, index2use);
 
-								remoteClient->MTUSize = defaultMTUSize;
-								if (mtu > defaultMTUSize) remoteClient->MTUSize = mtu;
-								assert(remoteClient->MTUSize <= MAXIMUM_MTU_SIZE);
-								remoteClient->guid = guid;
+								free_rs = remoteSystemList + index2use;
+								free_rs->guid = guid;
+								free_rs->MTUSize = defaultMTUSize;
+								if (mtu > defaultMTUSize)
+								{
+									free_rs->MTUSize = mtu;
+									assert(free_rs->MTUSize <= MAXIMUM_MTU_SIZE);
+								}
 
-								// This one line causes future incoming packets to 
-								// go through the reliability layer
-								remoteClient->isActive = true;
+								// This one line causes future incoming packets to go through the reliability layer
+								free_rs->isActive = true;
 
 								// Reserve this reliability layer for ourselves.
-								remoteClient->reliabilityLayer.Reset(true, remoteClient->MTUSize, serverRequiresThisClient2HaveSecureConnection);
-								remoteClient->reliabilityLayer.SetSplitMessageProgressInterval(splitMessageProgressInterval);
-								remoteClient->reliabilityLayer.SetUnreliableTimeout(unreliableTimeout);
-								remoteClient->reliabilityLayer.SetTimeoutTime(defaultTimeoutTime);
+								free_rs->reliabilityLayer.Reset(true, free_rs->MTUSize, clientSecureRequiredbyServer);
+								free_rs->reliabilityLayer.SetSplitMessageProgressInterval(splitMessageProgressInterval);
+								free_rs->reliabilityLayer.SetUnreliableTimeout(unreliableTimeout);
+								free_rs->reliabilityLayer.SetTimeoutTime(defaultTimeoutTime);
 								AddToActiveSystemList(index2use);
-								if (recvParams->localBoundSocket->GetBoundAddress() == server_bound_addr)
+								if (recvParams->localBoundSocket->GetBoundAddress() == recvivedBoundAddrFromClient)
 								{
-									remoteClient->socket2use = recvParams->localBoundSocket;
+									free_rs->socket2use = recvParams->localBoundSocket;
 								}
 								else
 								{
@@ -1360,7 +1377,7 @@ void JackieApplication::IsOfflineRecvParams(
 									// endpoint is always dominont and more official obviously
 
 									char str[256];
-									server_bound_addr.ToString(true, str);
+									recvivedBoundAddrFromClient.ToString(true, str);
 									// See if this is an internal IP address.
 									// If so, force binding on it so we reply on the same IP address as they sent to.
 									int foundIndex = -1;
@@ -1369,7 +1386,7 @@ void JackieApplication::IsOfflineRecvParams(
 										if (localIPAddrs[ipListIndex] == JACKIE_NULL_ADDRESS)
 											break;
 
-										if (server_bound_addr.EqualsExcludingPort(localIPAddrs[ipListIndex]))
+										if (recvivedBoundAddrFromClient.EqualsExcludingPort(localIPAddrs[ipListIndex]))
 										{
 											foundIndex = ipListIndex;
 											break;
@@ -1386,7 +1403,7 @@ void JackieApplication::IsOfflineRecvParams(
 										// in this case server_bound_addr = 227.0.54.23 but recvParams->localBoundSocket->GetBoundAddress() = 192.168.0.0.8
 										// we use recvParams->localBoundSocket because it does not matter
 										// Hi man, nobody will deploy the real game server in LAN if it is client/server artechtecture (LAN game exclusive)
-										remoteClient->socket2use = recvParams->localBoundSocket;
+										free_rs->socket2use = recvParams->localBoundSocket;
 									}
 									else
 									{
@@ -1394,10 +1411,10 @@ void JackieApplication::IsOfflineRecvParams(
 										unsigned int socketListIndex;
 										for (socketListIndex = 0; socketListIndex < bindedSockets.Size(); socketListIndex++)
 										{
-											if (bindedSockets[socketListIndex]->GetBoundAddress() == server_bound_addr)
+											if (bindedSockets[socketListIndex]->GetBoundAddress() == recvivedBoundAddrFromClient)
 											{
 												// Force binding with existing socket
-												remoteClient->socket2use = bindedSockets[socketListIndex];
+												free_rs->socket2use = bindedSockets[socketListIndex];
 												break;
 											}
 										}
@@ -1411,26 +1428,30 @@ void JackieApplication::IsOfflineRecvParams(
 									}
 								} // server_bound_addr != recv incomeing socket
 
-								// setup ping 
+								// setup remoteClient varaibles
 								for (j = 0; j < (unsigned)PING_TIMES_ARRAY_SIZE; j++)
 								{
-									remoteClient->pingAndClockDifferential[j].pingTime = 65535;
-									remoteClient->pingAndClockDifferential[j].clockDifferential = 0;
+									free_rs->pingAndClockDifferential[j].pingTime = 65535;
+									free_rs->pingAndClockDifferential[j].clockDifferential = 0;
 								}
-								remoteClient->connectMode = JackieRemoteSystem::UNVERIFIED_SENDER;
-								remoteClient->pingAndClockDifferentialWriteIndex = 0;
-								remoteClient->lowestPing = 65535;
-								remoteClient->nextPingTime = 0; // Ping immediately
-								remoteClient->locallyInitiateConnection = false;
-								remoteClient->connectionTime = time;
-								remoteClient->myExternalSystemAddress = JACKIE_NULL_ADDRESS;
-								remoteClient->lastReliableSend = time;
+								free_rs->connectMode = JackieRemoteSystem::UNVERIFIED_SENDER;
+								free_rs->pingAndClockDifferentialWriteIndex = 0;
+								free_rs->lowestPing = 65535;
+								free_rs->nextPingTime = 0; // Ping immediately
+								free_rs->locallyInitiateConnection = false;
+								free_rs->connectionTime = time;
+								free_rs->myExternalSystemAddress = JACKIE_NULL_ADDRESS;
+								free_rs->lastReliableSend = time;
 
 #ifdef _DEBUG
 								int indexLoopupCheck = GetIndexFromSystemAddress(recvParams->senderINetAddress, true);
 								if (indexLoopupCheck != (int)index2use)
 								{
-									//assert((int)indexLoopupCheck == (int)index2use);
+									assert((int)indexLoopupCheck == (int)index2use);
+								}
+								else
+								{
+									JDEBUG << "Server enable client of " << recvParams->senderINetAddress.ToString() << " to active end point with index of " << index2use;
 								}
 #endif
 								break;
@@ -1455,10 +1476,10 @@ void JackieApplication::IsOfflineRecvParams(
 						} // thisIPFloodsConnRequest == true
 
 #if ENABLE_SECURE_HAND_SHAKE==1
-						if (serverRequiresThisClient2HaveSecureConnection)
+						if (clientSecureRequiredbyServer)
 						{
 							JDEBUG << "AUDIT: Writing public key.  Sending ID_OPEN_CONNECTION_REPLY_2";
-							if (this->serverHandShaker->ProcessChallenge(remoteHandshakeChallenge, addr_rep->answer, addr_rep->reliabilityLayer.GetAuthenticatedEncryption()))
+							if (this->serverHandShaker->ProcessChallenge(receivedChallengeFromClient, free_rs->answer, free_rs->reliabilityLayer.GetAuthenticatedEncryption()))
 							{
 								JDEBUG << "AUDIT: Challenge good!\n";
 								// Keep going to OK block
@@ -1471,13 +1492,13 @@ void JackieApplication::IsOfflineRecvParams(
 								return;
 							}
 
-							clientReplay2Writer.WriteAlignedBytes((const unsigned char *)addr_rep->answer, sizeof(addr_rep->answer));
+							toClientReplay2Writer.WriteAlignedBytes((const unsigned char *)free_rs->answer, sizeof(free_rs->answer));
 						}
 #endif // ENABLE_SECURE_HAND_SHAKE
 
 						JISSendParams bsp;
-						bsp.data = clientReplay2Writer.DataInt8();
-						bsp.length = clientReplay2Writer.GetWrittenBytesCount();
+						bsp.data = toClientReplay2Writer.DataInt8();
+						bsp.length = toClientReplay2Writer.GetWrittenBytesCount();
 						bsp.receiverINetAddress = recvParams->senderINetAddress;
 						recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_);
 
@@ -1487,8 +1508,8 @@ void JackieApplication::IsOfflineRecvParams(
 					}  // 	CanAcceptIncomingConnection() == true
 				} // outcome == 0
 
+				JDEBUG << "Server handles ID_OPEN_CONNECTION_REQUEST_2 ENDS";
 			}
-			//return true;
 			break;
 		case ID_CONNECTION_ATTEMPT_FAILED:
 			UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1573,7 +1594,7 @@ void JackieApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS
 	if (timeUS == 0)
 	{
 		timeUS = Get64BitsTimeUS();
-		timeMS = (TimeMS)(timeUS / (TimeUS)1000);
+		timeMS = (TimeMS)(timeUS / 1000);
 	}
 
 	ConnectionRequest *connReq = 0;
@@ -1584,6 +1605,7 @@ void JackieApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS
 		connReq = connReqQ[index];
 		if (connReq->nextRequestTime < timeMS)
 		{
+			JDEBUG << "nextRequestTime = " << connReq->nextRequestTime << "timeMS = " << timeMS;
 			/// reach the max try times 
 			if (connReq->requestsMade == connReq->connAttemptTimes + 1)
 			{
@@ -1613,7 +1635,8 @@ void JackieApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS
 			}
 			else /// try to connect again
 			{
-				JDEBUG << "client try to connect again";
+				JDEBUG << "Try to connect again";
+
 				/// more times try to request connection, less mtu used
 				int MTUSizeIndex = connReq->requestsMade /
 					(connReq->connAttemptTimes / mtuSizesCount);
@@ -2073,7 +2096,7 @@ void JackieApplication::PacketGoThroughPluginCBs(JackiePacket*& incomePacket)
 		case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
 			pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
 			break;
-		case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+		case ID_WECLI_SECURE_BUT_SRV_NO:
 			pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
 			break;
 		case ID_PUBLIC_KEY_MISMATCH:
@@ -2122,7 +2145,7 @@ void JackieApplication::PacketGoThroughPluginCBs(JackiePacket*& incomePacket)
 		case ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY:
 			pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
 			break;
-		case ID_OUR_SYSTEM_REQUIRES_SECURITY:
+		case ID_WECLI_SECURE_BUT_SRV_NO:
 			pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_OUR_SYSTEM_REQUIRES_SECURITY);
 			break;
 		case ID_PUBLIC_KEY_MISMATCH:
@@ -2613,7 +2636,7 @@ void JackieApplication::AddToActiveSystemList(UInt32 index2use)
 int JackieApplication::GetIndexFromSystemAddress(JackieAddress senderINetAddress, bool param2)
 {
 	//throw std::logic_error("The method or operation is not implemented.");
-	return 12;
+	return 0;
 }
 
 bool JackieApplication::IsLoopbackAddress(const JackieAddressGuidWrapper &systemIdentifier, bool matchPort) const

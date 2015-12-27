@@ -81,7 +81,7 @@ enum DefaultMessageIDTypes : unsigned char
 	/// RakPeer - Remote system requires secure connections, pass a public key to RakPeerInterface::Connect()
 	ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY,
 	/// RakPeer - We passed a public key to RakPeerInterface::Connect(), but the other system did not have security turned on
-	ID_OUR_SYSTEM_REQUIRES_SECURITY,
+	ID_WECLI_SECURE_BUT_SRV_NO,
 	/// RakPeer - Wrong public key passed to RakPeerInterface::Connect()
 	ID_PUBLIC_KEY_MISMATCH,
 	/// RakPeer - Same as ID_ADVERTISE_SYSTEM, but intended for internal use rather than being passed to the user.

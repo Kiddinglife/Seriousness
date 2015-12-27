@@ -19,6 +19,14 @@ namespace JACKIE_INET
 	private:
 		JackieRemoteSystem* remoteEndpoint;
 
+#if ENABLE_SECURE_HAND_SHAKE == 1
+	public:
+		cat::AuthenticatedEncryption* GetAuthenticatedEncryption(void) { return &auth_enc; }
+	protected:
+		cat::AuthenticatedEncryption auth_enc;
+		bool useSecurity;
+#endif // ENABLE_SECURE_HAND_SHAKE
+
 		public:
 		JackieReliabler();
 		~JackieReliabler();
@@ -37,10 +45,6 @@ namespace JACKIE_INET
 		void SetSplitMessageProgressInterval(int splitMessageProgressInterval);
 		void SetUnreliableTimeout(TimeMS unreliableTimeout);
 		void SetTimeoutTime(TimeMS defaultTimeoutTime);
-
-#if ENABLE_SECURE_HAND_SHAKE==1
-		cat::AuthenticatedEncryption* GetAuthenticatedEncryption();
-#endif
 	};
 }
 

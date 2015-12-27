@@ -409,7 +409,7 @@ namespace JACKIE_INET
 			const char *passwd = 0, UInt32 passwdLength = 0,
 			JackieSHSKey *jackiePublicKey = 0,
 			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
-			UInt32 attemptIntervalMS = 10000, TimeMS timeout = 0,
+			UInt32 attemptIntervalMS = 10000000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
 
