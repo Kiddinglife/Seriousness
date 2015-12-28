@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 	// execution
 	defaultConf.clear();
 
-	RINF << "Starting Client..";
+	RINF << "Starting Client.." << (UInt32)-1;
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
 	JackieIPlugin plugin;

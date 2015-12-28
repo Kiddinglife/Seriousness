@@ -568,7 +568,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	typedef TimeUS RemoteEndPointTimeType;
 
 	/// These enumerations are used to describe when packets are delivered.
-	enum PacketSendPriority
+	enum PacketSendPriority : unsigned char
 	{
 		/// The highest possible priority. These message trigger sends immediately, 
 		/// and are generally not buffered or aggregated into a single datagram.
@@ -604,7 +604,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	/// there are 5 major types
 	/// \note Do not reorder, I check on >= UNRELIABLE_WITH_ACK_RECEIPT which equals 5
 	//////////////////////////////////////////////////////////////////////////////////////
-	enum PacketReliability
+	enum PacketReliability:unsigned char
 	{
 		//////////////////////////////////////////////////////////////////////////
 		/// Same as regular UDP, except that it will also discard duplicate datagrams.  
@@ -655,7 +655,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		///  [10/18/2015 mengdi] You can't have sequenced and ack receipts, because you 
 		/// don't know if the other system discarded the message, meaning you don't know
 		/// if the message was processed
-		// UNRELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
+		UNRELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
 		//////////////////////////////////////////////////////////////////////////
 
 		//////////////////////////////////////////////////////////////////////////
@@ -682,7 +682,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// 05/04/10 You can't have sequenced and ack receipts, because you don't know if the 
 		/// other system discarded the message, meaning you don't know if the message was 
 		/// processed
-		// RELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
+		RELIABLE_SEQUENCED_WITH_ACK_RECEIPT,
 		//////////////////////////////////////////////////////////////////////////
 
 		/// internal
@@ -826,7 +826,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JackieReliabler reliabilityLayer;
 		/// True if we started this connection via Connect.  
 		/// False if someone else connected to us.
-		bool locallyInitiateConnection;
+		bool weInitiateConnection;
 		/// last x ping times and calculated clock differentials with it
 		struct PingAndClockDifferential
 		{

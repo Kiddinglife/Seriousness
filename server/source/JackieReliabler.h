@@ -45,6 +45,7 @@ namespace JACKIE_INET
 		void SetSplitMessageProgressInterval(int splitMessageProgressInterval);
 		void SetUnreliableTimeout(TimeMS unreliableTimeout);
 		void SetTimeoutTime(TimeMS defaultTimeoutTime);
+		bool Send(ReliableSendParams& sendParams);
 	};
 }
 

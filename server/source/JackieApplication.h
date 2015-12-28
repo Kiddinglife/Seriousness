@@ -409,7 +409,7 @@ namespace JACKIE_INET
 			const char *passwd = 0, UInt32 passwdLength = 0,
 			JackieSHSKey *jackiePublicKey = 0,
 			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
-			UInt32 attemptIntervalMS = 10000000, TimeMS timeout = 0,
+			UInt32 attemptIntervalMS = 1000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
 
@@ -435,10 +435,19 @@ namespace JACKIE_INET
 			bool onlyWantActiveEndPoint) const;
 		JackieRemoteSystem* GetRemoteSystem(const JackieGUID& senderGUID,
 			bool onlyWantActiveEndPoint) const;
-		Int32 GetRemoteEndPointIndex(const JackieAddress &sa) const;
+		Int32 GetRemoteSystemIndex(const JackieAddress &sa) const;
 		void RefRemoteEndPoint(const JackieAddress &sa, UInt32 index);
 		void DeRefRemoteSystem(const JackieAddress &sa);
 
+		/// \brief Given \a systemAddress, returns its index into remoteSystemList.
+		/// \details Values range from 0 to the maximum number of players allowed-1.
+		/// This includes systems which were formerly connected, but are now not connected.
+		/// \param[in] systemAddress The SystemAddress we are referring to
+		/// \return The index of this SystemAddress or -1 on system not found.
+		Int32 GetRemoteSystemIndexGeneral(const JackieAddress& systemAddress,
+			bool calledFromNetworkThread = false) const;
+		Int32 GetRemoteSystemIndexGeneral(const JackieGUID& jackieGuid,
+			bool calledFromNetworkThread = false) const;
 
 		bool SendRightNow(TimeUS currentTime, bool useCallerAlloc,
 			Command* bufferedCommand);
@@ -451,14 +460,18 @@ namespace JACKIE_INET
 		/// If the plugin returns false from PluginInterface::UsesReliabilityLayer(), which is the case for all plugins except PacketLogger, you can call AttachPlugin() and DetachPlugin() for this plugin while RakPeer is active.
 		/// \param[in] messageHandler Pointer to the plugin to attach.
 		void AttachOnePlugin(JackieIPlugin *plugin);
+		bool SendImmediate(ReliableSendParams& sendParams);
+
+		void AddToActiveSystemList(UInt32 index2use);
+		bool IsInSecurityExceptionList(JackieAddress& jackieAddr);
+		void Add2RemoteSystemList(JISRecvParams* recvParams, JackieRemoteSystem*& free_rs, bool& thisIPFloodsConnRequest, UInt32 mtu, JackieAddress& recvivedBoundAddrFromClient, JackieGUID& guid,
+			bool clientSecureRequiredbyServer);
 
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);
-		void AddToActiveSystemList(UInt32 index2use);
-		int GetIndexFromSystemAddress(JackieAddress senderINetAddress, bool param2);
-		bool IsInSecurityExceptionList(JackieAddress& jackieAddr);
 	};
+
 }
 
 #endif 

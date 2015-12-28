@@ -79,7 +79,7 @@ enum DefaultMessageIDTypes : unsigned char
 	/// C2S: Header(1), GUID(8), Timestamp, HasSecurity(1), Proof(32)
 	ID_CONNECTION_REQUEST,
 	/// RakPeer - Remote system requires secure connections, pass a public key to RakPeerInterface::Connect()
-	ID_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY,
+	ID_WECLI_NOTSEND_SRVPUBKEY2SRV,
 	/// RakPeer - We passed a public key to RakPeerInterface::Connect(), but the other system did not have security turned on
 	ID_WECLI_SECURE_BUT_SRV_NO,
 	/// RakPeer - Wrong public key passed to RakPeerInterface::Connect()

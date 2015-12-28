@@ -60,6 +60,21 @@ namespace JACKIE_INET
 		int ttl;
 	};
 
+	struct JACKIE_EXPORT ReliableSendParams
+	{
+		bool broadcast;
+		union{ bool useCallerDataAllocation; bool makeDataCopy; };
+		char *data;
+		char orderingChannel;
+		BitSize bitsSize; // bits
+		PacketSendPriority sendPriority;
+		PacketReliability packetReliability;
+		JackieAddressGuidWrapper receiverAdress;
+		TimeUS currentTime;
+		UInt32 receipt;
+		UInt16 mtu;
+	};
+
 	struct JACKIE_EXPORT JISRecvParams
 	{
 		char data[MAXIMUM_MTU_SIZE];
@@ -263,8 +278,8 @@ namespace JACKIE_INET
 		inline void SetIPHdrIncl(int ipHdrIncl)
 		{
 			int val = setsockopt__(rns2Socket, IPPROTO_IP, IP_HDRINCL,
-			(char*) &ipHdrIncl, sizeof(ipHdrIncl));
-			 val = setsockopt__(rns2Socket, IPPROTO_IP, SO_DONTLINGER,
+				(char*)&ipHdrIncl, sizeof(ipHdrIncl));
+			val = setsockopt__(rns2Socket, IPPROTO_IP, SO_DONTLINGER,
 				(const char*)&ipHdrIncl, sizeof(ipHdrIncl));
 			/// this assert always fail maybe need admin permission
 			/// JACKIE_ASSERT(val == 0);
