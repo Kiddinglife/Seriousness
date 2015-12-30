@@ -4,6 +4,56 @@
  * \date Oct 18, 2015
  *\ Remember we never push null pointer to any kind of queue including lockfree queue
  *\ and normal queue so that we will never pop out a null pointer from any kind of queue
+
+ 1. Client pre - generats challenge then send connection request to server.
+ + Header(1)   ID_OPEN_CONNECTION_REQUEST_1
+ + OfflineMesageID(16)
+ + ProtocolNumber(1)
+ + Pad(toMTU)
+
+ 2. Server generates cookie and then send it to client to answer.
+ + Header(1)   ID_OPEN_CONNECTION_REPLY_1
+ + OfflineMesageID(16)
+ + Server GUID(8)
+ + HasCookieOn(1)
+ + Cookie(4, if HasCookieOn) protect syn - floods - attack with faked ip adress
+ + Server Public Key(if do security is true)
+ + MTU(2)
+
+ 3. Client compare the received ServerPublicKey
+ with locally - stored pre - given - one, if not equal,
+ connection would fail. if equal, client send challenge
+ for server to answer and reply the cookie.
+ + Header(1)   ID_OPEN_CONNECTION_REQUEST_2
+ + OfflineMesageID(16)
+ + Cookie(4, if HasCookieOn is true on the server)
+ + ClientSupportsSecurity(1 bit)
+ + ClientHandshakeChallenge(if has security on both server and client)
+ + RemoteBindingAddress(6)
+ + MTU(2)
+ + ClientGUID(8)
+
+ 4. server verify the blelow things :
+ if cookie is incorrect, stop process.
+ if client does not supports security connection,
+ but this client secure is required by this server, stop process.
+ if this client connects within 100ms since last connect,
+ we regard it as connecion flooding and send msg to notify client.
+ if process challenge incorrect, stop process.otherwise, write answer to client
+ + Header(1)   ID_OPEN_CONNECTION_REPLY_2
+ + OfflineMesageID(16)
+ + ServerGUID(8)
+ + ServerAddress(? )
+ + MTU(2)
+ + ClientSecureRequiredbyServer(1bit)
+ + Answer(128)
+
+ 5. Client processes answer from server
+ if incorrect, stop process
+ + Header(1)   ID_OPEN_CONNECTION_REPLY_2
+ + ClientGUID(8)
+ + TimeMS(4)
+ + proof(32)
  */
 
 #ifndef SERVERAPPLICATION_H_
@@ -267,9 +317,9 @@ namespace JACKIE_INET
 		bool GenerateConnectionRequestChallenge(ConnectionRequest *connectionRequest, JackieSHSKey *jackiePublicKey);
 
 		/// Returns the number of IP addresses we have
-		inline unsigned int GetLocalIPAddrCount(void)
+		unsigned int GetLocalIPAddrCount(void)
 		{
-			if (!IsActive())
+			if (!active())
 			{
 				InitIPAddress();
 			}
@@ -284,7 +334,7 @@ namespace JACKIE_INET
 		// \return The local IP address at this index
 		const char* GetLocalIPAddr(unsigned int index)
 		{
-			if (!IsActive())
+			if (!active())
 			{
 				InitIPAddress();
 			}
@@ -380,6 +430,7 @@ namespace JACKIE_INET
 		Command* AllocCommand();
 		void PostComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
 
+
 		/// @Function Connect 
 		/// @Brief Connect to a remote host
 		/// @Access  public  
@@ -409,7 +460,7 @@ namespace JACKIE_INET
 			const char *passwd = 0, UInt32 passwdLength = 0,
 			JackieSHSKey *jackiePublicKey = 0,
 			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
-			UInt32 attemptIntervalMS = 1000, TimeMS timeout = 0,
+			UInt32 attemptIntervalMS = 100000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
 
 
@@ -422,10 +473,10 @@ namespace JACKIE_INET
 		/// author mengdi[Jackie]
 		void StopRecvThread(void);
 		void StopNetworkUpdateThread(void);
-		bool IsActive(void) const { return endThreads == false; }
+		bool active(void) const { return endThreads == false; }
 
 
-		const JackieGUID& GetMyGUID(void) const { return myGuid; }
+		const JackieGUID& GetMyGuid(void) const { return myGuid; }
 		JackieRemoteSystem* GetRemoteSystem(const JackieAddress& sa,
 			bool neededBySendThread, bool onlyWantActiveEndPoint) const;
 		JackieRemoteSystem* GetRemoteSystem(const JackieAddress& sa)

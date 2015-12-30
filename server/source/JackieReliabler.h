@@ -13,6 +13,7 @@ namespace JACKIE_INET
 	class JISRecvParams;
 	class JackieApplication;
 	class JackieBits;
+	struct ReliableSendParams;
 
 	class JACKIE_EXPORT JackieReliabler
 	{
@@ -27,7 +28,7 @@ namespace JACKIE_INET
 		bool useSecurity;
 #endif // ENABLE_SECURE_HAND_SHAKE
 
-		public:
+	public:
 		JackieReliabler();
 		~JackieReliabler();
 

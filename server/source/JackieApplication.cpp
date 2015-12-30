@@ -15,13 +15,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																					{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																					{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -133,7 +133,7 @@ JackieApplication::~JackieApplication()
 JACKIE_INET::StartupResult JackieApplication::Start(BindSocket *bindLocalSockets,
 	UInt32 maxConn, UInt32 bindLocalSocketsCount, Int32 threadPriority /*= -99999*/)
 {
-	if (IsActive()) return StartupResult::ALREADY_STARTED;
+	if (active()) return StartupResult::ALREADY_STARTED;
 
 	// If getting the guid failed in the constructor, try again
 	if (myGuid.g == 0)
@@ -656,16 +656,16 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 {
 	//JDEBUG << "Process One RecvParam";
 
-#if ENABLE_SECURE_HAND_SHAKE==1
-#ifdef CAT_AUDIT
-	printf("AUDIT: RECV ");
-	for (int ii = 0; ii < length; ++ii)
-	{
-		printf("%02x", (cat::u8)data[ii]);
-	}
-	printf("\n");
-#endif
-#endif // ENABLE_SECURE_HAND_SHAKE
+	//#if ENABLE_SECURE_HAND_SHAKE==1
+	//#ifdef CAT_AUDIT
+	//	printf("AUDIT: RECV ");
+	//	for (int ii = 0; ii < length; ++ii)
+	//	{
+	//		printf("%02x", (cat::u8)data[ii]);
+	//	}
+	//	printf("\n");
+	//#endif
+	//#endif // ENABLE_SECURE_HAND_SHAKE
 
 	// 1.process baned client's recv
 	/*char str1[64];
@@ -708,7 +708,7 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 			GetRemoteSystem(recvParams->senderINetAddress, true, true);
 		if (remoteEndPoint != 0) // if this datagram comes from connected system
 		{
-			remoteEndPoint->reliabilityLayer.ProcessOneConnectedRecvParams(this, 
+			remoteEndPoint->reliabilityLayer.ProcessOneConnectedRecvParams(this,
 				recvParams, remoteEndPoint->MTUSize);
 		}
 		else
@@ -843,13 +843,19 @@ void JackieApplication::IsOfflineRecvParams(
 			}
 			break;
 		case ID_OPEN_CONNECTION_REPLY_1:
+			//assert(recvParams->bytesRead >
+			//	sizeof(MessageID)*2 +
+			//	sizeof(OFFLINE_MESSAGE_DATA_ID) +
+			//	JackieGUID::size() && 
+			//	recvParams->bytesRead <=
+			//	sizeof(MessageID)*2 +
+			//	sizeof(OFFLINE_MESSAGE_DATA_ID) +
+			//	JackieGUID::size() + sizeof(UInt32) + sizeof(UInt16));
+
 			// isOfflinerecvParams ?
-			if (recvParams->bytesRead >= sizeof(MessageID) * 2 +
-				sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size() + sizeof(UInt16))
-			{
-				*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
-					OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
-			}
+			*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
+				OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+
 			if (*isOfflinerecvParams) // only process offline msg
 			{
 				JDEBUG << "Client starts to handle ID_OPEN_CONNECTION_REPLY_1";
@@ -894,9 +900,14 @@ void JackieApplication::IsOfflineRecvParams(
 							toServerWriter.WriteMini(cookie);
 
 #if ENABLE_SECURE_HAND_SHAKE==1
-							unsigned char publicKeyReceivedFromServer[cat::EasyHandshake::PUBLIC_KEY_BYTES];
-							fromServerReader.ReadAlignedBytes(publicKeyReceivedFromServer, sizeof(publicKeyReceivedFromServer));
 
+							unsigned char publicKeyReceivedFromServer[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+
+							// @Important !!! see id_request_1 for details why we do not read public key
+							//fromServerReader.ReadAlignedBytes(publicKeyReceivedFromServer, sizeof(publicKeyReceivedFromServer));
+
+							//@Important !!! 
+							// to be easiliy man-in-middle attacked, do not use in production environment
 							//  locally stored the received public key from server if ACCEPT_ANY_PUBLIC_KEY is enabled
 							if (connectionRequest->publicKeyMode == ACCEPT_ANY_PUBLIC_KEY)
 							{
@@ -904,31 +915,31 @@ void JackieApplication::IsOfflineRecvParams(
 								if (!connectionRequest->client_handshake->Initialize(publicKeyReceivedFromServer) ||
 									!connectionRequest->client_handshake->GenerateChallenge(connectionRequest->handshakeChallenge))
 								{
-									JERROR << "AUDIT: client_handshake :: server passed a bad public key with ACCEPT_ANY_PUBLIC_KEY and generate challenge failed";
+									JERROR << "AUDIT: client_handshake :: server passed a bad public key with ACCEPT_ANY_PUBLIC_KEY and generate challenge failed, Caution !!! to be easiliy man-in-middle attacked, do not use in production environment";
 									return;
 								}
 							}
 
 							// compare received and locally stored server public keys
-							if (!cat::SecureEqual(publicKeyReceivedFromServer, connectionRequest->remote_public_key, cat::EasyHandshake::PUBLIC_KEY_BYTES))
-							{
-								JDEBUG << "AUDIT: Expected public key does not match what was sent by server -- Reporting back ID_PUBLIC_KEY_MISMATCH to user";
-								msgid = ID_PUBLIC_KEY_MISMATCH;  // Attempted a connection and couldn't
-								packet = AllocPacket(sizeof(MessageID), &msgid);
-								packet->systemAddress = connectionRequest->receiverAddr;
-								packet->guid = serverGuid;
-								DCHECK(allocPacketQ.PushTail(packet) == true);
-								return;
-							}
+							//if (!cat::SecureEqual(publicKeyReceivedFromServer, connectionRequest->remote_public_key, cat::EasyHandshake::PUBLIC_KEY_BYTES))
+							//{
+							//	JDEBUG << "AUDIT: Expected public key does not match what was sent by server -- Reporting back ID_PUBLIC_KEY_MISMATCH to user";
+							//	msgid = ID_PUBLIC_KEY_MISMATCH;  // Attempted a connection and couldn't
+							//	packet = AllocPacket(sizeof(MessageID), &msgid);
+							//	packet->systemAddress = connectionRequest->receiverAddr;
+							//	packet->guid = serverGuid;
+							//	DCHECK(allocPacketQ.PushTail(packet) == true);
+							//	return;
+							//}
 
 							// client contains no challenge  We might still pass if we are in the security exception list
 							if (connectionRequest->client_handshake == 0)
 							{
-								toServerWriter.WriteMini(false);
+								toServerWriter.WriteMini(false); //  has chanllenge off
 							}
 							else 	// client contains  a challenge 
 							{
-								toServerWriter.WriteMini(true);
+								toServerWriter.WriteMini(true); // has chanllenge on
 								toServerWriter.WriteAlignedBytes((const unsigned char*)connectionRequest->handshakeChallenge, cat::EasyHandshake::CHALLENGE_BYTES);
 								JDEBUG << "AUDIT: client contains a challenge and WriteAlignedBytes(connectionRequest->handshakeChallenge) to server";
 							}
@@ -1010,7 +1021,7 @@ void JackieApplication::IsOfflineRecvParams(
 
 #if ENABLE_SECURE_HAND_SHAKE==1
 				char answer[cat::EasyHandshake::ANSWER_BYTES];
-				JDEBUG << "AUDIT: doSecurity=" << (int)clientSecureRequiredbyServer;
+				JDEBUG << "AUDIT: clientSecureRequiredbyServer=" << (int)clientSecureRequiredbyServer;
 				if (clientSecureRequiredbyServer)
 				{
 					JDEBUG << "AUDIT: read server's answer";
@@ -1041,17 +1052,14 @@ void JackieApplication::IsOfflineRecvParams(
 							{
 								connReqQLock.Unlock();
 
-								JDEBUG << "AUDIT: Server wants security but we didn't\nReporting back ID_WECLI_NOTSENDPUBKEY_2SERVER to user";
-
-								//msgid = ID_WECLI_NOTSENDPUBKEY_2SERVER;
-								//packet = AllocPacket(sizeof(MessageID), &msgid);
-								packet = AllocPacket(sizeof(MessageID) * 2);
+								JDEBUG << "AUDIT: Server wants us to pass its pubkey to connect() but we didn't";
+								msgid = ID_WECLINOTPASS_SRVPUBKEY_WHENCONNECT;
+								packet = AllocPacket(sizeof(MessageID), &msgid);
+								//packet = AllocPacket(sizeof(MessageID) * 2);
 								// Attempted a connection and couldn't
-								packet->data[0] = ID_WECLI_NOTSEND_SRVPUBKEY2SRV;
-								packet->data[1] = 0; // Indicate server public key is missing
-								packet->bitSize = (sizeof(char) * 8);
-								packet->systemAddress = recvParams->senderINetAddress;
-								packet->guid = guid;
+								//packet->data[0] = ID_WECLINOTUSE_SRVPUBKEY_2CONNECT;
+								//packet->data[1] = 0; // Indicate server public key is missing
+								//packet->bitSize = (sizeof(char) * 8);
 								DCHECK(allocPacketQ.PushTail(packet) == true);
 								return;
 							}
@@ -1081,7 +1089,7 @@ void JackieApplication::IsOfflineRecvParams(
 							// Don't check GetRemoteSystemFromGUID, server will verify
 							if (free_rs != 0)
 							{
-								// Move pointer from RequestedConnectionStruct to RemoteSystemStruct
+								// process challenge answer from server
 #if ENABLE_SECURE_HAND_SHAKE==1
 								cat::u8 ident[cat::EasyHandshake::IDENTITY_BYTES];
 								bool doIdentity = false;
@@ -1102,15 +1110,17 @@ void JackieApplication::IsOfflineRecvParams(
 									{
 										if (!connReq->client_handshake->ProcessAnswer(answer, free_rs->reliabilityLayer.GetAuthenticatedEncryption()))
 										{
-											JDEBUG << "AUDIT: Client id Processing answer -- Invalid Answer";
 											connReqQLock.Unlock();
+											// notify user
+											JDEBUG << "AUDIT: AUDIT: Client id Processing answer -- Invalid Answer\nExpected public key does not match what was sent by server -- Reporting back ID_PUBLIC_KEY_MISMATCH to user";
+											msgid = ID_PUBLIC_KEY_MISMATCH;  // Attempted a connection and couldn't
+											packet = AllocPacket(sizeof(MessageID), &msgid);
+											packet->systemAddress = recvParams->senderINetAddress;
+											packet->guid = myGuid;
+											DCHECK(allocPacketQ.PushTail(packet) == true);
 											return;
 										}
 									}
-
-									/*							JACKIE_INET::OP_DELETE(connReq->client_handshake, TRACE_FILE_AND_LINE_);
-																connReq->client_handshake = 0;
-																JDEBUG << "Client Connects Successfully !";*/
 								}
 #endif // ENABLE_SECURE_HAND_SHAKE
 
@@ -1212,7 +1222,6 @@ void JackieApplication::IsOfflineRecvParams(
 				*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
 					OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
 			}
-
 			if (*isOfflinerecvParams == true)
 			{
 				JDEBUG << "server start to handle ID_OPEN_CONNECTION_REQUEST_1";
@@ -1256,7 +1265,6 @@ void JackieApplication::IsOfflineRecvParams(
 					writer.Write((unsigned char*)OFFLINE_MESSAGE_DATA_ID,
 						sizeof(OFFLINE_MESSAGE_DATA_ID));
 					writer.WriteMini(myGuid);
-
 #if ENABLE_SECURE_HAND_SHAKE==1
 					if (secureIncomingConnectionEnabled)
 					{
@@ -1265,9 +1273,15 @@ void JackieApplication::IsOfflineRecvParams(
 						UInt32 cookie = serverCookie->Generate(&recvParams->senderINetAddress.address, sizeof(recvParams->senderINetAddress.address));
 						writer.WriteMini(cookie); // Write cookie
 						JDEBUG << "AUDIT: server WriteMini(cookie " << cookie << ") to client";
-						// Write my public key
-						writer.WriteAlignedBytes((const unsigned char *)my_public_key, sizeof(my_public_key));
-						JDEBUG << "AUDIT: server WriteAlignedBytes(my_public_key) to client";
+						// @Important !!! 
+						// this is dangeous to send public key to remote because,
+						// legal client is pre-given a server public key and client uses this key to encrypt and pre-generate
+						// challenge including YK to implement Diffie-Hellman Key Exchange/Agreement Algorithm in the following 
+						// steps. actually official server can tell if client has same public key based on the returned value
+						// of server_handshake->ProcessChallenge(), because it uses its private key to decrypt challenge
+						// Write my public key. so it is commented to remember myself.
+						// writer.WriteAlignedBytes((const unsigned char *)my_public_key, sizeof(my_public_key));
+						// JDEBUG << "AUDIT: server WriteAlignedBytes(my_public_key) to client";
 					}
 #else // ENABLE_SECURE_HAND_SHAKE
 					writer.WriteMini(false);  // HasCookie off
@@ -1353,12 +1367,6 @@ void JackieApplication::IsOfflineRecvParams(
 					if (clientSecureConnectionEnabled)
 					{
 						fromClientReader.ReadAlignedBytes((unsigned char*)receivedChallengeFromClient, cat::EasyHandshake::CHALLENGE_BYTES);
-#ifdef _DEBUG
-						char ouput[cat::EasyHandshake::CHALLENGE_BYTES + 1];
-						memcpy(ouput, receivedChallengeFromClient, cat::EasyHandshake::CHALLENGE_BYTES);
-						ouput[cat::EasyHandshake::CHALLENGE_BYTES] = 0;
-						JDEBUG << "Server receives changendge from secured client: " << ouput;
-#endif // _DEBUG
 					}
 				}
 #endif // ENABLE_SECURE_HAND_SHAKE
@@ -1545,7 +1553,6 @@ void JackieApplication::IsOfflineRecvParams(
 #if ENABLE_SECURE_HAND_SHAKE==1
 						if (clientSecureRequiredbyServer)
 						{
-							JDEBUG << "AUDIT: Writing public key.  Sending ID_OPEN_CONNECTION_REPLY_2";
 							if (this->serverHandShaker->ProcessChallenge(receivedChallengeFromClient, free_rs->answer, free_rs->reliabilityLayer.GetAuthenticatedEncryption()))
 							{
 								JDEBUG << "AUDIT: Challenge good!\n";
@@ -1553,7 +1560,7 @@ void JackieApplication::IsOfflineRecvParams(
 							}
 							else
 							{
-								JDEBUG << "AUDIT: Challenge BAD!";
+								JDEBUG << "AUDIT: Challenge is BAD! Unassign this remote system";
 								// Unassign this remote system
 								DeRefRemoteSystem(recvParams->senderINetAddress);
 								return;
@@ -2160,7 +2167,7 @@ void JackieApplication::PacketGoThroughPluginCBs(JackiePacket*& incomePacket)
 		case ID_CONNECTION_ATTEMPT_FAILED:
 			pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
 			break;
-		case ID_WECLI_NOTSEND_SRVPUBKEY2SRV:
+		case ID_WECLINOTPASS_SRVPUBKEY_WHENCONNECT:
 			pluginListTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
 			break;
 		case ID_WECLI_SECURE_BUT_SRV_NO:
@@ -2209,7 +2216,7 @@ void JackieApplication::PacketGoThroughPluginCBs(JackiePacket*& incomePacket)
 		case ID_CONNECTION_ATTEMPT_FAILED:
 			pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_CONNECTION_ATTEMPT_FAILED);
 			break;
-		case ID_WECLI_NOTSEND_SRVPUBKEY2SRV:
+		case ID_WECLINOTPASS_SRVPUBKEY_WHENCONNECT:
 			pluginListNTS[i]->OnFailedConnectionAttempt(incomePacket, CAFR_REMOTE_SYSTEM_REQUIRES_PUBLIC_KEY);
 			break;
 		case ID_WECLI_SECURE_BUT_SRV_NO:
@@ -2302,7 +2309,7 @@ JackiePacket* JackieApplication::GetPacketOnce(void)
 	//	TIMED_FUNC();
 
 #if USE_SINGLE_THREAD == 0
-	if (!(IsActive())) return 0;
+	if (!(active())) return 0;
 #endif
 
 #if USE_SINGLE_THREAD != 0
@@ -2942,7 +2949,7 @@ bool JACKIE_INET::JackieApplication::SendImmediate(ReliableSendParams& sendParam
 	if (sendParams.receiverAdress.systemAddress != JACKIE_NULL_ADDRESS)
 		remoteSystemIndex = GetRemoteSystemIndexGeneral(sendParams.receiverAdress.systemAddress, true);
 	else if (sendParams.receiverAdress.guid != JACKIE_NULL_GUID)
-		remoteSystemIndex = GetSystemIndexFromGuid(sendParams.receiverAdress.guid);
+		remoteSystemIndex = GetRemoteSystemIndexGeneral(sendParams.receiverAdress.guid);
 	else
 		remoteSystemIndex = (unsigned int)-1;
 
@@ -3079,7 +3086,7 @@ Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieAd
 
 }
 
-Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieGUID& input, bool calledFromNetworkThread /*= false*/) const
+Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieGUID& input, bool calledFromNetworkThread /*NOT USED*/) const
 {
 	if (input == JACKIE_NULL_GUID)
 		return -1;

@@ -227,6 +227,7 @@
     <ClInclude Include="..\source\WSAStartupSingleton.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\source\EasyLog.cpp" />
     <ClCompile Include="..\source\GlobalFunctions.cpp" />
     <ClCompile Include="..\source\JackieApplication.cpp" />
     <ClCompile Include="..\source\JackieBits.cpp" />
@@ -246,7 +247,6 @@
     <ClCompile Include="..\source\RandomSeedCreator.cpp" />
     <ClCompile Include="..\source\SecurityHandShake.cpp" />
     <ClCompile Include="..\source\WSAStartupSingleton.cpp" />
-    <ClCompile Include="EasyLog.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

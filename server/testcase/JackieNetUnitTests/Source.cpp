@@ -447,6 +447,7 @@ static void test_ServerApplication_funcs()
 		cat::EasyHandshake handshake;
 		char public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 		char private_key[cat::EasyHandshake::PRIVATE_KEY_BYTES];
+		// generated key pairs are not encrypted
 		handshake.GenerateServerKey(public_key, private_key);
 		server->EnableSecureIncomingConnections(public_key, private_key, false);
 
@@ -456,6 +457,13 @@ static void test_ServerApplication_funcs()
 
 		//JackieBits::PrintHex(str, 32 * 8, (UInt8*)private_key);
 		//JDEBUG << "server private key \n" << str;
+		//char publicc[cat::EasyHandshake::PUBLIC_KEY_BYTES];
+		//char privatee[cat::EasyHandshake::PRIVATE_KEY_BYTES];
+		//handshake.GenerateServerKey(publicc, privatee);
+		//assert(memcmp(publicc, public_key, 64) != 0);
+		//FILE *fp = fopen("..\\publicKey.pk", "wb");
+		//fwrite(publicc, sizeof(publicc), 1, fp);
+		//fclose(fp);
 
 		FILE *fp = fopen("..\\publicKey.pk", "wb");
 		fwrite(public_key, sizeof(public_key), 1, fp);

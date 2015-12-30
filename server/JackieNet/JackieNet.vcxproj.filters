@@ -196,7 +196,7 @@
     <ClCompile Include="..\source\WSAStartupSingleton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EasyLog.cpp">
+    <ClCompile Include="..\source\EasyLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

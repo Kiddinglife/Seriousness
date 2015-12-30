@@ -56,6 +56,7 @@ int main(int argc, char** argv)
 	RINF << "Starting Client.." << (UInt32)-1;
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
+	client->
 	JackieIPlugin plugin;
 	client->AttachOnePlugin(&plugin);
 
@@ -66,6 +67,7 @@ int main(int argc, char** argv)
 
 #if ENABLE_SECURE_HAND_SHAKE==1
 		{
+
 			char serverPublicKey[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 			FILE *fp = fopen("..\\publickey.pk", "rb");
 			fread(serverPublicKey, sizeof(serverPublicKey), 1, fp);
@@ -74,7 +76,8 @@ int main(int argc, char** argv)
 			shsKeys.remoteServerPublicKey = serverPublicKey;
 			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
 			char uname[] = "admin";
-			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			//ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname));
 			assert(connectResult == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}
 #elif
