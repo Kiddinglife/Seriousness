@@ -47,7 +47,7 @@ namespace cat {
 	Point operations performed with Extended Twisted Edwards group laws
 	See BigTwistedEdwards.hpp for more information
 
-	H: Skein-Key, either 256-bit or 512-bit based on security level
+	H: Skein-Key(hash function), either 256-bit or 512-bit based on security level
 	MAC: Skein-MAC, keyed from output of H()
 
     Here the protocol initiator is the (c)lient, and the responder is the (s)erver:

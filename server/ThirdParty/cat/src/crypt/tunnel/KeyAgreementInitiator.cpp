@@ -201,7 +201,9 @@ bool KeyAgreementInitiator::GenerateChallenge(BigTwistedEdwards *math, FortunaOu
 	if (!math || !csprng || challenge_bytes != KeyBytes*2) return false;
 #endif
 
+	// A = initiator's public key
     // a = initiator private key
+	// A = a * G
 	GenerateKey(math, csprng, a);
 
     // A = a * G

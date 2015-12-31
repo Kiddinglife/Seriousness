@@ -450,7 +450,7 @@ static void test_ServerApplication_funcs()
 		// generated key pairs are not encrypted
 		handshake.GenerateServerKey(public_key, private_key);
 		server->EnableSecureIncomingConnections(public_key, private_key, false);
-
+		
 		//char str[1024];
 		//JackieBits::PrintHex(str, 64 * 8, (UInt8*)public_key);
 		//JDEBUG << "server private key \n" << str;

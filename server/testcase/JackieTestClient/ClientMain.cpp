@@ -7,12 +7,10 @@
 #include "EasyLog.h"
 INITIALIZE_EASYLOGGINGPP
 
-#include "DefaultNetDefines.h"
-#include "JackieApplication.h"
-#include "MessageID.h"
 #include "JackieIPlugin.h"
+#include "JackieApplication.h"
 
-#if ENABLE_SECURE_HAND_SHAKE==1
+#if ENABLE_SECURE_HAND_SHAKE == 1
 #include "SecurityHandShake.h"
 #endif
 
@@ -56,7 +54,6 @@ int main(int argc, char** argv)
 	RINF << "Starting Client.." << (UInt32)-1;
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
-	client->
 	JackieIPlugin plugin;
 	client->AttachOnePlugin(&plugin);
 
@@ -65,7 +62,7 @@ int main(int argc, char** argv)
 	if (client->Start(&socketDescriptor) == StartupResult::START_SUCCEED)
 	{
 
-#if ENABLE_SECURE_HAND_SHAKE==1
+#if ENABLE_SECURE_HAND_SHAKE == 1
 		{
 
 			char serverPublicKey[cat::EasyHandshake::PUBLIC_KEY_BYTES];
@@ -76,13 +73,14 @@ int main(int argc, char** argv)
 			shsKeys.remoteServerPublicKey = serverPublicKey;
 			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
 			char uname[] = "admin";
-			//ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
-			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname));
+			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			//ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname));
 			assert(connectResult == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}
-#elif
+#else
 		assert(client->Connect("127.0.0.1", 38000, "root", strlen("root")) == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 #endif
+
 		JINFO << "\nMy IP addresses:";
 		unsigned int i;
 		for (i = 0; i < client->GetLocalIPAddrCount(); i++)

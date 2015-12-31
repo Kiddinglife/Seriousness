@@ -11,6 +11,8 @@ void RemoteLogger::handle(const el::LogDispatchData* data)
 			Command* cmd = japp->AllocCommand();
 			cmd->command = Command::BCS_SEND;
 			//@to-do fillup cmd with msg data
+			cmd->data = (char*)data->logMessage()->message().c_str();
+			cmd->receipt = 12;
 			japp->PostComand(cmd);
 		}
 	}
