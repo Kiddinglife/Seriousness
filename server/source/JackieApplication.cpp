@@ -1133,6 +1133,7 @@ void JackieApplication::IsOfflineRecvParams(
 								temp.Write(ID_CONNECTION_REQUEST);
 								temp.WriteMini(guid);
 								temp.WriteMini(GetTimeMS());
+
 #if ENABLE_SECURE_HAND_SHAKE==1
 								if (clientSecureRequiredbyServer)
 								{
@@ -1158,8 +1159,11 @@ void JackieApplication::IsOfflineRecvParams(
 								temp.WriteMini(false);
 #endif // ENABLE_SECURE_HAND_SHAKE
 
-								if (connReq->pwdLen > 0)
-									temp.Write((UInt8*)connReq->pwd, connReq->pwdLen);
+								// send passwd to server
+								if (connReq->pwd != 0 && connReq->pwdLen > 0)
+								{
+									temp.WriteAlignedBytes((UInt8*)connReq->pwd, connReq->pwdLen);
+								}
 
 								ReliableSendParams sendParams;
 								sendParams.data = temp.DataInt8();
@@ -1178,7 +1182,6 @@ void JackieApplication::IsOfflineRecvParams(
 							{
 								msgid = ID_CONNECTION_ATTEMPT_FAILED;
 								packet = AllocPacket(sizeof(msgid), &msgid);
-								packet->data[0] = ID_CONNECTION_ATTEMPT_FAILED;
 								// Attempted a connection and couldn't
 								packet->systemAddress = connReq->receiverAddr;
 								packet->guid = guid;
