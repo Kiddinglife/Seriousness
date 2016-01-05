@@ -474,6 +474,7 @@ static void test_ServerApplication_funcs()
 	/// default blobking 
 	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
 	server->Start(&socketDescriptor);
+	server->BanRemoteSystem("*", 1000);
 
 	JackiePacket* packet = 0;
 	while (1)

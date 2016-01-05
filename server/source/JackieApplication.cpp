@@ -15,13 +15,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																												{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																																									{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																												{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																																									{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -669,18 +669,14 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 #endif // ENABLE_SECURE_HAND_SHAKE
 
 	// 1.process baned client's recv
-	char str1[64];
-	recvParams->senderINetAddress.ToString(false, str1);
-	if (this->IsBanned(str1))
+	if (IsBanned(recvParams->senderINetAddress))
 	{
-
 		for (i = 0; i < pluginListNTS.Size(); i++)
 			this->pluginListNTS[i]->OnDirectSocketReceive(recvParams);
 
 		JackieBits bs;
 		bs.Write((MessageID)ID_CONNECTION_BANNED);
-		bs.WriteAlignedBytes((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
-			sizeof(OFFLINE_MESSAGE_DATA_ID));
+		bs.Write(OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
 		bs.WriteMini(myGuid);
 
 		JISSendParams bsp;
@@ -781,69 +777,7 @@ void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isO
 			break;
 		case ID_INCOMPATIBLE_PROTOCOL_VERSION:
 			/// msg layout: MessageID MessageID OFFLINE_MESSAGE_DATA_ID JackieGUID
-			if (recvParams->bytesRead > sizeof(MessageID) * 2 +
-				sizeof(OFFLINE_MESSAGE_DATA_ID) &&
-				recvParams->bytesRead <= sizeof(MessageID) * 2 +
-				sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
-			{
-				*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID) * 2,
-					OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
-			}
-			UNCONNECTED_RECVPARAMS_HANDLER2;
-			if (*isOfflinerecvParams)
-			{
-				JackieBits reader((UInt8*)recvParams->data, recvParams->bytesRead);
-				MessageID msgid;
-				reader.Read(msgid);
-				JDEBUG << "client receives msg with " << "msgid " << (int)msgid;
-				if ((MessageID)recvParams->data[0] == ID_INCOMPATIBLE_PROTOCOL_VERSION)
-				{
-					MessageID update_protocol_version;
-					reader.Read(update_protocol_version);
-					JDEBUG << "update_protocol_version " << (int)update_protocol_version;
-				}
-				reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
-
-				JackieGUID guid;
-				reader.ReadMini(guid);
-				JDEBUG << "guid " << guid.g;
-
-				ConnectionRequest *connectionRequest;
-				bool connectionAttemptCancelled = false;
-				unsigned int index;
-
-				connReqQLock.Lock();
-				for (index = 0; index < connReqQ.Size(); index++)
-				{
-					connectionRequest = connReqQ[index];
-					if (connectionRequest->actionToTake == ConnectionRequest::CONNECT &&
-						connectionRequest->receiverAddr == recvParams->senderINetAddress)
-					{
-						connectionAttemptCancelled = true;
-						connReqQ.RemoveAtIndex(index);
-
-#if ENABLE_SECURE_HAND_SHAKE==1
-						JDEBUG << "AUDIT: Connection attempt canceled so deleting connectionRequest->client_handshake object" << connectionRequest->client_handshake;
-						JACKIE_INET::OP_DELETE(connectionRequest->client_handshake, TRACE_FILE_AND_LINE_);
-#endif // ENABLE_SECURE_HAND_SHAKE
-
-						JACKIE_INET::OP_DELETE(connectionRequest, TRACE_FILE_AND_LINE_);
-						break;
-					}
-				}
-				connReqQLock.Unlock();
-
-				if (connectionAttemptCancelled)
-				{
-					/// Tell user connection attempt failed
-					JackiePacket* packet = AllocPacket(sizeof(unsigned char),
-						(unsigned char*)recvParams->data);
-					packet->systemAddress = recvParams->senderINetAddress;
-					packet->guid = guid;
-					DCHECK_EQ(allocPacketQ.PushTail(packet), true);
-				}
-				//return true;
-			}
+			OnConnectionFailed(recvParams, isOfflinerecvParams);
 			break;
 		case ID_OPEN_CONNECTION_REPLY_1:
 			//assert(recvParams->bytesRead >
@@ -1600,8 +1534,7 @@ void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isO
 			UNCONNECTED_RECVPARAMS_HANDLER2;
 			break;
 		case ID_CONNECTION_BANNED:
-			UNCONNETED_RECVPARAMS_HANDLER0;
-			UNCONNECTED_RECVPARAMS_HANDLER2;
+			OnConnectionFailed(recvParams, isOfflinerecvParams);
 			break;
 		case ID_ALREADY_CONNECTED:
 			UNCONNETED_RECVPARAMS_HANDLER0;
@@ -1619,6 +1552,77 @@ void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isO
 	//return false;
 }
 
+void JackieApplication::OnConnectionFailed(JISRecvParams* recvParams,
+	bool* isOfflinerecvParams)
+{
+	if (recvParams->bytesRead > sizeof(MessageID) +
+		sizeof(OFFLINE_MESSAGE_DATA_ID) &&
+		recvParams->bytesRead <= sizeof(MessageID) +
+		sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())
+	{
+		*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),
+			OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;
+	}
+
+	if (*isOfflinerecvParams)
+	{
+		for (unsigned index = 0; index < pluginListNTS.Size(); index++)
+			pluginListNTS[index]->OnDirectSocketReceive(recvParams);
+
+		JackieBits reader((UInt8*)recvParams->data, recvParams->bytesRead);
+		MessageID msgid;
+		reader.Read(msgid);
+		JDEBUG << "client receives msg with " << "msgid " << (int)msgid;
+		if ((MessageID)recvParams->data[0] == ID_INCOMPATIBLE_PROTOCOL_VERSION)
+		{
+			MessageID update_protocol_version;
+			reader.Read(update_protocol_version);
+			JDEBUG << "update_protocol_version " << (int)update_protocol_version;
+		}
+		reader.ReadSkipBytes(sizeof(OFFLINE_MESSAGE_DATA_ID));
+
+		JackieGUID guid;
+		reader.ReadMini(guid);
+		JDEBUG << "guid " << guid.g;
+
+		ConnectionRequest *connectionRequest;
+		bool connectionAttemptCancelled = false;
+		unsigned int index;
+
+		connReqQLock.Lock();
+		for (index = 0; index < connReqQ.Size(); index++)
+		{
+			connectionRequest = connReqQ[index];
+			if (connectionRequest->actionToTake == ConnectionRequest::CONNECT &&
+				connectionRequest->receiverAddr == recvParams->senderINetAddress)
+			{
+				connectionAttemptCancelled = true;
+				connReqQ.RemoveAtIndex(index);
+
+#if ENABLE_SECURE_HAND_SHAKE==1
+				JDEBUG << "AUDIT: Connection attempt canceled so deleting connectionRequest->client_handshake object" << connectionRequest->client_handshake;
+				JACKIE_INET::OP_DELETE(connectionRequest->client_handshake, TRACE_FILE_AND_LINE_);
+#endif // ENABLE_SECURE_HAND_SHAKE
+
+				JACKIE_INET::OP_DELETE(connectionRequest, TRACE_FILE_AND_LINE_);
+				break;
+			}
+		}
+		connReqQLock.Unlock();
+
+		if (connectionAttemptCancelled)
+		{
+			/// Tell user connection attempt failed
+			JackiePacket* packet = AllocPacket(sizeof(unsigned char),
+				(unsigned char*)recvParams->data);
+			packet->systemAddress = recvParams->senderINetAddress;
+			packet->guid = guid;
+			DCHECK_EQ(allocPacketQ.PushTail(packet), true);
+
+		}
+		//return true;
+	}
+}
 
 void JackieApplication::ProcessConnectionRequestCancelQ(void)
 {
@@ -1849,6 +1853,10 @@ void JackieApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 			break;
 		case Command::BCS_GET_SOCKET:
 			JDEBUG << "BCS_GET_SOCKET";
+			break;
+		case Command::BCS_ADD_2_BANNED_LIST:
+			AddToBanList(cmd->data, *((TimeMS*)(cmd->data + strlen(cmd->data) + 1)));
+			JDEBUG << "BCS_ADD_2_BANNED_LIST";
 			break;
 		default:
 			JERROR << "Not Found Matched BufferedCommand";
@@ -2422,7 +2430,7 @@ void JackieApplication::RunRecvCycleOnce(UInt32 index)
 #if USE_SINGLE_THREAD == 0
 		if (allocRecvParamQ[index].Size() > 8) quitAndDataEvents.TriggerEvent();
 #endif
-	}
+		}
 	else
 	{
 		//@ Remember myself
@@ -2440,7 +2448,7 @@ void JackieApplication::RunRecvCycleOnce(UInt32 index)
 		}
 		JISRecvParamsPool[index].Reclaim(recvParams);
 	}
-}
+	}
 
 JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 {
@@ -3010,7 +3018,7 @@ bool JACKIE_INET::JackieApplication::SendImmediate(ReliableSendParams& sendParam
 		jackieFree_Ex(sendList, TRACE_FILE_AND_LINE_);
 #endif
 		return false;
-	}
+}
 
 	// start to send one by one
 	bool useData;
@@ -3046,7 +3054,7 @@ bool JACKIE_INET::JackieApplication::SendImmediate(ReliableSendParams& sendParam
 
 	// Return value only meaningful if true was passed for useCallerDataAllocation.  Means the reliability layer used that data copy, so the caller should not deallocate it
 	return callerDataAllocationUsed;
-}
+	}
 
 Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieAddress& systemAddress, bool calledFromNetworkThread /*= false*/) const
 {
@@ -3088,8 +3096,6 @@ Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieAd
 				return i;
 			}
 	}
-
-
 }
 
 Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieGUID& input, bool calledFromNetworkThread /*NOT USED*/) const
@@ -3119,19 +3125,106 @@ Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieGU
 	return (unsigned int)-1;
 }
 
-bool JACKIE_INET::JackieApplication::IsBanned(const char IP[65])
+bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 {
-	UInt32 characterIndex = 0;
-	TimeMS time = GetTimeMS();
-	Banned* tmp;
+	if (banList.Size() == 0) return false;
 
-	if (IP == 0 || IP[0] == 0 || strlen(IP) > 65)
+	char IP[65];
+	senderINetAddress.ToString(false, IP);
+	if (IP == 0 || IP[0] == 0 || IP[0] == ' ' || strlen(IP) > 65)
 		return false;
 
 	UInt32 banListIndex;
 	for (banListIndex = 0; banListIndex < banList.Size(); banListIndex++)
 	{
+		// timeout and flag it as unused
+		if (banList[banListIndex]->timeout > 0 &&
+			banList[banListIndex]->timeout <= GetTimeMS())
+		{
+			// remove this expired ban
+			Banned* tmp = banList[banListIndex];
+			banList.RemoveAtIndexFast(banListIndex);
+			JACKIE_INET::OP_DELETE(tmp, TRACE_FILE_AND_LINE_);
+		}
+		else
+		{
+			UInt32 characterIndex = 0;
+			while (1) 	// compare ip char by char
+			{
+				if (banList[banListIndex]->IP[characterIndex] == IP[characterIndex])
+				{
+					if (IP[characterIndex] == 0)
+					{
+						return true;
+					}
+					characterIndex++;
+				}
+				else
+				{
+					if (banList[banListIndex]->IP[characterIndex] == 0 ||
+						IP[characterIndex] == 0)
+					{
+						// End of one of the strings
+						break;
+					}
 
+					// Characters do not match
+					if (banList[banListIndex]->IP[characterIndex] == '*')
+					{
+						// Domain is banned.
+						return true;
+					}
+
+					// Characters do not match and it is not a *
+					break;
+
+				}
+			}
+			banListIndex++;
+		}
+	}
+}
+
+void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
+	TimeMS milliseconds /*= 0*/)
+{
+	JDEBUG << "AddToBanList " << IP << ", " << milliseconds;
+	if (IP == 0 || IP[0] == 0 || strlen(IP) > 32) return;
+
+	unsigned index;
+	TimeMS time = GetTimeMS();
+
+	// If this guy is already in the ban list, do nothing
+	for (index = 0; index < banList.Size(); index++)
+	{
+		if (strcmp(IP, banList[index]->IP) == 0)
+		{
+			// Already in the ban list.  Just update the time
+			if (milliseconds == 0)
+				banList[index]->timeout = 0; // Infinite
+			else
+				banList[index]->timeout = time + milliseconds;
+			return;
+		}
 	}
 
+	// not in the ban list so create a new ban for him
+	Banned *banStruct = JACKIE_INET::OP_NEW<Banned>(TRACE_FILE_AND_LINE_);
+	if (milliseconds == 0)
+		banStruct->timeout = 0; // Infinite
+	else
+		banStruct->timeout = time + milliseconds;
+	strcpy(banStruct->IP, IP);
+	banList.InsertAtLast(banStruct);
+}
+
+void JACKIE_INET::JackieApplication::BanRemoteSystem(const char IP[32], TimeMS milliseconds /*= 0*/)
+{
+	assert(active());
+	Command* c = AllocCommand();
+	c->command = Command::BCS_ADD_2_BANNED_LIST;
+	c->data = (char*)jackieMalloc_Ex(strlen(IP) + sizeof(TimeMS) + 1, TRACE_FILE_AND_LINE_);
+	memcpy(c->data, IP, sizeof(IP) + 1);
+	memcpy(c->data + sizeof(IP) + 1, &milliseconds, sizeof(TimeMS));
+	PostComand(c);
 }

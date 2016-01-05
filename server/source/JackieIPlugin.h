@@ -92,12 +92,12 @@ namespace JACKIE_INET
 		/// Called when serverApplication is initialized
 		virtual void OnStartup()
 		{
-			JINFO << "USER THREAD OnRakPeerStartup()";
+			JINFO << " OnRakPeerStartup()";
 		}
 		/// Called when serverApplication is shutdown
 		virtual void OnShutdown(void)
 		{
-			JINFO << "USER THREAD OnRakPeerShutdown()";
+			JINFO << "OnRakPeerShutdown()";
 		}
 
 

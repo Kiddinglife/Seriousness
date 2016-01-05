@@ -76,10 +76,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #define PRINTF_64BITS_MODIFIER "ll"
 #endif
 
-//#define SEND_10040_ERR(sock, sendParams)\
-//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
-//sendParams.bytesWritten == 10040)\
-//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+	//#define SEND_10040_ERR(sock, sendParams)\
+			//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
+			//sendParams.bytesWritten == 10040)\
+			//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
 
 
 	/// \sa NetworkIDObject.h
@@ -604,7 +604,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	/// there are 5 major types
 	/// \note Do not reorder, I check on >= UNRELIABLE_WITH_ACK_RECEIPT which equals 5
 	//////////////////////////////////////////////////////////////////////////////////////
-	enum PacketReliability:unsigned char
+	enum PacketReliability :unsigned char
 	{
 		//////////////////////////////////////////////////////////////////////////
 		/// Same as regular UDP, except that it will also discard duplicate datagrams.  
@@ -896,13 +896,14 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		JackieINetSocket* socket;
 		unsigned short port;
 		unsigned int receipt;
-		enum
+		enum : unsigned char
 		{
 			BCS_SEND,
 			BCS_CLOSE_CONNECTION,
 			BCS_GET_SOCKET,
 			BCS_CHANGE_SYSTEM_ADDRESS,
 			/* BCS_USE_USER_SOCKET, BCS_REBIND_SOCKET_ADDRESS, BCS_RPC, BCS_RPC_SHIFT,*/
+			BCS_ADD_2_BANNED_LIST,
 			BCS_DO_NOTHING
 		} command;
 	};
@@ -929,7 +930,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			PING = 2,
 			PING_OPEN_CONNECTIONS = 4,
 			ADVERTISE_SYSTEM = 2
-	} actionToTake;
+		} actionToTake;
 #if ENABLE_SECURE_HAND_SHAKE ==1
 		char handshakeChallenge[cat::EasyHandshake::CHALLENGE_BYTES];
 		cat::ClientEasyHandshake *client_handshake;
@@ -955,7 +956,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #else
 		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
 #endif
-	}
+}
 
 	/// Return false if Numeric IP address. Return true if domain NonNumericHostString
 	JACKIE_EXPORT extern bool  isDomainIPAddr(const char *host);

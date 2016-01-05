@@ -253,13 +253,14 @@ namespace JACKIE_INET
 		struct Banned
 		{
 			char IP[65];
-			bool banned;
 			TimeMS whenBanned;
 			TimeMS timeout; /*0 for none*/
 			UInt16 bannedTImes;
 		};
+	public:
 		JackieArray<Banned*> banList;
 
+	private:
 		// Threadsafe, and not thread safe
 		JackieArray<JackieIPlugin*> pluginListTS;
 		JackieArray<JackieIPlugin*> pluginListNTS;
@@ -432,7 +433,6 @@ namespace JACKIE_INET
 		/// a public key from connecting clients as a proof of identity but eats twice as much CPU time as a normal connection
 		bool EnableSecureIncomingConnections(const char *public_key,
 			const char *private_key, bool requireClientPublicKey);
-		bool IsBanned(const char IP[65]);
 
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
 		void ReclaimPacket(JackiePacket *packet);
@@ -472,7 +472,6 @@ namespace JACKIE_INET
 			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
 			UInt32 attemptIntervalMS = 100000, TimeMS timeout = 0,
 			UInt32 extraData = 0);
-
 
 		/// function  StopRecvPollingThread 
 		/// Access  public  
@@ -527,7 +526,26 @@ namespace JACKIE_INET
 		bool IsInSecurityExceptionList(JackieAddress& jackieAddr);
 		void Add2RemoteSystemList(JISRecvParams* recvParams, JackieRemoteSystem*& free_rs, bool& thisIPFloodsConnRequest, UInt32 mtu, JackieAddress& recvivedBoundAddrFromClient, JackieGUID& guid,
 			bool clientSecureRequiredbyServer);
+		void AddToSecurityExceptionList(const char *ip);
 
+		/// @brief Bans an IP from connecting. 
+		/// Banned IPs persist between connections 
+		/// but are not saved on shutdown nor loaded on startup.
+		/// @param[in] IP Dotted IP address. 
+		/// Can use * as a wildcard, such as 128.0.0.* will ban all IP
+		/// addresses starting with 128.0.0
+		/// @param[in] milliseconds 
+		/// how many ms for a temporary ban.  Use 0 for a permanent ban
+		/// BanRemoteSystem() is used by user thread
+		/// AddtoBanLst() is used by network thread
+		/// so it is a asynchronous invokation to avoid adding locks on @banlist
+		/// @Caution you can call this from user thread after Startup() because it will clear cmd q
+		void BanRemoteSystem(const char IP[32], TimeMS milliseconds = 0);
+		bool IsBanned(JackieAddress& senderINetAddress);
+	private:
+		void AddToBanList(const char IP[32], TimeMS milliseconds = 0);
+		void OnConnectionFailed(JISRecvParams* recvParams, bool* isOfflinerecvParams);
+	public:
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(UDTConnect);

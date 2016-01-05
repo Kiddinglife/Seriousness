@@ -315,6 +315,22 @@ namespace DataStructures
 			}
 		}
 
+		/// @brief Delete the element at position @a position.
+		/// by swaping it with last element only used when order does not matter
+		/// @param[in] position The index of the element to delete 
+		void RemoveAtIndexFast(const unsigned int position)
+		{
+#ifdef _DEBUG
+			if (position >= list_size)
+			{
+				assert(position < list_size);
+				return;
+			}
+#endif
+			--list_size;
+			listArray[position] = listArray[list_size];
+		}
+
 		/// @brief Delete the element at the end of the list.
 		inline void RemoveFromLast(const unsigned num = 1)
 		{
