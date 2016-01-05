@@ -64,7 +64,6 @@ int main(int argc, char** argv)
 
 #if ENABLE_SECURE_HAND_SHAKE == 1
 		{
-
 			char serverPublicKey[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 			FILE *fp = fopen("..\\publickey.pk", "rb");
 			fread(serverPublicKey, sizeof(serverPublicKey), 1, fp);

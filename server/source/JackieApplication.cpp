@@ -15,13 +15,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																					{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																												{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																					{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																												{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -655,41 +655,45 @@ void JackieApplication::StopNetworkUpdateThread()
 void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 {
 	//JDEBUG << "Process One RecvParam";
+	UInt32 i = 0;
 
-	//#if ENABLE_SECURE_HAND_SHAKE==1
-	//#ifdef CAT_AUDIT
-	//	printf("AUDIT: RECV ");
-	//	for (int ii = 0; ii < length; ++ii)
-	//	{
-	//		printf("%02x", (cat::u8)data[ii]);
-	//	}
-	//	printf("\n");
-	//#endif
-	//#endif // ENABLE_SECURE_HAND_SHAKE
+#if ENABLE_SECURE_HAND_SHAKE==1
+#ifdef CAT_AUDIT
+	printf("AUDIT: RECV ");
+	for (i = 0; i < recvParams->bytesRead; ++i)
+	{
+		printf("%02x", (cat::u8)recvParams->data[i]);
+	}
+	printf("\n");
+#endif
+#endif // ENABLE_SECURE_HAND_SHAKE
 
 	// 1.process baned client's recv
-	/*char str1[64];
-	systemAddress.ToString(false, str1);
-	if (rakPeer->IsBanned(str1))
+	char str1[64];
+	recvParams->senderINetAddress.ToString(false, str1);
+	if (this->IsBanned(str1))
 	{
-	for (i = 0; i < rakPeer->pluginListNTS.Size(); i++)
-	rakPeer->pluginListNTS[i]->OnDirectSocketReceive(data, length * 8, systemAddress);
 
-	RakNet::BitStream bs;
-	bs.WriteFrom((MessageID)ID_CONNECTION_BANNED);
-	bs.WriteAlignedBytesFrom((const unsigned char*)OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID));
-	bs.WriteFrom(rakPeer->GetGuidFromSystemAddress(UNASSIGNED_SYSTEM_ADDRESS));
+		for (i = 0; i < pluginListNTS.Size(); i++)
+			this->pluginListNTS[i]->OnDirectSocketReceive(recvParams);
 
+		JackieBits bs;
+		bs.Write((MessageID)ID_CONNECTION_BANNED);
+		bs.WriteAlignedBytes((const unsigned char*)OFFLINE_MESSAGE_DATA_ID,
+			sizeof(OFFLINE_MESSAGE_DATA_ID));
+		bs.WriteMini(myGuid);
 
-	RNS2_SendParameters bsp;
-	bsp.data = (char*)bs.GetData();
-	bsp.length = bs.GetWrittenBytesCount();
-	bsp.systemAddress = systemAddress;
-	for (i = 0; i < rakPeer->pluginListNTS.Size(); i++)
-	rakPeer->pluginListNTS[i]->OnDirectSocketSend((char*)bs.GetData(), bs.GetNumberOfBitsUsed(), systemAddress);
-	rakNetSocket->Send(&bsp, _FILE_AND_LINE_);
-	return true;
-	}*/
+		JISSendParams bsp;
+		bsp.data = bs.DataInt8();
+		bsp.length = bs.GetWrittenBytesCount();
+		bsp.receiverINetAddress = recvParams->senderINetAddress;
+		if (recvParams->localBoundSocket->Send(&bsp, TRACE_FILE_AND_LINE_) > 0)
+		{
+			for (i = 0; i < this->pluginListNTS.Size(); i++)
+				this->pluginListNTS[i]->OnDirectSocketSend(&bsp);
+		}
+		return;
+	}
 
 	DCHECK(recvParams->senderINetAddress.GetPortHostOrder() != 0);
 
@@ -720,8 +724,7 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 	}
 }
 
-void JackieApplication::IsOfflineRecvParams(
-	JISRecvParams* recvParams, bool* isOfflinerecvParams)
+void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isOfflinerecvParams)
 {
 	//JDEBUG << "Network thread Process One Unconnected Recv Params";
 	static MessageID msgid;
@@ -3114,4 +3117,21 @@ Int32 JACKIE_INET::JackieApplication::GetRemoteSystemIndexGeneral(const JackieGU
 	}
 
 	return (unsigned int)-1;
+}
+
+bool JACKIE_INET::JackieApplication::IsBanned(const char IP[65])
+{
+	UInt32 characterIndex = 0;
+	TimeMS time = GetTimeMS();
+	Banned* tmp;
+
+	if (IP == 0 || IP[0] == 0 || strlen(IP) > 65)
+		return false;
+
+	UInt32 banListIndex;
+	for (banListIndex = 0; banListIndex < banList.Size(); banListIndex++)
+	{
+
+	}
+
 }

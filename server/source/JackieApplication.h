@@ -81,6 +81,7 @@
 #if ENABLE_SECURE_HAND_SHAKE == 1
 #include "SecurityHandShake.h"
 #endif
+//#include "../thirdparty/folly/SpinLock.h"
 
 using namespace DataStructures;
 namespace JACKIE_INET
@@ -139,7 +140,7 @@ namespace JACKIE_INET
 
 	public:
 		bool(*recvHandler)(JISRecvParams*);
-		void(*userUpdateThreadPtr)(IServerApplication *, void *);
+		void(*userUpdateThreadPtr)(JackieApplication *, void *);
 		void *userUpdateThreadData;
 		bool(*incomeDatagramEventHandler)(JISRecvParams *);
 
@@ -249,13 +250,75 @@ namespace JACKIE_INET
 		JackieArraryQueue<ConnectionRequest*, 8> connReqQ;
 		JackieSimpleMutex connReqQLock;
 
+		struct Banned
+		{
+			char IP[65];
+			bool banned;
+			TimeMS whenBanned;
+			TimeMS timeout; /*0 for none*/
+			UInt16 bannedTImes;
+		};
+		JackieArray<Banned*> banList;
+
 		// Threadsafe, and not thread safe
 		JackieArray<JackieIPlugin*> pluginListTS;
 		JackieArray<JackieIPlugin*> pluginListNTS;
 
-	public:
-		/// only user thread pushtail into the queue, other threads only read it so no need lock
+		//public:
+		/// only user thread pushtail into the queue, 
+		/// other threads only read it so no need lock
 		JackieArray<JackieINetSocket*, 8 > bindedSockets;
+
+	private:
+		void ClearAllCommandQs(void);
+		void ClearSocketQueryOutputs(void);
+		void ClearAllRecvParamsQs(void);
+
+		void ProcessOneRecvParam(JISRecvParams* recvParams);
+		void IsOfflineRecvParams(JISRecvParams* recvParams,
+			bool* isOfflinerecvParams);
+		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieBits &updateBitStream);
+		void ProcessConnectionRequestCancelQ(void); /// @Done
+		void ProcessAllocJISRecvParamsQ(void);
+		void ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS);
+		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);	/// @Done
+		void AdjustTimestamp(JackiePacket*& incomePacket) const;
+
+		/// In multi-threads app and single- thread app,these 3 functions
+		/// are called only  by recv thread. the recvStruct will be obtained from 
+		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
+		/// It is Caller's responsibility to make sure s != 0
+		void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index);
+		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
+		JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
+
+		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
+		/// for the furture use of recv thread by popout
+		JackiePacket* AllocPacket(UInt32 dataSize);
+		JackiePacket* AllocPacket(UInt32 dataSize, UInt8 *data);
+		/// send thread will take charge of dealloc packet in multi-threads env
+		void ReclaimAllPackets(void);
+
+		/// recv thread will reclaim all commands  into command pool in multi-threads env
+		void ReclaimAllCommands();
+
+		void RunNetworkUpdateCycleOnce(void);
+		void RunRecvCycleOnce(UInt32 in = 0);
+		JackiePacket* RunGetPacketCycleOnce(void);
+
+		/// function  CreateRecvPollingThread 
+		/// Access  private  
+		/// Param [in] [int threadPriority]
+		/// Returns int
+		/// Remarks this function is not used because because , a thread 
+		/// that calls the Start() func plays recv thread
+		/// author mengdi[Jackie]
+		int CreateRecvPollingThread(int threadPriority, UInt32 index);
+		int CreateNetworkUpdateThread(int threadPriority);
+
+		void PacketGoThroughPluginCBs(JackiePacket*& incomePacket);
+		void PacketGoThroughPlugins(JackiePacket*& incomePacket);
+		void UpdatePlugins(void);
 
 	public:
 		STATIC_FACTORY_DECLARATIONS(JackieApplication);
@@ -267,26 +330,13 @@ namespace JACKIE_INET
 		void ResetSendReceipt(void);
 		JackiePacket* GetPacketOnce(void);
 
-	private:
-		void ProcessOneRecvParam(JISRecvParams* recvParams);
-		void IsOfflineRecvParams(JISRecvParams* recvParams,
-			bool* isOfflinerecvParams);
-		void ProcessBufferedCommand(JISRecvParams* recvParams, JackieBits &updateBitStream);
-		void ProcessConnectionRequestCancelQ(void); /// @Done
-		void ProcessAllocJISRecvParamsQ(void);
-		void ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS);
-		void ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS);	/// @Done
-		void AdjustTimestamp(JackiePacket*& incomePacket) const;
-
-	public:
 		virtual StartupResult Start(BindSocket *socketDescriptors,
 			UInt32 maxConnections = 8, UInt32 socketDescriptorCount = 1,
 			Int32 threadPriority = -99999);
 		void End(UInt32 blockDuration, unsigned char orderingChannel = 0,
 			PacketSendPriority disconnectionNotificationPriority = BUFFERED_THIRDLY_SEND);
 
-
-		/// Generate and store a unique GUID
+		/// public: Generate and store a unique GUID
 		void GenerateGUID(void) { myGuid.g = CreateUniqueRandness(); }
 		/// Mac address is a poor solution because 
 		/// you can't have multiple connections from the same system
@@ -304,6 +354,7 @@ namespace JACKIE_INET
 		/// to check if this is loop back address of local host
 		bool IsLoopbackAddress(const JackieAddressGuidWrapper &systemIdentifier,
 			bool matchPort) const;
+
 		/// @Function CancelConnectionRequest 
 		/// @Brief  
 		/// Cancel a pending connection attempt
@@ -381,49 +432,8 @@ namespace JACKIE_INET
 		/// a public key from connecting clients as a proof of identity but eats twice as much CPU time as a normal connection
 		bool EnableSecureIncomingConnections(const char *public_key,
 			const char *private_key, bool requireClientPublicKey);
+		bool IsBanned(const char IP[65]);
 
-	private:
-		void ClearAllCommandQs(void);
-		void ClearSocketQueryOutputs(void);
-		void ClearAllRecvParamsQs(void);
-
-		/// In multi-threads app and single- thread app,these 3 functions
-		/// are called only  by recv thread. the recvStruct will be obtained from 
-		/// bufferedDeallocatedRecvParamQueue, so it is thread safe
-		/// It is Caller's responsibility to make sure s != 0
-		void ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 index);
-		void ReclaimAllJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
-		JISRecvParams * AllocJISRecvParams(UInt32 deAlloclJISRecvParamsQIndex);
-
-		/// send thread will push trail this packet to buffered alloc queue in multi-threads env
-		/// for the furture use of recv thread by popout
-		JackiePacket* AllocPacket(UInt32 dataSize);
-		JackiePacket* AllocPacket(UInt32 dataSize, UInt8 *data);
-		/// send thread will take charge of dealloc packet in multi-threads env
-		void ReclaimAllPackets(void);
-
-		/// recv thread will reclaim all commands  into command pool in multi-threads env
-		void ReclaimAllCommands();
-
-		void RunNetworkUpdateCycleOnce(void);
-		void RunRecvCycleOnce(UInt32 in = 0);
-		JackiePacket* RunGetPacketCycleOnce(void);
-
-		/// function  CreateRecvPollingThread 
-		/// Access  private  
-		/// Param [in] [int threadPriority]
-		/// Returns int
-		/// Remarks this function is not used because because , a thread 
-		/// that calls the Start() func plays recv thread
-		/// author mengdi[Jackie]
-		int CreateRecvPollingThread(int threadPriority, UInt32 index);
-		int CreateNetworkUpdateThread(int threadPriority);
-
-		void PacketGoThroughPluginCBs(JackiePacket*& incomePacket);
-		void PacketGoThroughPlugins(JackiePacket*& incomePacket);
-		void UpdatePlugins(void);
-
-	public:
 		/// recv thread will push tail this packet to buffered dealloc queue in multi-threads env
 		void ReclaimPacket(JackiePacket *packet);
 		/// only recv thread will take charge of alloc packet in multi-threads env
