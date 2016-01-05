@@ -32,7 +32,7 @@
     <ClInclude Include="..\source\IServerApplication.h" />
     <ClInclude Include="..\source\JackieApplication.h" />
     <ClInclude Include="..\source\JackieArraryQueue.h" />
-    <ClInclude Include="..\source\JackieArray.h" />
+    <ClInclude Include="..\source\JackieArrayList.h" />
     <ClInclude Include="..\source\JackieBits.h" />
     <ClInclude Include="..\source\JackieINetSocket.h" />
     <ClInclude Include="..\source\JackieINetVersion.h" />
@@ -50,8 +50,8 @@
     <ClInclude Include="..\source\MessageID.h" />
     <ClInclude Include="..\source\NetTime.h" />
     <ClInclude Include="..\source\NetTypes.h" />
-    <ClInclude Include="..\source\OrderArray.h" />
-    <ClInclude Include="..\source\OrderListMap.h" />
+    <ClInclude Include="..\source\JackieOrderArraryList.h" />
+    <ClInclude Include="..\source\JakieOrderArrayListMap.h" />
     <ClInclude Include="..\source\OverrideMemory.h" />
     <ClInclude Include="..\source\OverrideNetDefines.h" />
     <ClInclude Include="..\source\RandomSeedCreator.h" />

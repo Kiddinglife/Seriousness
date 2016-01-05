@@ -73,7 +73,7 @@
 #include "CompileFeatures.h"
 #include "JACKIE_Atomic.h"
 #include "JackieArraryQueue.h"
-#include "JackieArray.h"
+#include "JackieArrayList.h"
 #include "JackieSPSCQueue.h"
 #include "JackieMemoryPool.h"
 #include "RandomSeedCreator.h"
@@ -258,17 +258,17 @@ namespace JACKIE_INET
 			UInt16 bannedTImes;
 		};
 	public:
-		JackieArray<Banned*> banList;
+		JackieArrayList<Banned*> banList;
 
 	private:
 		// Threadsafe, and not thread safe
-		JackieArray<JackieIPlugin*> pluginListTS;
-		JackieArray<JackieIPlugin*> pluginListNTS;
+		JackieArrayList<JackieIPlugin*> pluginListTS;
+		JackieArrayList<JackieIPlugin*> pluginListNTS;
 
 		//public:
 		/// only user thread pushtail into the queue, 
 		/// other threads only read it so no need lock
-		JackieArray<JackieINetSocket*, 8 > bindedSockets;
+		JackieArrayList<JackieINetSocket*, 8 > bindedSockets;
 
 	private:
 		void ClearAllCommandQs(void);

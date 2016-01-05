@@ -230,9 +230,9 @@ static void test_MemoryPool_funcs()
 #include "JackieArraryQueue.h"
 #include "JackieSPSCQueue.h"
 #include "EasyLog.h"
-#include "JackieArray.h"
-#include "OrderArray.h"
-#include "OrderListMap.h"
+#include "JackieArrayList.h"
+#include "JackieOrderArraryList.h"
+#include "JakieOrderArrayListMap.h"
 #include "DoubleLinkedList.h"
 
 JACKIE_THREAD_DECLARATION(lockfreeproducer)
@@ -293,7 +293,7 @@ static void test_Queue_funcs()
 		}
 	}
 
-	DataStructures::JackieArray<int, 100001> list;
+	DataStructures::JackieArrayList<int, 100001> list;
 	TIMED_BLOCK(ListTimer, "ListTimer")
 	{
 		for (int i = 0; i < 5000; i++)
@@ -312,7 +312,7 @@ static void test_Queue_funcs()
 		int t = list.PopAtLast();
 	}
 
-	DataStructures::OrderArray<int, int> olist;
+	DataStructures::JackieOrderArraryList<int, int> olist;
 	TIMED_BLOCK(olistTimer, "olist")
 	{
 		for (int i = 0; i < 10; i++)
@@ -329,7 +329,7 @@ static void test_Queue_funcs()
 		}
 	}
 
-	DataStructures::OrderListMap<std::string, int> omap;
+	DataStructures::JakieOrderArrayListMap<std::string, int> omap;
 	TIMED_BLOCK(omapTimer, "omap")
 	{
 		omap.Set("set", 1);
@@ -450,7 +450,7 @@ static void test_ServerApplication_funcs()
 		// generated key pairs are not encrypted
 		handshake.GenerateServerKey(public_key, private_key);
 		server->EnableSecureIncomingConnections(public_key, private_key, false);
-		
+
 		//char str[1024];
 		//JackieBits::PrintHex(str, 64 * 8, (UInt8*)public_key);
 		//JDEBUG << "server private key \n" << str;

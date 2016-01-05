@@ -4,9 +4,9 @@
 #include <stdarg.h>
 #include <cstdio>
 #include "DLLExport.h"
-#include "JackieArray.h"
+#include "JackieArrayList.h"
 #include "NetTypes.h" // int64_t
-#include "OrderListMap.h"
+#include "JakieOrderArrayListMap.h"
 
 #ifdef _WIN32
 #include "WindowsIncludes.h"
@@ -59,7 +59,7 @@ namespace JACKIE_INET
 		/// Singleton instance
 		static JackieStringCompressor *instance;
 		/// Pointer to the huffman encoding trees.
-		DataStructures::OrderListMap<int, HuffmanEncodingTree *> huffmanEncodingTrees;
+		DataStructures::JakieOrderArrayListMap<int, HuffmanEncodingTree *> huffmanEncodingTrees;
 		static int referenceCount;
 
 	public:
@@ -127,7 +127,7 @@ namespace JACKIE_INET
 
 		/// \internal
 		/// List of free objects to reduce memory reallocations
-		static DataStructures::JackieArray<SharedString*> freeList;
+		static DataStructures::JackieArrayList<SharedString*> freeList;
 
 		/// \internal
 		static SharedString emptyString;

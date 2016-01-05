@@ -1,7 +1,7 @@
 #ifndef __ORDER__LIST_MAP_H__
 #define __ORDER__LIST_MAP_H__
 
-#include "OrderArray.h"
+#include "JackieOrderArraryList.h"
 #include "DLLExport.h"
 #include "OverrideMemory.h"
 
@@ -22,7 +22,7 @@ namespace DataStructures
 	/// \note IMPORTANT! If you use defaultMapKeyComparison then call IMPLEMENT_DEFAULT_COMPARISON or you will get an unresolved external linker error.
 	template <class key_type, class data_type,
 		int(*key_comparison_func)(const key_type&, const key_type&) = defaultMapKeyComparison<key_type> >
-	class JACKIE_EXPORT OrderListMap
+	class JACKIE_EXPORT JakieOrderArrayListMap
 	{
 	public:
 		static void IMPLEMENT_DEFAULT_COMPARISON(void)
@@ -62,22 +62,22 @@ namespace DataStructures
 		}
 
 	protected:
-		OrderArray< key_type, Node, &OrderListMap::NodeComparisonFunc > mapNodeList;
+		JackieOrderArraryList< key_type, Node, &JakieOrderArrayListMap::NodeComparisonFunc > mapNodeList;
 		unsigned int lastSearchIndex;
 		key_type lastSearchKey;
 		bool lastSearchIndexValid;
 
 	public:
-		OrderListMap() : lastSearchIndexValid(false){}
-		~OrderListMap() { Clear(); }
-		OrderListMap(const OrderListMap& original_copy)
+		JakieOrderArrayListMap() : lastSearchIndexValid(false){}
+		~JakieOrderArrayListMap() { Clear(); }
+		JakieOrderArrayListMap(const JakieOrderArrayListMap& original_copy)
 		{
 			mapNodeList = original_copy.mapNodeList;
 			lastSearchIndex = original_copy.lastSearchIndex;
 			lastSearchKey = original_copy.lastSearchKey;
 			lastSearchIndexValid = original_copy.lastSearchIndexValid;
 		}
-		OrderListMap& operator= (const OrderListMap& original_copy)
+		JakieOrderArrayListMap& operator= (const JakieOrderArrayListMap& original_copy)
 		{
 			if (this != &original_copy)
 			{

@@ -1,7 +1,7 @@
 #ifndef __ORDER_ARRARY_LIST_H__
 #define __ORDER_ARRARY_LIST_H__
 
-#include "JackieArray.h"
+#include "JackieArrayList.h"
 
 /// The namespace DataStructures was only added to avoid compiler errors for commonly named data structures
 /// As these data structures are stand-alone, you can use them outside of RakNet for your own projects if you wish.
@@ -16,10 +16,10 @@ namespace DataStructures
 	///@note IMPORTANT! If you use DefaultOrderArrayListComparsionFunc then call IMPLEMENT_DEFAULT_COMPARISON or you will get an unresolved external linker error.
 	template <class key_type, class data_type,
 		int(*default_comparison_function)(const key_type&, const data_type&) = DefaultOrderArrayListComparsionFunc<key_type, data_type> >
-	class JACKIE_EXPORT OrderArray
+	class JACKIE_EXPORT JackieOrderArraryList
 	{
 	protected:
-		JackieArray<data_type> orderedList;
+		JackieArrayList<data_type> orderedList;
 
 	public:
 		static void IMPLEMENT_DEFAULT_COMPARISON(void)
@@ -28,15 +28,15 @@ namespace DataStructures
 				data_type());
 		}
 
-		OrderArray(){}
-		virtual ~OrderArray(){ Clear(); }
+		JackieOrderArraryList(){}
+		virtual ~JackieOrderArraryList(){ Clear(); }
 
-		OrderArray(const OrderArray& original_copy)
+		JackieOrderArraryList(const JackieOrderArraryList& original_copy)
 		{
 			orderedList = original_copy.orderedList;
 		}
 
-		OrderArray& operator= (const OrderArray& original_copy)
+		JackieOrderArraryList& operator= (const JackieOrderArraryList& original_copy)
 		{
 			orderedList = original_copy.orderedList;
 			return *this;

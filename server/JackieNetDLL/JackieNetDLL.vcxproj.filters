@@ -56,9 +56,6 @@
     <ClInclude Include="..\source\JackieArraryQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\JackieArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\JackieBits.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -104,12 +101,6 @@
     <ClInclude Include="..\source\NetTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\OrderArray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\OrderListMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\OverrideMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -132,6 +123,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\source\WSAStartupSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieArrayList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JackieOrderArraryList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\JakieOrderArrayListMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

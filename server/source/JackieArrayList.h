@@ -21,7 +21,7 @@ namespace DataStructures
 	/// used as list, slow insert and remove middle element but fast to random get the element by index
 	/// @note ONLY USE THIS FOR SHALLOW COPIES.  I don't bother with operator= to improve performance.
 	template <class ElementType, unsigned int QUEUE_INIT_SIZE = 32>
-	class JACKIE_EXPORT JackieArray
+	class JACKIE_EXPORT JackieArrayList
 	{
 	private:
 		/// An array of user values
@@ -32,8 +32,8 @@ namespace DataStructures
 		unsigned int allocation_size;
 
 	public:
-		JackieArray() : allocation_size(0), listArray(0), list_size(0){}
-		~JackieArray()
+		JackieArrayList() : allocation_size(0), listArray(0), list_size(0){}
+		~JackieArrayList()
 		{
 			if (allocation_size > 0)
 			{
@@ -42,7 +42,7 @@ namespace DataStructures
 			}
 		}
 
-		JackieArray(const JackieArray& original_copy)
+		JackieArrayList(const JackieArrayList& original_copy)
 		{
 			/// allocate memory for copying the elements from @param original_copy
 			if (original_copy.list_size == 0)
@@ -60,7 +60,7 @@ namespace DataStructures
 
 			list_size = allocation_size = original_copy.list_size;
 		}
-		JackieArray<ElementType>& operator= (const JackieArray& originalCopy)
+		JackieArrayList<ElementType>& operator= (const JackieArrayList& originalCopy)
 		{
 			if (this == &originalCopy) return *this;
 
@@ -196,7 +196,8 @@ namespace DataStructures
 
 		/// @brief Insert an element at position @a position in the list.
 		/// @param[in] input The new element. 
-		/// @param[in] position The position of the new element. 		
+		/// @param[in] position The position of the new element. 
+		/// @Remarks Move the elements in the list to make room and so is slow operation
 		void InsertAtIndex(const ElementType &input, const unsigned int position)
 		{
 #ifdef _DEBUG
@@ -290,7 +291,9 @@ namespace DataStructures
 		}
 
 		/// @brief Delete the element at position @a position. 
+		/// will move all elements forward to keep all the elements still in order
 		/// @param[in] position The index of the element to delete 
+		/// @eg. [1,2,3,5]->RemoveAtIndex(2)->[1,2,5]
 		void RemoveAtIndex(const unsigned int position)
 		{
 #ifdef _DEBUG
@@ -302,7 +305,7 @@ namespace DataStructures
 #endif
 			if (position < list_size)
 			{
-				// Compress the array
+				// move all elements forward to keep it in order
 				for (unsigned int counter = position; counter < list_size - 1; ++counter)
 					listArray[counter] = listArray[counter + 1];
 
@@ -318,6 +321,7 @@ namespace DataStructures
 		/// @brief Delete the element at position @a position.
 		/// by swaping it with last element only used when order does not matter
 		/// @param[in] position The index of the element to delete 
+		/// @eg. [1,2,3,5]->RemoveAtIndex(0)->[5,2,3]
 		void RemoveAtIndexFast(const unsigned int position)
 		{
 #ifdef _DEBUG
