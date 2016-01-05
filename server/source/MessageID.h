@@ -48,7 +48,7 @@ enum OutOfBandIdentifiers : unsigned char
 /// \endcode 
 ///
 /// \note All these enumerations should be casted to (unsigned char) before writing them to RakNet::BitStream
-enum DefaultMessageIDTypes : unsigned char
+enum MsgEnum : unsigned char
 {
 	// RESERVED TYPES - DO NOT CHANGE THESE
 	// All types from RakPeer
@@ -79,7 +79,7 @@ enum DefaultMessageIDTypes : unsigned char
 	/// C2S: Header(1), GUID(8), Timestamp, HasSecurity(1), Proof(32)
 	ID_CONNECTION_REQUEST,
 	/// RakPeer - Remote system requires secure connections, pass a public key to RakPeerInterface::Connect()
-   ///  enable_secure_connection == 1 but we do not pass srv pubkey when calling connect() 
+	///  enable_secure_connection == 1 but we do not pass srv pubkey when calling connect() 
 	ID_WECLINOTPASS_SRVPUBKEY_WHENCONNECT,
 	/// RakPeer - We passed a public key to RakPeerInterface::Connect(), but the other system did not have security turned on
 	ID_WECLI_SECURE_BUT_SRV_NO,

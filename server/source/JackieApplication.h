@@ -536,15 +536,19 @@ namespace JACKIE_INET
 		/// addresses starting with 128.0.0
 		/// @param[in] milliseconds 
 		/// how many ms for a temporary ban.  Use 0 for a permanent ban
+		/// @Caution 
 		/// BanRemoteSystem() is used by user thread
 		/// AddtoBanLst() is used by network thread
-		/// so it is a asynchronous invokation to avoid adding locks on @banlist
-		/// @Caution you can call this from user thread after Startup() because it will clear cmd q
+		/// Call this method from user user thread, it will post a cmd to cmd q for
+		/// network to process in the future. so it is a asynchronous invokation to avoid 
+		/// adding locks on @banlist 
+		/// @!you can only call this from user thread after Startup() that clear cmd q
 		void BanRemoteSystem(const char IP[32], TimeMS milliseconds = 0);
 		bool IsBanned(JackieAddress& senderINetAddress);
 	private:
 		void AddToBanList(const char IP[32], TimeMS milliseconds = 0);
 		void OnConnectionFailed(JISRecvParams* recvParams, bool* isOfflinerecvParams);
+
 	public:
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
 		friend JACKIE_THREAD_DECLARATION(RunRecvCycleLoop);

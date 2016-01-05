@@ -138,7 +138,7 @@ namespace JACKIE_INET
 		virtual void OnFailedConnectionAttempt(JackiePacket *packet,
 			ConnectionAttemptFailReason failedConnectionAttemptReason)
 		{
-			JINFO << "User Thread calls Plugin CB of OnFailedConnectionAttempt()";
+			JINFO << "OnFailedConnectionAttempt reason is " << packet->data[0];
 		}
 
 
