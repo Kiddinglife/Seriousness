@@ -346,9 +346,10 @@ JACKIE_INET::StartupResult JackieApplication::Start(BindSocket *bindLocalSockets
 	isNetworkUpdateThreadActive = false;
 	if (endThreads)
 	{
-		ClearAllCommandQs();
-		ClearSocketQueryOutputs();
-		ClearAllRecvParamsQs();
+		// no need to clear this
+		//ClearAllCommandQs();
+		//ClearSocketQueryOutputs();
+		//ClearAllRecvParamsQs();
 
 		firstExternalID = JACKIE_NULL_ADDRESS;
 		updateCycleIsRunning = false;

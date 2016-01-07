@@ -480,20 +480,23 @@ static void test_ServerApplication_funcs()
 	while (1)
 	{
 		JackieSleep(10);
+		Command* c = server->AllocCommand();
+		c->command = Command::BCS_SEND;
+		server->PostComand(c);
 
 		// This sleep keeps RakNet responsive
-		for (packet = server->GetPacketOnce(); packet != 0;
-			server->ReclaimPacket(packet), packet = 0)
+		for (packet = server->GetPacketOnce(); packet != 0; server->ReclaimPacket(packet), packet = server->GetPacketOnce())
 		{
 			/// user logics goes here
-			//Command* c = app->AllocCommand();
-			//c->command = Command::BCS_SEND;
-			//app->ExecuteComand(c);
+			Command* c = server->AllocCommand();
+			c->command = Command::BCS_SEND;
+			server->PostComand(c);
 		}
 	}
 
 	server->StopRecvThread();
 	server->StopNetworkUpdateThread();
+	server->DestroyInstance(server);
 }
 
 #include "JackieBits.h"
