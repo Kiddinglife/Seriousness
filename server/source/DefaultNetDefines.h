@@ -159,13 +159,13 @@
 #define NET_SUPPORT_IPV6 0
 #endif
 
-#ifndef RAKSTRING_TYPE
+#ifndef JACKIE_STRING_TYPE
 #if defined(_UNICODE)
-#define RAKSTRING_TYPE RakWString
-#define RAKSTRING_TYPE_IS_UNICODE 1
+#define JACKIE_STRING_TYPE JackieWString
+#define JACKIE_STRING_TYPE_IS_UNICODE 1
 #else
-#define RAKSTRING_TYPE RakString
-#define RAKSTRING_TYPE_IS_UNICODE 0
+#define RAKSTRING_TYPE JackieString
+#define JACKIE_STRING_TYPE_IS_UNICODE 0
 #endif
 #endif
 

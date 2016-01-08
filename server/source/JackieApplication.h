@@ -145,6 +145,13 @@ namespace JACKIE_INET
 		bool(*incomeDatagramEventHandler)(JISRecvParams *);
 
 	private:
+		/// temporary variables used in IsOfflineRecvParams() in this class
+		/// to improve efficiency and good structure because it is loop
+		MessageID msgid;
+		JackiePacket* packet;
+		unsigned int index;
+		bool isUnconnectedRecvPrrams;
+
 		bool updateCycleIsRunning;
 		volatile bool endThreads; ///Set this to true to terminate threads execution 
 		volatile bool isNetworkUpdateThreadActive; ///true if the send thread is active. 
@@ -548,6 +555,14 @@ namespace JACKIE_INET
 	private:
 		void AddToBanList(const char IP[32], TimeMS milliseconds = 0);
 		void OnConnectionFailed(JISRecvParams* recvParams, bool* isOfflinerecvParams);
+		void OnConnectionRequest1(JISRecvParams* recvParams,
+			bool* isOfflinerecvParams);
+		void OnConnectionReply1(JISRecvParams* recvParams,
+			bool* isOfflinerecvParams);
+		void OnConnectionRequest2(JISRecvParams* recvParams,
+			bool* isOfflinerecvParams);
+		void OnConnectionReply2(JISRecvParams* recvParams,
+			bool* isOfflinerecvParams);
 
 	public:
 		friend JACKIE_THREAD_DECLARATION(RunNetworkUpdateCycleLoop);
