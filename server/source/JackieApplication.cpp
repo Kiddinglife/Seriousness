@@ -3221,7 +3221,6 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 
 void JACKIE_INET::JackieApplication::BanRemoteSystem(const char IP[32], TimeMS milliseconds /*= 0*/)
 {
-	assert(active());
 	Command* c = AllocCommand();
 	c->command = Command::BCS_ADD_2_BANNED_LIST;
 	c->data = (char*)jackieMalloc_Ex(strlen(IP) + sizeof(TimeMS) + 1, TRACE_FILE_AND_LINE_);

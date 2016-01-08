@@ -261,154 +261,153 @@ static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
 
-	DataStructures::JackieSPSCQueue<int, 4 * 100000> lockfree;
-	TIMED_BLOCK(LockFreeQueueTimer, "JackieSPSCQueue")
-	{
-		for (int i = 0; i < 10; i++)
-		{
-			lockfree.PushTail(i);
-		}
-		for (int i = 0; i < 10; i++)
-		{
-			int t;
-			lockfree.PopHead(t);
-		}
-		for (unsigned int i = 0; i < lockfree.Size(); i++)
-		{
-			//printf_s("%d, ", lockfree[i]);
-		}
-	}
+	//DataStructures::JackieSPSCQueue<int, 4 * 100000> lockfree;
+	//TIMED_BLOCK(LockFreeQueueTimer, "JackieSPSCQueue")
+	//{
+	//	for (int i = 0; i < 10; i++)
+	//	{
+	//		lockfree.PushTail(i);
+	//	}
+	//	for (int i = 0; i < 10; i++)
+	//	{
+	//		int t;
+	//		lockfree.PopHead(t);
+	//	}
+	//	for (unsigned int i = 0; i < lockfree.Size(); i++)
+	//	{
+	//		//printf_s("%d, ", lockfree[i]);
+	//	}
+	//}
 
-	DataStructures::JackieArraryQueue<int, 100001> queuee;
+	DataStructures::JackieArraryQueue<int> alloc;
+	DataStructures::JackieArraryQueue<int> dealloc;
 	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
 	{
-		for (int i = 0; i < 100000; i++)
+		for (int i = 0; i < 1000; i++)
 		{
-			queuee.PushTail(i);
-		}
-		for (int i = 0; i < 100000; i++)
-		{
-			int t;
-			queuee.PopHead(t);
+			alloc.PushTail(i);
+			alloc.PopHead(i);
+			dealloc.PushTail(i);
+			dealloc.PopHead(i);
 		}
 	}
 
-	DataStructures::JackieArrayList<int, 100001> list;
-	TIMED_BLOCK(ListTimer, "ListTimer")
-	{
-		for (int i = 0; i < 5000; i++)
-		{
-			list.PushAtLast(i);
-		}
+	//DataStructures::JackieArrayList<int, 100001> list;
+	//TIMED_BLOCK(ListTimer, "ListTimer")
+	//{
+	//	for (int i = 0; i < 5000; i++)
+	//	{
+	//		list.PushAtLast(i);
+	//	}
 
-		list.InsertAtIndex(1, 6);
-		list.RemoveAtIndex(24);
-		list.ReplaceAtIndex(23, 0, 23);
+	//	list.InsertAtIndex(1, 6);
+	//	list.RemoveAtIndex(24);
+	//	list.ReplaceAtIndex(23, 0, 23);
 
-		for (int i = 4; i < 100; i++)
-		{
-			list.RemoveAtIndex(i);
-		}
-		int t = list.PopAtLast();
-	}
+	//	for (int i = 4; i < 100; i++)
+	//	{
+	//		list.RemoveAtIndex(i);
+	//	}
+	//	int t = list.PopAtLast();
+	//}
 
-	DataStructures::JackieOrderArraryList<int, int> olist;
-	TIMED_BLOCK(olistTimer, "olist")
-	{
-		for (int i = 0; i < 10; i++)
-		{
-			olist.Insert(i, i, true);
-		}
+	//DataStructures::JackieOrderArraryList<int, int> olist;
+	//TIMED_BLOCK(olistTimer, "olist")
+	//{
+	//	for (int i = 0; i < 10; i++)
+	//	{
+	//		olist.Insert(i, i, true);
+	//	}
 
-		olist.Insert(-3, -3, true);
-		olist.RemoveAtIndex(4);
+	//	olist.Insert(-3, -3, true);
+	//	olist.RemoveAtIndex(4);
 
-		for (int i = 0; i < 10; i++)
-		{
-			//JINFO << olist[i];
-		}
-	}
+	//	for (int i = 0; i < 10; i++)
+	//	{
+	//		//JINFO << olist[i];
+	//	}
+	//}
 
-	DataStructures::JakieOrderArrayListMap<std::string, int> omap;
-	TIMED_BLOCK(omapTimer, "omap")
-	{
-		omap.Set("set", 1);
-		omap.SetExisting("set", 2);
-		omap.SetNew("SetNew", 3);
-		int setval = omap.Get("set");
-		//JINFO << "set = " << setval;
-		setval = omap.Get("SetNew");
-		//JINFO << "set = " << setval;
-		omap.Delete("set");
-	}
+	//DataStructures::JakieOrderArrayListMap<std::string, int> omap;
+	//TIMED_BLOCK(omapTimer, "omap")
+	//{
+	//	omap.Set("set", 1);
+	//	omap.SetExisting("set", 2);
+	//	omap.SetNew("SetNew", 3);
+	//	int setval = omap.Get("set");
+	//	//JINFO << "set = " << setval;
+	//	setval = omap.Get("SetNew");
+	//	//JINFO << "set = " << setval;
+	//	omap.Delete("set");
+	//}
 
-	DataStructures::CircularList<int> linkedlist;
-	TIMED_BLOCK(LinkedlisttIMER, "linkedlist")
-	{
-		linkedlist.Beginning();
-		linkedlist.Add(4);
-		linkedlist.Add(3);
-		linkedlist.Insert(2);
-		linkedlist.Add(1);
-		linkedlist.Sort();
+	//DataStructures::CircularList<int> linkedlist;
+	//TIMED_BLOCK(LinkedlisttIMER, "linkedlist")
+	//{
+	//	linkedlist.Beginning();
+	//	linkedlist.Add(4);
+	//	linkedlist.Add(3);
+	//	linkedlist.Insert(2);
+	//	linkedlist.Add(1);
+	//	linkedlist.Sort();
 
-		for (size_t i = 0; i < linkedlist.Size(); i++)
-		{
-			printf("%d ", linkedlist.Peek());
-			linkedlist++;
-		}
-		printf("\n");
-		DCHECK(linkedlist.Has(3));
-		DCHECK(linkedlist.Find(3));
-		linkedlist.Remove();
-		DCHECK(linkedlist.Has(3) == false);
-		linkedlist.Find(4);
-		linkedlist.Replace(-1);
-		linkedlist.Beginning();
-		for (size_t i = 0; i < linkedlist.Size(); i++)
-		{
-			printf("%d ", linkedlist.Peek());
-			linkedlist++;
-		}
-		printf("\n");
-	}
+	//	for (size_t i = 0; i < linkedlist.Size(); i++)
+	//	{
+	//		printf("%d ", linkedlist.Peek());
+	//		linkedlist++;
+	//	}
+	//	printf("\n");
+	//	DCHECK(linkedlist.Has(3));
+	//	DCHECK(linkedlist.Find(3));
+	//	linkedlist.Remove();
+	//	DCHECK(linkedlist.Has(3) == false);
+	//	linkedlist.Find(4);
+	//	linkedlist.Replace(-1);
+	//	linkedlist.Beginning();
+	//	for (size_t i = 0; i < linkedlist.Size(); i++)
+	//	{
+	//		printf("%d ", linkedlist.Peek());
+	//		linkedlist++;
+	//	}
+	//	printf("\n");
+	//}
 
-	DataStructures::ArrayCircularList<int, 1000> arrayCircularList;
-	TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
-	{
-		int val;
-		arrayCircularList.Add(2);
-		arrayCircularList.Add(3);
-		arrayCircularList.Add(8);
+	//DataStructures::ArrayCircularList<int, 1000> arrayCircularList;
+	//TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
+	//{
+	//	int val;
+	//	arrayCircularList.Add(2);
+	//	arrayCircularList.Add(3);
+	//	arrayCircularList.Add(8);
 
-		arrayCircularList.Print();
+	//	arrayCircularList.Print();
 
-		bool flag = arrayCircularList.Has(8);
-		DCHECK(flag == true);
-		flag = arrayCircularList.Has(13);
-		DCHECK(flag == false);
+	//	bool flag = arrayCircularList.Has(8);
+	//	DCHECK(flag == true);
+	//	flag = arrayCircularList.Has(13);
+	//	DCHECK(flag == false);
 
-		arrayCircularList.Remove(8);
-		flag = arrayCircularList.Has(8);
-		DCHECK(flag == false);
+	//	arrayCircularList.Remove(8);
+	//	flag = arrayCircularList.Has(8);
+	//	DCHECK(flag == false);
 
-		val = arrayCircularList.Pop();
-		DCHECK(val == 2);
-		flag = arrayCircularList.Has(2);
-		DCHECK(flag == false);
+	//	val = arrayCircularList.Pop();
+	//	DCHECK(val == 2);
+	//	flag = arrayCircularList.Has(2);
+	//	DCHECK(flag == false);
 
-		arrayCircularList.Print();
+	//	arrayCircularList.Print();
 
-		arrayCircularList.Add(2);
-		arrayCircularList.Add(8);
+	//	arrayCircularList.Add(2);
+	//	arrayCircularList.Add(8);
 
-		arrayCircularList.Print();
+	//	arrayCircularList.Print();
 
-		flag = arrayCircularList.Has(8);
-		DCHECK(flag == true);
-		flag = arrayCircularList.Has(3);
-		DCHECK(flag == true);
-	}
+	//	flag = arrayCircularList.Has(8);
+	//	DCHECK(flag == true);
+	//	flag = arrayCircularList.Has(3);
+	//	DCHECK(flag == true);
+	//}
 }
 
 #include "JackieBits.h"
@@ -439,7 +438,7 @@ static void test_ServerApplication_funcs()
 	server->SetIncomingConnectionsPasswd("admin", (int)strlen("admin"));
 	JackieIPlugin plugin;
 	server->AttachOnePlugin(&plugin);
-
+	server->BanRemoteSystem("*", 1000000);
 #if ENABLE_SECURE_HAND_SHAKE==1
 	{
 		/// @Remarks
@@ -474,7 +473,6 @@ static void test_ServerApplication_funcs()
 	/// default blobking 
 	JACKIE_INET::BindSocket socketDescriptor("localhost", 38000);
 	server->Start(&socketDescriptor);
-	server->BanRemoteSystem("*", 1000);
 
 	JackiePacket* packet = 0;
 	while (1)
@@ -497,6 +495,8 @@ static void test_ServerApplication_funcs()
 	server->StopRecvThread();
 	server->StopNetworkUpdateThread();
 	server->DestroyInstance(server);
+
+
 }
 
 #include "JackieBits.h"
@@ -830,10 +830,12 @@ enum
 	Test_Queue_funcs,
 
 	ServerApplication_H,
+
 	JackieStream_H,
-	Start,
-	AllClass,
-	AllFuncs
+
+
+	AllFuncs,
+
 };
 
 //static int testcase = GlobalFunctions_h;

@@ -137,11 +137,15 @@ namespace DataStructures
 #ifdef _DEBUG
 			assert(head != tail);
 #endif // _DEBUG
+
+			// queue is empty
 			if (head == tail) return false;
 
 			if (++head == allocation_size) head = 0;
-			if (head == 0) ele = queueArrary[allocation_size - 1];
-			ele = queueArrary[head - 1];
+			if (head == 0) 
+				ele = queueArrary[allocation_size - 1];
+			else
+				ele = queueArrary[head - 1];
 			return true;
 		}
 
