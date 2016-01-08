@@ -436,9 +436,12 @@ static void test_ServerApplication_funcs()
 
 	JACKIE_INET::JackieApplication* server = JACKIE_INET::JackieApplication::GetInstance();
 	server->SetIncomingConnectionsPasswd("admin", (int)strlen("admin"));
+	server->BanRemoteSystem("202.168.1.123", 1000000);
+	server->BanRemoteSystem("202.168.1", 1000000);
+	server->BanRemoteSystem("202.168.1", 1000000);
 	JackieIPlugin plugin;
 	server->AttachOnePlugin(&plugin);
-	server->BanRemoteSystem("*", 1000000);
+
 #if ENABLE_SECURE_HAND_SHAKE==1
 	{
 		/// @Remarks
@@ -478,16 +481,13 @@ static void test_ServerApplication_funcs()
 	while (1)
 	{
 		JackieSleep(10);
-		Command* c = server->AllocCommand();
-		c->command = Command::BCS_SEND;
-		server->PostComand(c);
 
 		// This sleep keeps RakNet responsive
 		for (packet = server->GetPacketOnce(); packet != 0; server->ReclaimPacket(packet), packet = server->GetPacketOnce())
 		{
 			/// user logics goes here
 			Command* c = server->AllocCommand();
-			c->command = Command::BCS_SEND;
+			c->commandID = Command::BCS_SEND;
 			server->PostComand(c);
 		}
 	}

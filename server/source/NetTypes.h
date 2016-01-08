@@ -77,9 +77,9 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #endif
 
 	//#define SEND_10040_ERR(sock, sendParams)\
-			//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
-			//sendParams.bytesWritten == 10040)\
-			//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+				//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
+				//sendParams.bytesWritten == 10040)\
+				//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
 
 
 	/// \sa NetworkIDObject.h
@@ -858,7 +858,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Valid after connectMode reaches HANDLING_CONNECTION_REQUEST
 		char client_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 #endif
-		enum ConnectMode
+		enum ConnectMode: unsigned char
 		{
 			NO_ACTION,
 			DISCONNECT_ASAP,
@@ -879,23 +879,6 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 
 	struct JACKIE_EXPORT Command
 	{
-		unsigned int numberOfBitsToSend;
-		PacketReliability priority;
-		PacketReliability reliability;
-		char orderingChannel;
-		JackieAddressGuidWrapper systemIdentifier;
-		bool broadcast;
-		JackieRemoteSystem::ConnectMode repStatus;
-		NetworkID networkID;
-		bool blockingCommand; // Only used for RPC
-		char *data;
-		bool haveRakNetCloseSocket;
-		unsigned connectionSocketIndex;
-		unsigned short remotePortRakNetWasStartedOn_PS3;
-		unsigned int extraSocketOptions;
-		JackieINetSocket* socket;
-		unsigned short port;
-		unsigned int receipt;
 		enum : unsigned char
 		{
 			BCS_SEND,
@@ -905,7 +888,32 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			/* BCS_USE_USER_SOCKET, BCS_REBIND_SOCKET_ADDRESS, BCS_RPC, BCS_RPC_SHIFT,*/
 			BCS_ADD_2_BANNED_LIST,
 			BCS_DO_NOTHING
-		} command;
+		} commandID;
+
+		JackieAddressGuidWrapper systemIdentifier;
+		char *data;
+		union
+		{
+			struct
+			{
+				NetworkID networkID;
+				PacketReliability priority;
+				PacketReliability reliability;
+				JackieRemoteSystem::ConnectMode repStatus;
+				bool blockingCommand; // Only used for RPC
+				bool haveRakNetCloseSocket;
+				bool broadcast;
+				char orderingChannel;
+				unsigned int connectionSocketIndex;
+				unsigned int extraSocketOptions;
+				unsigned int receipt;
+				unsigned int numberOfBitsToSend;
+				JackieINetSocket* socket;
+				unsigned short port;
+				unsigned short remotePortRakNetWasStartedOn_PS3;
+			};
+			char arrayparams[sizeof(unsigned int)*4 + sizeof(short)*2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID)];
+		};
 	};
 
 	struct JACKIE_EXPORT ConnectionRequest
@@ -956,7 +964,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #else
 		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
 #endif
-}
+	}
 
 	/// Return false if Numeric IP address. Return true if domain NonNumericHostString
 	JACKIE_EXPORT extern bool  isDomainIPAddr(const char *host);

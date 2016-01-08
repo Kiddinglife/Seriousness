@@ -1812,9 +1812,8 @@ void JackieApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 		/// no need to check if bufferedCommand == 0, because we never push 0 pointer
 		DCHECK_EQ(allocCommandQ.PopHead(cmd), true);
 		DCHECK_NOTNULL(cmd);
-		DCHECK_NOTNULL(cmd->data);
 
-		switch (cmd->command)
+		switch (cmd->commandID)
 		{
 		case Command::BCS_SEND:
 			JDEBUG << "BCS_SEND";
@@ -1856,7 +1855,7 @@ void JackieApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 			JDEBUG << "BCS_GET_SOCKET";
 			break;
 		case Command::BCS_ADD_2_BANNED_LIST:
-			AddToBanList(cmd->data, *((TimeMS*)(cmd->data + strlen(cmd->data) + 1)));
+			AddToBanList(cmd->arrayparams, *((TimeMS*)(cmd->arrayparams + strlen(cmd->arrayparams) + 1)));
 			JDEBUG << "BCS_ADD_2_BANNED_LIST";
 			break;
 		default:
@@ -3200,9 +3199,12 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 	{
 		if (strcmp(IP, banList[index]->IP) == 0)
 		{
+			JDEBUG << IP << " Already in the ban list.  Just update the time";
 			// Already in the ban list.  Just update the time
 			if (milliseconds == 0)
+			{
 				banList[index]->timeout = 0; // Infinite
+			}
 			else
 				banList[index]->timeout = time + milliseconds;
 			return;
@@ -3222,9 +3224,13 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 void JACKIE_INET::JackieApplication::BanRemoteSystem(const char IP[32], TimeMS milliseconds /*= 0*/)
 {
 	Command* c = AllocCommand();
-	c->command = Command::BCS_ADD_2_BANNED_LIST;
-	c->data = (char*)jackieMalloc_Ex(strlen(IP) + sizeof(TimeMS) + 1, TRACE_FILE_AND_LINE_);
-	memcpy(c->data, IP, sizeof(IP) + 1);
-	memcpy(c->data + sizeof(IP) + 1, &milliseconds, sizeof(TimeMS));
+	c->commandID = Command::BCS_ADD_2_BANNED_LIST;
+	c->data = 0;
+	memcpy(c->arrayparams, IP, strlen(IP) + 1);
+	memcpy(c->arrayparams + strlen(IP) + 1, &milliseconds, sizeof(TimeMS));
+	//c->data = (char*)jackieMalloc_Ex(strlen(IP) + sizeof(TimeMS) + 1, TRACE_FILE_AND_LINE_);
+	//memcpy(c->data, IP, strlen(IP) + 1);
+	//memcpy(c->data + strlen(IP) + 1, &milliseconds, sizeof(TimeMS));
+
 	PostComand(c);
 }
