@@ -92,7 +92,7 @@ namespace JACKIE_INET
 		/// @Author mengdi[Jackie]
 		///========================================
 		virtual StartupResult Start(unsigned int maxConnections,
-			BindSocket *bindSockets,
+			JackieBindingSocket *bindSockets,
 			unsigned int socketDescriptorCount,
 			Int32 threadPriority = -99999)
 		{

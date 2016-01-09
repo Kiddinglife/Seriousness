@@ -199,10 +199,10 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 	};
 
 	/// BindSocket is used to bind socket
-	struct JACKIE_EXPORT BindSocket
+	struct JACKIE_EXPORT JackieBindingSocket
 	{
-		BindSocket();
-		BindSocket(const char *_hostAddress, UInt16 _port);
+		JackieBindingSocket();
+		JackieBindingSocket(const char *_hostAddress, UInt16 _port);
 
 		/// The local port to bind to.  Pass 0 to have an OS auto-assigned port.
 		UInt16 port;
@@ -887,7 +887,8 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 			BCS_CHANGE_SYSTEM_ADDRESS,
 			/* BCS_USE_USER_SOCKET, BCS_REBIND_SOCKET_ADDRESS, BCS_RPC, BCS_RPC_SHIFT,*/
 			BCS_ADD_2_BANNED_LIST,
-			BCS_DO_NOTHING
+			BCS_CONEECT,
+			BCS_DO_NOTHING,
 		} commandID;
 
 		JackieAddressGuidWrapper systemIdentifier;
@@ -912,6 +913,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 				unsigned short port;
 				unsigned short remotePortRakNetWasStartedOn_PS3;
 			};
+			//sizeof(unsigned int) * 4 + sizeof(short) * 2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID) = 35 bytes
 			char arrayparams[sizeof(unsigned int)*4 + sizeof(short)*2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID)];
 		};
 	};

@@ -55,10 +55,10 @@ int main(int argc, char** argv)
 
 	JACKIE_INET::JackieApplication* client = JACKIE_INET::JackieApplication::GetInstance();
 	JackieIPlugin plugin;
-	client->AttachOnePlugin(&plugin);
+	client->SetPlugin(&plugin);
 
 	// default use wild address and random port and blobking mode
-	JACKIE_INET::BindSocket socketDescriptor;
+	JACKIE_INET::JackieBindingSocket socketDescriptor;
 	if (client->Start(&socketDescriptor) == StartupResult::START_SUCCEED)
 	{
 
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 			shsKeys.remoteServerPublicKey = serverPublicKey;
 			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
 			char uname[] = "admin";
-			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			ConnectionAttemptResult connectResult = client->Connect_("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
 			//ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname));
 			assert(connectResult == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}
@@ -94,10 +94,8 @@ int main(int argc, char** argv)
 		//// Loop for input
 		while (1)
 		{
-			JackieSleep(10);		// This sleep keeps jackie net more responsive
-
 			for (packet = client->GetPacketOnce(); packet != 0;
-				client->ReclaimPacket(packet), packet = 0)
+				client->ReclaimPacket(packet), packet = client->GetPacketOnce())
 			{
 				/// user logics goes here
 				//Command* c = app->AllocCommand();
@@ -109,6 +107,7 @@ int main(int argc, char** argv)
 
 		client->StopRecvThread();
 		client->StopNetworkUpdateThread();
+		JackieApplication::DestroyInstance(client);
 	}
 	else
 	{

@@ -157,7 +157,8 @@ namespace JACKIE_INET
 		volatile bool isNetworkUpdateThreadActive; ///true if the send thread is active. 
 		JackieAtomicLong isRecvPollingThreadActive; ///true if the recv thread is active. 
 		JackieWaitEvent quitAndDataEvents;
-
+		/// default sleep 10 ms to wit more incoming data
+		UInt32 userThreadSleepTime;
 
 		int defaultMTUSize;
 		bool trackFrequencyTable;
@@ -260,7 +261,7 @@ namespace JACKIE_INET
 		struct Banned
 		{
 			char IP[65];
-			TimeMS whenBanned;
+			TimeMS firstTimeBanned;
 			TimeMS timeout; /*0 for none*/
 			UInt16 bannedTImes;
 		};
@@ -338,7 +339,7 @@ namespace JACKIE_INET
 		void ResetSendReceipt(void);
 		JackiePacket* GetPacketOnce(void);
 
-		virtual StartupResult Start(BindSocket *socketDescriptors,
+		virtual StartupResult Start(JackieBindingSocket *socketDescriptors,
 			UInt32 maxConnections = 8, UInt32 socketDescriptorCount = 1,
 			Int32 threadPriority = -99999);
 		void End(UInt32 blockDuration, unsigned char orderingChannel = 0,
@@ -359,6 +360,8 @@ namespace JACKIE_INET
 		{
 			return GetIncomingConnectionsCount() < maxConnections;
 		}
+		UInt32 SetSleepTime() const { return userThreadSleepTime; }
+		void SetSleepTime(UInt32 val) { userThreadSleepTime = val; }
 		/// to check if this is loop back address of local host
 		bool IsLoopbackAddress(const JackieAddressGuidWrapper &systemIdentifier,
 			bool matchPort) const;
@@ -423,7 +426,7 @@ namespace JACKIE_INET
 			// Who is going to change the password a lot during runtime?
 			// It won't overflow because @incomingPasswordLength is an unsigned char
 			if (passwd != 0 && passwdLength > 0)
-				memcpy(incomingPassword, passwd, passwdLength);
+			 strcpy(incomingPassword, passwd);
 			incomingPasswordLength = (unsigned char)passwdLength;
 		}
 
@@ -448,8 +451,9 @@ namespace JACKIE_INET
 		void PostComand(Command* cmd) { allocCommandQ.PushTail(cmd); };
 
 
-		/// @Function Connect 
-		/// @Brief Connect to a remote host
+		/// @Function Connect  Connect_
+		/// @Brief Connect to a remote host called from user thread Connect() 
+		/// and connect_() is used internally by network update thread as AMI(asynchrnious Method Invokation)
 		/// @Access  public  
 		/// @Param [in] [const char * host] Either a dotted IP address or a domain name
 		/// @Param [in] [UInt16 port] Which port to connect to on the remote machine.
@@ -473,12 +477,16 @@ namespace JACKIE_INET
 		/// when IsConnected() returns true or getting a packet with the type identifier 
 		/// ID_CONNECTION_REQUEST_ACCEPTED. 
 		/// @Author mengdi[Jackie]
-		ConnectionAttemptResult Connect(const char* host, UInt16 port,
-			const char *passwd = 0, UInt32 passwdLength = 0,
-			JackieSHSKey *jackiePublicKey = 0,
-			UInt32 localSocketIndex = 0, UInt32 attemptTimes = 6,
-			UInt32 attemptIntervalMS = 100000, TimeMS timeout = 0,
-			UInt32 extraData = 0);
+		ConnectionAttemptResult Connect_(const char* host,
+			UInt16 port, const char *passwd = 0, UInt8 passwdLength = 0,
+			JackieSHSKey *jackiePublicKey = 0, UInt8 localSocketIndex = 0,
+			UInt8 attemptTimes = 6, UInt16 attemptIntervalMS = 100000,
+			TimeMS timeout = 0, UInt32 extraData = 0);
+		void Connect(const char* host,
+			UInt16 port, const char *passwd = 0, UInt8 passwdLength = 0,
+			JackieSHSKey *jackiePublicKey = 0, UInt8 localSocketIndex = 0,
+			UInt8 attemptTimes = 6, UInt16 attemptIntervalMS = 100000,
+			TimeMS timeout = 0, UInt32 extraData = 0);
 
 		/// function  StopRecvPollingThread 
 		/// Access  public  
@@ -526,7 +534,7 @@ namespace JACKIE_INET
 		/// \brief Attaches a Plugin interface to an instance of the base class (RakPeer or PacketizedTCP) to run code automatically on message receipt in the Receive call.
 		/// If the plugin returns false from PluginInterface::UsesReliabilityLayer(), which is the case for all plugins except PacketLogger, you can call AttachPlugin() and DetachPlugin() for this plugin while RakPeer is active.
 		/// \param[in] messageHandler Pointer to the plugin to attach.
-		void AttachOnePlugin(JackieIPlugin *plugin);
+		void SetPlugin(JackieIPlugin *plugin);
 		bool SendImmediate(ReliableSendParams& sendParams);
 
 		void AddToActiveSystemList(UInt32 index2use);
@@ -550,7 +558,7 @@ namespace JACKIE_INET
 		/// network to process in the future. so it is a asynchronous invokation to avoid 
 		/// adding locks on @banlist 
 		/// @!you can only call this from user thread after Startup() that clear cmd q
-		void BanRemoteSystem(const char IP[32], TimeMS milliseconds = 0);
+		void SetBannedRemoteSystem(const char IP[32], TimeMS milliseconds = 0);
 		bool IsBanned(JackieAddress& senderINetAddress);
 	private:
 		void AddToBanList(const char IP[32], TimeMS milliseconds = 0);

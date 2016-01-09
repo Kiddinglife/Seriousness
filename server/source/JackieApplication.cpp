@@ -15,13 +15,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																																																											{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																																																																{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																																																											{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																																																																{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -83,6 +83,7 @@ JackieApplication::JackieApplication() : sendBitStream(MAXIMUM_MTU_SIZE
 	userUpdateThreadData = 0;
 	incomeDatagramEventHandler = 0;
 	endThreads = true;
+	userThreadSleepTime = 10; // default sleep 10 ms to wit more incoming data
 
 	allowInternalRouting = false;
 	allowConnectionResponseIPMigration = false;
@@ -130,7 +131,7 @@ JackieApplication::~JackieApplication()
 }
 
 
-JACKIE_INET::StartupResult JackieApplication::Start(BindSocket *bindLocalSockets,
+JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLocalSockets,
 	UInt32 maxConn, UInt32 bindLocalSocketsCount, Int32 threadPriority /*= -99999*/)
 {
 	if (active()) return StartupResult::ALREADY_STARTED;
@@ -722,11 +723,6 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 
 void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isOfflinerecvParams)
 {
-	//JDEBUG << "Network thread Process One Unconnected Recv Params";
-	//static MessageID msgid;
-	//JackiePacket* packet;
-	//unsigned int index;
-
 	// The reason for all this is that the reliability layer has no way to tell between offline
 	// messages that arrived late for a player that is now connected,
 	// and a regular encoding. So I insert OFFLINE_MESSAGE_DATA_ID into the stream,
@@ -841,7 +837,6 @@ void JackieApplication::IsOfflineRecvParams(JISRecvParams* recvParams, bool* isO
 			break;
 		}
 	}
-	//return false;
 }
 
 void JackieApplication::OnConnectionFailed(JISRecvParams* recvParams,
@@ -1708,7 +1703,6 @@ void JackieApplication::ProcessConnectionRequestCancelQ(void)
 	connReqCancelQLock.Unlock();
 }
 
-/// @Done
 void JackieApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS)
 {
 	//DEBUG << "Network Thread Process ConnectionRequestQ";
@@ -1739,7 +1733,6 @@ void JackieApplication::ProcessConnectionRequestQ(TimeUS& timeUS, TimeMS& timeMS
 			/// reach the max try times 
 			if (connReq->requestsMade == connReq->connAttemptTimes + 1)
 			{
-
 				/// free data inside conn req
 				if (connReq->data != 0)
 				{
@@ -1903,6 +1896,27 @@ void JackieApplication::ProcessAllocCommandQ(TimeUS& timeUS, TimeMS& timeMS)
 			AddToBanList(cmd->arrayparams, *((TimeMS*)(cmd->arrayparams + strlen(cmd->arrayparams) + 1)));
 			JDEBUG << "BCS_ADD_2_BANNED_LIST";
 			break;
+		case Command::BCS_CONEECT:
+		{
+			char* passwd = cmd->data;
+			cmd->data += strlen(passwd) + 1;
+			UInt8 passwdlength = *(UInt32*)cmd->data;
+			cmd->data += sizeof(passwdlength);
+			JackieSHSKey* jackiePublicKey = *(JackieSHSKey**)cmd->data;
+			cmd->data += sizeof(jackiePublicKey);
+			UInt8 ConnectionSocketIndex = *(UInt32*)cmd->data;
+			cmd->data += sizeof(ConnectionSocketIndex);
+			UInt8 attemptTimes = *(UInt32*)cmd->data;
+			cmd->data += sizeof(attemptTimes);
+			UInt16 AttemptIntervalMS = *(UInt32*)cmd->data;
+			cmd->data += sizeof(AttemptIntervalMS);
+			TimeMS timeout = *(UInt32*)cmd->data;
+			cmd->data += sizeof(timeout);
+			UInt32 extraData = *(UInt32*)cmd->data;
+			Connect_(cmd->systemIdentifier.systemAddress.ToString(), cmd->systemIdentifier.systemAddress.GetPortHostOrder(),
+				passwd, passwdlength, jackiePublicKey, ConnectionSocketIndex, attemptTimes, AttemptIntervalMS, timeout, extraData);
+		}
+		break;
 		default:
 			JERROR << "Not Found Matched BufferedCommand";
 			break;
@@ -2180,7 +2194,7 @@ void JackieApplication::CloseConnectionInternally(bool sendDisconnectionNotifica
 
 // Attatches a Plugin interface to run code automatically 
 // on message receipt in the Receive call
-void JackieApplication::AttachOnePlugin(JackieIPlugin *plugin)
+void JackieApplication::SetPlugin(JackieIPlugin *plugin)
 {
 	bool isNotThreadsafe = plugin->UsesReliabilityLayer();
 	if (isNotThreadsafe)
@@ -2366,6 +2380,9 @@ void JackieApplication::UpdatePlugins(void)
 JackiePacket* JackieApplication::GetPacketOnce(void)
 {
 	//	TIMED_FUNC();
+	// sleep a while to make user thread more responsible
+	// and low cpu usaage rate
+	JackieSleep(userThreadSleepTime);
 
 #if USE_SINGLE_THREAD == 0
 	if (!(active())) return 0;
@@ -2375,6 +2392,7 @@ JackiePacket* JackieApplication::GetPacketOnce(void)
 	RunRecvCycleOnce(0);
 	RunNetworkUpdateCycleOnce();
 #endif
+
 	return RunGetPacketCycleOnce();
 }
 JackiePacket* JackieApplication::RunGetPacketCycleOnce(void)
@@ -2444,13 +2462,13 @@ void JackieApplication::RunNetworkUpdateCycleOnce(void)
 	/// who alloc who dealloc
 	ReclaimAllPackets();
 
-	/// process buffered recv params
-	ProcessAllocJISRecvParamsQ();
-
 	TimeUS timeUS = 0;
 	TimeMS timeMS = 0;
 	/// process buffered commands
 	ProcessAllocCommandQ(timeUS, timeMS);
+
+	/// process buffered recv params
+	ProcessAllocJISRecvParamsQ();
 
 	/// process buffered connection request and cance
 	/// Cancel certain conn req before process Connection Request Q 
@@ -2473,7 +2491,8 @@ void JackieApplication::RunRecvCycleOnce(UInt32 index)
 				JWARNING << "incomeDatagramEventHandler(recvStruct) Failed.";
 		}
 #if USE_SINGLE_THREAD == 0
-		if (allocRecvParamQ[index].Size() > 8) quitAndDataEvents.TriggerEvent();
+		if (allocRecvParamQ[index].Size() >=
+			allocRecvParamQ->AllocationSize() / 2) quitAndDataEvents.TriggerEvent();
 #endif
 	}
 	else
@@ -2506,9 +2525,6 @@ JACKIE_THREAD_DECLARATION(JACKIE_INET::RunRecvCycleLoop)
 	while (!serv->endThreads)
 	{
 		serv->RunRecvCycleOnce(index);
-#if USE_SINGLE_THREAD == 1 // sleep to cache more recv to process in one time
-		JackieSleep(10);
-#endif
 	}
 	JDEBUG << "Recv polling thread Stops....";
 
@@ -2530,7 +2546,6 @@ JACKIE_THREAD_DECLARATION(JACKIE_INET::RunNetworkUpdateCycleLoop)
 #if USE_SINGLE_THREAD == 0
 		serv->quitAndDataEvents.WaitEvent(10);
 #endif
-		//JackieSleep(1000);
 	}
 	JDEBUG << "Send polling thread Stops....";
 	serv->isNetworkUpdateThreadActive = false;
@@ -2580,11 +2595,47 @@ void JackieApplication::CancelConnectionRequest(const JackieAddress& target)
 	connReqCancelQLock.Unlock();
 }
 
-JACKIE_INET::ConnectionAttemptResult JackieApplication::Connect(const char* host,
-	UInt16 port, const char *passwd /*= 0*/, UInt32 passwdLength /*= 0*/,
-	JackieSHSKey *jackiePublicKey /*= 0*/, UInt32 ConnectionSocketIndex /*= 0*/,
-	UInt32 attemptTimes /*= 6*/, UInt32 AttemptIntervalMS /*= 1000*/,
-	TimeMS timeout /*= 0*/, UInt32 extraData/*=0*/)
+void JackieApplication::Connect(const char* host,
+	UInt16 port, const char *passwd /*= 0*/, UInt8 passwdLength /*= 0*/,
+	JackieSHSKey *jackiePublicKey /*= 0*/, UInt8 localSocketIndex /*= 0*/,
+	UInt8 attemptTimes /*= 6*/, UInt16 attemptIntervalMS /*= 100000*/,
+	TimeMS timeout /*= 0*/, UInt32 extraData /*= 0*/)
+{
+	Command* conn_cmd = AllocCommand();
+	conn_cmd->commandID = Command::BCS_CONEECT;
+	conn_cmd->systemIdentifier.systemAddress.FromString(host, port);
+	conn_cmd->data = (char*)jackieMalloc_Ex(strlen(passwd) + 1 + sizeof(passwdLength) + sizeof(JackieSHSKey *) + sizeof(localSocketIndex) + sizeof(attemptTimes) + sizeof(attemptIntervalMS) + sizeof(timeout) + sizeof(extraData), TRACE_FILE_AND_LINE_);
+
+	memcpy(conn_cmd->data, passwd, strlen(passwd) + 1);
+	conn_cmd->data += strlen(passwd) + 1;
+
+	memcpy(conn_cmd->data, &passwdLength, sizeof(passwdLength));
+	conn_cmd->data += sizeof(passwdLength);
+
+	memcpy(conn_cmd->data, &jackiePublicKey, sizeof(jackiePublicKey));
+	conn_cmd->data += sizeof(jackiePublicKey);
+
+	memcpy(conn_cmd->data, &localSocketIndex, sizeof(localSocketIndex));
+	conn_cmd->data += sizeof(localSocketIndex);
+
+	memcpy(conn_cmd->data, &attemptTimes, sizeof(attemptTimes));
+	conn_cmd->data += sizeof(attemptTimes);
+
+	memcpy(conn_cmd->data, &attemptIntervalMS, sizeof(attemptIntervalMS));
+	conn_cmd->data += sizeof(attemptIntervalMS);
+
+	memcpy(conn_cmd->data, &timeout, sizeof(timeout));
+	conn_cmd->data += sizeof(timeout);
+
+	memcpy(conn_cmd->data, &extraData, sizeof(extraData));
+	PostComand(conn_cmd);
+}
+
+ConnectionAttemptResult JackieApplication::Connect_(const char* host,
+	UInt16 port, const char *passwd /*= 0*/, UInt8 passwdLength /*= 0*/,
+	JackieSHSKey *jackiePublicKey /*= 0*/, UInt8 ConnectionSocketIndex /*= 0*/,
+	UInt8 attemptTimes /*= 6*/, UInt16 AttemptIntervalMS /*= 100000*/,
+	TimeMS timeout /*= 0*/, UInt32 extraData /*= 0*/)
 {
 	JDEBUG << "User Thread start to Connect() to " << host << ":" << port;
 
@@ -2604,7 +2655,7 @@ JACKIE_INET::ConnectionAttemptResult JackieApplication::Connect(const char* host
 		return INVALID_PARAM;
 	}
 
-	if (passwdLength > 256) passwdLength = 256;
+	if (passwdLength > 8) passwdLength = 8;
 	if (passwd == 0) passwdLength = 0;
 
 	bool found = false;
@@ -2661,7 +2712,7 @@ JACKIE_INET::ConnectionAttemptResult JackieApplication::Connect(const char* host
 	{
 		if (connReqQ[Index]->receiverAddr == addr)
 		{
-			connReqQLock.Unlock();
+			//connReqQLock.Unlock();
 			JACKIE_INET::OP_DELETE(connReq, TRACE_FILE_AND_LINE_);
 			return CONNECTION_ATTEMPT_ALREADY_IN_PROGRESS;
 		}
@@ -3176,19 +3227,17 @@ bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 
 	char IP[65];
 	senderINetAddress.ToString(false, IP);
-	if (IP == 0 || IP[0] == 0 || IP[0] == ' ' || strlen(IP) > 65)
-		return false;
+	if (IP == 0 || IP[0] == 0 || IP[0] == ' ' || strlen(IP) > 65) return false;
 
-	UInt32 banListIndex;
-	for (banListIndex = 0; banListIndex < banList.Size(); banListIndex++)
+	for (index = 0; index < banList.Size(); index++)
 	{
 		// timeout and flag it as unused
-		if (banList[banListIndex]->timeout > 0 &&
-			banList[banListIndex]->timeout <= GetTimeMS())
+		if (banList[index]->timeout > 0 &&
+			banList[index]->timeout <= GetTimeMS())
 		{
 			// remove this expired ban
-			Banned* tmp = banList[banListIndex];
-			banList.RemoveAtIndexFast(banListIndex);
+			Banned* tmp = banList[index];
+			banList.RemoveAtIndexFast(index);
 			JACKIE_INET::OP_DELETE(tmp, TRACE_FILE_AND_LINE_);
 		}
 		else
@@ -3196,7 +3245,7 @@ bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 			UInt32 characterIndex = 0;
 			while (1) 	// compare ip char by char
 			{
-				if (banList[banListIndex]->IP[characterIndex] == IP[characterIndex])
+				if (banList[index]->IP[characterIndex] == IP[characterIndex])
 				{
 					if (IP[characterIndex] == 0)
 					{
@@ -3206,7 +3255,7 @@ bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 				}
 				else
 				{
-					if (banList[banListIndex]->IP[characterIndex] == 0 ||
+					if (banList[index]->IP[characterIndex] == 0 ||
 						IP[characterIndex] == 0)
 					{
 						// End of one of the strings
@@ -3214,7 +3263,7 @@ bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 					}
 
 					// Characters do not match
-					if (banList[banListIndex]->IP[characterIndex] == '*')
+					if (banList[index]->IP[characterIndex] == '*')
 					{
 						// Domain is banned.
 						return true;
@@ -3225,9 +3274,11 @@ bool JACKIE_INET::JackieApplication::IsBanned(JackieAddress& senderINetAddress)
 
 				}
 			}
-			banListIndex++;
+			index++;
 		}
 	}
+	// not match found
+	return false;
 }
 
 void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
@@ -3244,12 +3295,11 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 	{
 		if (strcmp(IP, banList[index]->IP) == 0)
 		{
-			JDEBUG << IP << " Already in the ban list.  Just update the time";
-			// Already in the ban list.  Just update the time
+			JDEBUG << IP << " Already in the ban list.  Just update the time and times";
+			// Already in the ban list.  Just update the time and banned times
+			banList[index]->bannedTImes++;
 			if (milliseconds == 0)
-			{
 				banList[index]->timeout = 0; // Infinite
-			}
 			else
 				banList[index]->timeout = time + milliseconds;
 			return;
@@ -3258,6 +3308,8 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 
 	// not in the ban list so create a new ban for him
 	Banned *banStruct = JACKIE_INET::OP_NEW<Banned>(TRACE_FILE_AND_LINE_);
+	banStruct->firstTimeBanned = time;
+	banStruct->bannedTImes = 1;
 	if (milliseconds == 0)
 		banStruct->timeout = 0; // Infinite
 	else
@@ -3266,7 +3318,7 @@ void JACKIE_INET::JackieApplication::AddToBanList(const char IP[32],
 	banList.InsertAtLast(banStruct);
 }
 
-void JACKIE_INET::JackieApplication::BanRemoteSystem(const char IP[32], TimeMS milliseconds /*= 0*/)
+void JACKIE_INET::JackieApplication::SetBannedRemoteSystem(const char IP[32], TimeMS milliseconds /*= 0*/)
 {
 	Command* c = AllocCommand();
 	c->commandID = Command::BCS_ADD_2_BANNED_LIST;

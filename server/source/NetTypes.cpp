@@ -14,7 +14,7 @@ namespace JACKIE_INET
 	const JackieGUID JACKIE_NULL_GUID;
 #endif
 
-	BindSocket::BindSocket()
+	JackieBindingSocket::JackieBindingSocket()
 	{
 #ifdef __native_client__
 		blockingSocket=USE_NON_BLOBKING_SOCKET;
@@ -28,7 +28,7 @@ namespace JACKIE_INET
 		socketFamily = AF_INET;
 		blockingSocket = USE_BLOBKING_SOCKET;
 	}
-	BindSocket::BindSocket(const char *_hostAddress, UInt16 _port)
+	JackieBindingSocket::JackieBindingSocket(const char *_hostAddress, UInt16 _port)
 	{
 #ifdef __native_client__
 		blockingSocket = USE_NON_BLOBKING_SOCKET;
