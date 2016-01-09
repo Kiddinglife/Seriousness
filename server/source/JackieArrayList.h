@@ -3,6 +3,7 @@
 /// \brief similar to std::vector
 /// \details Usually the Queue class is used instead,
 /// since it has all the same functionality and is only worse at random access.
+/// Ë³ÐòÏßÐÔ±í
 ///
 #ifndef __ARRARY_LIST_H__
 #define __ARRARY_LIST_H__

@@ -12,7 +12,7 @@ namespace DataStructures
 
 	/// will dynalically allocate list node by new
 	template <class data_type>
-	class JACKIE_EXPORT CircularList
+	class JACKIE_EXPORT CircularLinkedList
 	{
 	private:
 		struct ListNode
@@ -47,9 +47,9 @@ namespace DataStructures
 		}
 
 	private:
-		CircularList Merge(CircularList& L1, CircularList& L2)
+		CircularLinkedList Merge(CircularLinkedList& L1, CircularLinkedList& L2)
 		{
-			CircularList X;
+			CircularLinkedList X;
 			data_type element;
 			L1.position = L1.root;
 			L2.position = L2.root;
@@ -81,14 +81,14 @@ namespace DataStructures
 
 			return X;
 		}
-		CircularList Mergesort(const CircularList& space)
+		CircularLinkedList Mergesort(const CircularLinkedList& space)
 		{
 			unsigned int counter;
 			unsigned int list_size = space.list_size;
 			ListNode* location = space.root;
 
-			CircularList L1;
-			CircularList L2;
+			CircularLinkedList L1;
+			CircularLinkedList L2;
 
 			// Split the list into two equal size sublists, L1 and L2
 			for (counter = 0; counter < list_size / 2; counter++)
@@ -203,15 +203,15 @@ namespace DataStructures
 			MergeFixed(leftSubListLeft, rightSubListRight, leftSubListSize, rightSubListSize);
 		}
 	public:
-		CircularList()
+		CircularLinkedList()
 		{
 			root = position = 0; list_size = 0;
 		}
-		virtual ~CircularList()
+		virtual ~CircularLinkedList()
 		{
 			Clear();
 		}
-		CircularList(const CircularList& original_copy)
+		CircularLinkedList(const CircularLinkedList& original_copy)
 		{
 			if (original_copy.list_size == 0)
 			{
@@ -275,7 +275,7 @@ namespace DataStructures
 			}
 		}
 		// CircularLinkedList(LinkedList<CircularLinkedListType> original_copy) {CircularLinkedList(original_copy);}  // Converts linked list to circular type
-		CircularList operator= (const CircularList& original_copy)
+		CircularLinkedList operator= (const CircularLinkedList& original_copy)
 		{
 			if (this != &original_copy)
 			{
@@ -346,24 +346,24 @@ namespace DataStructures
 			return *this;
 		}
 		/// CircularLinkedList A; ++A;
-		CircularList& operator++()
+		CircularLinkedList& operator++()
 		{
 			if (this->list_size != 0) position = position->next;
 			return *this;
 		}
 		// Circular_Linked List A; A++;
-		CircularList& operator++(int)
+		CircularLinkedList& operator++(int)
 		{
 			return this->operator++();
 		}
 		/// CircularLinkedList A; --A;
-		CircularList& operator--()
+		CircularLinkedList& operator--()
 		{
 			if (this->list_size != 0) this->position = this->position->previous;
 			return *this;
 		}
 		// Circular_Linked List A; A--;
-		CircularList& operator--(int)
+		CircularLinkedList& operator--(int)
 		{
 			return this->operator--();
 		}
@@ -568,7 +568,7 @@ namespace DataStructures
 		{
 			if (this->root != 0) this->position = this->root->previous;
 		}
-		void Concatenate(const CircularList& space)
+		void Concatenate(const CircularLinkedList& space)
 		{
 			if (space.list_size == 0) return;
 			if (this->list_size == 0) *this = space;
@@ -589,7 +589,7 @@ namespace DataStructures
 				this->position = this->position->next;
 			}
 		}
-		inline CircularList& operator<<(const CircularList& space)
+		inline CircularLinkedList& operator<<(const CircularLinkedList& space)
 		{
 			Concatenate(space);
 			return *this;
@@ -601,7 +601,7 @@ namespace DataStructures
 	};
 
 	template <class LinkedListType>
-	class JACKIE_EXPORT LinkedList : public CircularList<LinkedListType>
+	class JACKIE_EXPORT LinkedList : public CircularLinkedList<LinkedListType>
 	{
 	public:
 		LinkedList(){}
@@ -619,14 +619,13 @@ namespace DataStructures
 		LinkedList Mergesort(const LinkedList& space);
 	};
 
-
 	/// Usually should use this
 	/// have all functions same to CircularList and LinkedList, 
 	///but faster because no need to allocate new node by new call 
 	/// and never free  allocated memory to avoid memory fragments
 	/// on the runtime.
 	template <class ElemType, unsigned int MAXSIZE = 32>
-	class JACKIE_EXPORT ArrayCircularList
+	class JACKIE_EXPORT StaticCircularLinkedList
 	{
 	private:
 		int size;
@@ -685,7 +684,7 @@ namespace DataStructures
 
 		ListNode* space;
 
-		ArrayCircularList()
+		StaticCircularLinkedList()
 		{
 			space = JACKIE_INET::OP_NEW_ARRAY<ListNode>(MAXSIZE, TRACE_FILE_AND_LINE_);
 			for (int i = 0; i < MAXSIZE - 1; i++)
@@ -696,7 +695,7 @@ namespace DataStructures
 			position = 1;
 			position_array_index = 1;
 		}
-		virtual ~ArrayCircularList()
+		virtual ~StaticCircularLinkedList()
 		{
 			JACKIE_INET::OP_DELETE_ARRAY(space, TRACE_FILE_AND_LINE_);
 		}
@@ -725,8 +724,8 @@ namespace DataStructures
 				for (int l = 1; l <= i - 1; l++)  { k = space[k].cur; } /// 找到第i个元素之前的位置 
 				space[j].cur = space[k].cur;  /// 把第i个元素之前的cur赋值给新元素的cur 
 				space[k].cur = j; /// 把新元素的下标赋值给第i个元素之前元素的ur 
-				if (size > 0 && i <= position )
-				position++;
+				if (size > 0 && i <= position)
+					position++;
 				size++;
 				//i = j;
 				return true;
@@ -742,7 +741,7 @@ namespace DataStructures
 		/// Add new element in bebind of cursor
 		inline bool Add(const ElemType& input)
 		{
-			return Insert(position+1, input);
+			return Insert(position + 1, input);
 		}
 
 		/// 删除在space中第i个数据元素 

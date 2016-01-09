@@ -65,7 +65,7 @@ namespace DataStructures
 			}
 
 			int res;
-			int index = orderedList.Size() / 2;
+			int index = orderedList.Size() >>1;
 			int upperBound = orderedList.Size() - 1;
 			int lowerBound = 0;
 
@@ -82,7 +82,7 @@ namespace DataStructures
 					return (unsigned)index;
 				}
 
-				index = lowerBound + (upperBound - lowerBound) / 2;
+				index = lowerBound + (upperBound - lowerBound) >> 1;
 				if (lowerBound > upperBound)
 				{
 					objectExists = false;
