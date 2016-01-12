@@ -134,10 +134,15 @@ namespace DataStructures
 		void Set(const key_type &key, const data_type &data)
 		{
 			bool objectExists;
-			unsigned index = mapNodeList.GetIndexFromKey(key, objectExists);
+			unsigned int index = mapNodeList.GetIndexFromKey(key, objectExists);
 
-			objectExists ? mapNodeList[index].nodeData = data :
-				mapNodeList.Insert(key, Node(key, data), true);
+			if (objectExists)
+				mapNodeList[index].nodeData = data;
+			else
+			{
+				Node node(key, data);
+				mapNodeList.Insert(key, node, true);
+			}
 		}
 
 		// Must already exist

@@ -12,7 +12,7 @@ namespace DataStructures
 
 	/// will dynalically allocate list node by new
 	template <class data_type>
-	class JACKIE_EXPORT CircularLinkedList
+	class JACKIE_EXPORT JackieDoubleLinkedList
 	{
 	private:
 		struct ListNode
@@ -47,9 +47,9 @@ namespace DataStructures
 		}
 
 	private:
-		CircularLinkedList Merge(CircularLinkedList& L1, CircularLinkedList& L2)
+		JackieDoubleLinkedList Merge(JackieDoubleLinkedList& L1, JackieDoubleLinkedList& L2)
 		{
-			CircularLinkedList X;
+			JackieDoubleLinkedList X;
 			data_type element;
 			L1.position = L1.root;
 			L2.position = L2.root;
@@ -81,14 +81,14 @@ namespace DataStructures
 
 			return X;
 		}
-		CircularLinkedList Mergesort(const CircularLinkedList& space)
+		JackieDoubleLinkedList Mergesort(const JackieDoubleLinkedList& space)
 		{
 			unsigned int counter;
 			unsigned int list_size = space.list_size;
 			ListNode* location = space.root;
 
-			CircularLinkedList L1;
-			CircularLinkedList L2;
+			JackieDoubleLinkedList L1;
+			JackieDoubleLinkedList L2;
 
 			// Split the list into two equal size sublists, L1 and L2
 			for (counter = 0; counter < list_size / 2; counter++)
@@ -203,15 +203,15 @@ namespace DataStructures
 			MergeFixed(leftSubListLeft, rightSubListRight, leftSubListSize, rightSubListSize);
 		}
 	public:
-		CircularLinkedList()
+		JackieDoubleLinkedList()
 		{
 			root = position = 0; list_size = 0;
 		}
-		virtual ~CircularLinkedList()
+		virtual ~JackieDoubleLinkedList()
 		{
 			Clear();
 		}
-		CircularLinkedList(const CircularLinkedList& original_copy)
+		JackieDoubleLinkedList(const JackieDoubleLinkedList& original_copy)
 		{
 			if (original_copy.list_size == 0)
 			{
@@ -275,7 +275,7 @@ namespace DataStructures
 			}
 		}
 		// CircularLinkedList(LinkedList<CircularLinkedListType> original_copy) {CircularLinkedList(original_copy);}  // Converts linked list to circular type
-		CircularLinkedList operator= (const CircularLinkedList& original_copy)
+		JackieDoubleLinkedList operator= (const JackieDoubleLinkedList& original_copy)
 		{
 			if (this != &original_copy)
 			{
@@ -346,24 +346,24 @@ namespace DataStructures
 			return *this;
 		}
 		/// CircularLinkedList A; ++A;
-		CircularLinkedList& operator++()
+		JackieDoubleLinkedList& operator++()
 		{
 			if (this->list_size != 0) position = position->next;
 			return *this;
 		}
 		// Circular_Linked List A; A++;
-		CircularLinkedList& operator++(int)
+		JackieDoubleLinkedList& operator++(int)
 		{
 			return this->operator++();
 		}
 		/// CircularLinkedList A; --A;
-		CircularLinkedList& operator--()
+		JackieDoubleLinkedList& operator--()
 		{
 			if (this->list_size != 0) this->position = this->position->previous;
 			return *this;
 		}
 		// Circular_Linked List A; A--;
-		CircularLinkedList& operator--(int)
+		JackieDoubleLinkedList& operator--(int)
 		{
 			return this->operator--();
 		}
@@ -517,13 +517,13 @@ namespace DataStructures
 		data_type Pop(void)
 		{
 			data_type element = Peek();
-			Del();
+			Remove();
 			return element; // return temporary
 		}
 		void Pop(data_type& data)
 		{
 			data = Peek();
-			Del();
+			Remove();
 		}
 		/// free memory and reset to empty
 		void Clear(void)
@@ -568,7 +568,7 @@ namespace DataStructures
 		{
 			if (this->root != 0) this->position = this->root->previous;
 		}
-		void Concatenate(const CircularLinkedList& space)
+		void Concatenate(const JackieDoubleLinkedList& space)
 		{
 			if (space.list_size == 0) return;
 			if (this->list_size == 0) *this = space;
@@ -589,7 +589,7 @@ namespace DataStructures
 				this->position = this->position->next;
 			}
 		}
-		inline CircularLinkedList& operator<<(const CircularLinkedList& space)
+		inline JackieDoubleLinkedList& operator<<(const JackieDoubleLinkedList& space)
 		{
 			Concatenate(space);
 			return *this;
@@ -601,7 +601,7 @@ namespace DataStructures
 	};
 
 	template <class LinkedListType>
-	class JACKIE_EXPORT LinkedList : public CircularLinkedList<LinkedListType>
+	class JACKIE_EXPORT LinkedList : public JackieDoubleLinkedList<LinkedListType>
 	{
 	public:
 		LinkedList(){}

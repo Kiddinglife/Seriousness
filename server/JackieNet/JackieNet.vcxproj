@@ -191,7 +191,7 @@
     <ClInclude Include="..\source\CompileFeaturesOverride.h" />
     <ClInclude Include="..\source\DefaultNetDefines.h" />
     <ClInclude Include="..\source\DLLExport.h" />
-    <ClInclude Include="..\source\DoubleLinkedList.h" />
+    <ClInclude Include="..\source\JackieLinkedList.h" />
     <ClInclude Include="..\source\EasyLog.h" />
     <ClInclude Include="..\source\GlobalFunctions.h" />
     <ClInclude Include="..\source\IServerApplication.h" />

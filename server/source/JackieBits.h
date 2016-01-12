@@ -28,41 +28,40 @@
 namespace JACKIE_INET
 {
 	/// This class allows you to write and read native types as a string of bits.  
+	/// the value of @mWritePosBits always reprsents 
+	/// the position where a bit is going to be written(not been written yet)
+	/// the value of @mReadPosBits always reprsents 
+	/// the position where a bit is going to be read(not been read yet)
+	/// both of them will start to cout at index of 0, 
+	/// so mWritePosBits = 2 means the first 2 bits has been written, the third bit is
+	/// being written (not been written yet)
+	/// so mReadPosBits = 2 means the first 2 bits has been read, the third bit is
+	/// being read (not been read yet)
+	/// |<-------data[0]------->|     |<---------data[0]------->|           
+	///+++++++++++++++++++++++++++++++++++
+	/// | 0 |  1 | 2 | 3 |  4 | 5 |  6 | 7 | 8 |  9 |10 |11 |12 |13 |14 | 15 |   bit index
+	///+++++++++++++++++++++++++++++++++++
+	/// | 0 |  0 | 0 | 1 |  0 | 0 |  0 | 0 | 1 |  0 |  0 |  0 |  0  |  0 |  0 |   0 |  bit in memory
+	///+++++++++++++++++++++++++++++++++++
+	///              ^                                                       ^
+	/// for example, @mWritePosBits = 12, @mReadPosBits = 2,
+	/// base on draw above, all the unwritten bits are 0000 (index 12,13,14,15), 
+	/// all the unread bits are 10 bits (0100001000, index 2,3,4,5,6,7,8,9,10,11),
+	/// we can calculate:
+	/// @the index of the byte that @mReadPosBits points to is 
+	/// 0 = @mReadPosBits >> 3 = 2/8 = index 0, data[0]
+	/// @the index of the byte that @mWritePosBits points to is 
+	/// 1 = @mWritePosBits >> 3 = 12/8 = index 1, data[1]
+	/// @the offset for mReadPosBits to the byte boundary = mReadPosBits mod 8
+	/// =  mReadPosBits & 7 = 2 &7 = 2 bits (00, index 0,1) 
+	/// @the offset for mWritePosBits to the byte boundary  = mWritePosBits mod 8 
+	/// =  mWritePosBits & 7 = 12 &7 = 4 bits (1000, index 8,9,10,11) 
+	/// @BITS_TO_BYTES(mWritePosBits[bit at index 12 is exclusive ]) 
+	/// = (12+7) >> 3 = 19/8 = 2( also is the number of written bytes)
+	/// BITS_TO_BYTES(8[bit at index 8 is exclusive ])  = 
+	/// (8+7)>>3 = 15/8 = 1 ( also is the number of written bytes)
 	class JACKIE_EXPORT JackieBits
 	{
-		/// the value of @mWritePosBits always reprsents 
-		/// the position where a bit is going to be written(not been written yet)
-		/// the value of @mReadPosBits always reprsents 
-		/// the position where a bit is going to be read(not been read yet)
-		/// both of them will start to cout at index of 0, 
-		/// so mWritePosBits = 2 means the first 2 bits has been written, the third bit is
-		/// being written (not been written yet)
-		/// so mReadPosBits = 2 means the first 2 bits has been read, the third bit is
-		/// being read (not been read yet)
-		/// |<-------data[0]------->|     |<---------data[0]------->|           
-		///+++++++++++++++++++++++++++++++++++
-		/// | 0 |  1 | 2 | 3 |  4 | 5 |  6 | 7 | 8 |  9 |10 |11 |12 |13 |14 | 15 |   bit index
-		///+++++++++++++++++++++++++++++++++++
-		/// | 0 |  0 | 0 | 1 |  0 | 0 |  0 | 0 | 1 |  0 |  0 |  0 |  0  |  0 |  0 |   0 |  bit in memory
-		///+++++++++++++++++++++++++++++++++++
-		///              ^                                                       ^
-		/// for example, @mWritePosBits = 12, @mReadPosBits = 2,
-		/// base on draw above, all the unwritten bits are 0000 (index 12,13,14,15), 
-		/// all the unread bits are 10 bits (0100001000, index 2,3,4,5,6,7,8,9,10,11),
-		/// we can calculate:
-		/// @the index of the byte that @mReadPosBits points to is 
-		/// 0 = @mReadPosBits >> 3 = 2/8 = index 0, data[0]
-		/// @the index of the byte that @mWritePosBits points to is 
-		/// 1 = @mWritePosBits >> 3 = 12/8 = index 1, data[1]
-		/// @the offset for mReadPosBits to the byte boundary = mReadPosBits mod 8
-		/// =  mReadPosBits & 7 = 2 &7 = 2 bits (00, index 0,1) 
-		/// @the offset for mWritePosBits to the byte boundary  = mWritePosBits mod 8 
-		/// =  mWritePosBits & 7 = 12 &7 = 4 bits (1000, index 8,9,10,11) 
-		/// @BITS_TO_BYTES(mWritePosBits[bit at index 12 is exclusive ]) 
-		/// = (12+7) >> 3 = 19/8 = 2( also is the number of written bytes)
-		/// BITS_TO_BYTES(8[bit at index 8 is exclusive ])  = 
-		/// (8+7)>>3 = 15/8 = 1 ( also is the number of written bytes)
-		/// 
 	private:
 		BitSize mBitsAllocSize;
 		BitSize mWritingPosBits;
@@ -817,7 +816,8 @@ namespace JACKIE_INET
 		/// @access public 
 		/// @returns void
 		/// @param [in] IntegralType & dest
-		/// @brief Read any integral type from a bitstream.  
+		/// @brief Read any integral type from a bitstream, 
+		/// endian swapping counters internally.
 		/// @notice
 		/// For floating point, this is lossy, using 2 bytes for a float and 4 for
 		/// a double.  The range must be between -1 and +1.
@@ -827,26 +827,6 @@ namespace JACKIE_INET
 		inline void ReadMini(IntegralType &dest)
 		{
 			ReadMini((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//			if (sizeof(dest) == 1)
-			//				ReadMini((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//			else
-			//			{
-			//#ifndef DO_NOT_SWAP_ENDIAN
-			//				if (DoEndianSwap())
-			//				{
-			//					//UInt8 output[sizeof(IntegralType)];
-			//					//ReadMini((UInt8*)output, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//					//ReverseBytes(output, (UInt8*)&dest, sizeof(IntegralType));
-			//					ReadMini((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//				}
-			//				else
-			//				{
-			//					ReadMini((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//				}
-			//#else
-			//				ReadMini((UInt8*)& dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
-			//#endif
-			//			}
 		}
 		template <> inline void ReadMini(JackieAddress &dest)
 		{
