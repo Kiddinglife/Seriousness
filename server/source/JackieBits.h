@@ -25,6 +25,9 @@
 #define _copysign copysign
 #endif
 
+#define UnSignedInteger true
+#define SignedInteger false
+
 namespace JACKIE_INET
 {
 	/// This class allows you to write and read native types as a string of bits.  
@@ -120,28 +123,6 @@ namespace JACKIE_INET
 		/// realloc and free are more efficient than delete and new  
 		/// because it will not call ctor and dtor
 		~JackieBits();
-
-
-		/// @ brief Use Mini write and read internally 
-		template <class templateType>
-		JackieBits& operator<<(templateType& c)
-		{
-			WriteMini(c);
-			return *this;
-		}
-		template <class templateType>
-		JackieBits& operator>>(templateType& c)
-		{
-			ReadMini(c);
-			return *this;
-		}
-
-		template <>
-		JackieBits& operator<<(JackieBits& c)
-		{
-			Write(c);
-			return *this;
-		}
 
 		/// Getters and Setters
 		BitSize WritePosBits() const { return mWritingPosBits; }
@@ -817,52 +798,49 @@ namespace JACKIE_INET
 		/// @returns void
 		/// @param [in] IntegralType & dest
 		/// @brief Read any integral type from a bitstream, 
-		/// endian swapping counters internally.
+		/// endian swapping counters internally. default is unsigned (isUnsigned = true)
 		/// @notice
 		/// For floating point, this is lossy, using 2 bytes for a float and 4 for
 		/// a double.  The range must be between -1 and +1.
 		/// For non-floating point, this is lossless, but only has benefit if you 
 		/// use less than half the bits of the type
-		template <class IntegralType>
+		template <bool isUnsigned = UnSignedInteger, class IntegralType>
 		inline void ReadMini(IntegralType &dest)
 		{
-			ReadMini((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), true);
+			ReadMini((UInt8*)&dest, BYTES_TO_BITS(sizeof(IntegralType)), isUnsigned);
 		}
 		template <> inline void ReadMini(JackieAddress &dest)
 		{
 			UInt8 ipVersion;
-			ReadMini(ipVersion);
+			ReadMini<UnSignedInteger>(ipVersion);
 			if (ipVersion == 4)
 			{
 				dest.address.addr4.sin_family = AF_INET;
 				// Read(var.binaryAddress);
 				// Don't endian swap the address or port
 				UInt32 binaryAddress;
-				ReadMini(binaryAddress);
+				ReadMini<UnSignedInteger>(binaryAddress);
 				// Unhide the IP address, done to prevent routers from changing it
 				dest.address.addr4.sin_addr.s_addr = ~binaryAddress;
-				ReadMini(dest.address.addr4.sin_port);
+				ReadMini<UnSignedInteger>(dest.address.addr4.sin_port);
 				dest.debugPort = ntohs(dest.address.addr4.sin_port);
 			}
 			else
 			{
 #if NET_SUPPORT_IPV6==1
-				ReadMini(dest.address.addr6);
+				ReadMini<UnSignedInteger>(dest.address.addr6);
 				dest.debugPort = ntohs(dest.address.addr6.sin6_port);
-				//return b;
-#else
-				//return false;
 #endif
 			}
 		}
 		template <> inline void ReadMini(UInt24 &dest)
 		{
 
-			ReadMini(dest.val);
+			ReadMini<UnSignedInteger>(dest.val);
 		}
 		template <> inline void ReadMini(JackieGUID &dest)
 		{
-			ReadMini(dest.g);
+			ReadMini<UnSignedInteger>(dest.g);
 		}
 		template <> inline void ReadMini(bool &dest)
 		{
@@ -872,14 +850,14 @@ namespace JACKIE_INET
 		inline void ReadMini(float &dest)
 		{
 			UInt16 compressedFloat;
-			ReadMini(compressedFloat);
+			ReadMini<UnSignedInteger>(compressedFloat);
 			dest = ((float)compressedFloat / 32767.5f - 1.0f);
 		}
 		template <> /// For values between -1 and 1
 		inline void ReadMini(double &dest)
 		{
 			UInt32 compressedFloat;
-			ReadMini(compressedFloat);
+			ReadMini<UnSignedInteger>(compressedFloat);
 			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
 		}
 
@@ -1654,7 +1632,8 @@ namespace JACKIE_INET
 
 
 		/// @func WriteMini 
-		/// @brief Write any integral type to a bitstream.  
+		/// @brief Write any integral type to a bitstream,
+		/// endian swapping counters internally. default is unsigned (isUnsigned = true)
 		/// @access  public  
 		/// @param [in] const IntergralType & src  
 		/// @return void 
@@ -1666,37 +1645,17 @@ namespace JACKIE_INET
 		/// we write low bits and reassenble the value in receiver endpoint
 		/// based on its endian, so no need to do endian swap here
 		/// @author mengdi[Jackie]
-		template <class IntergralType>
+		template <bool isUnsigned = UnSignedInteger, class IntergralType>
 		inline void WriteMini(const IntergralType &src)
 		{
-			WriteMini((UInt8*)&src, sizeof(IntergralType) << 3, true);
-			//if (sizeof(src) == 1)
-			//{
-			//	WriteMini((UInt8*)& src, sizeof(IntergralType) << 3, true);
-			//	return;
-			//}
-			//#ifndef DO_NOT_SWAP_ENDIAN
-			//			if (DoEndianSwap())
-			//			{
-			//				JINFO << "DoEndianSwap";
-			//				UInt8 output[sizeof(IntergralType)];
-			//				ReverseBytes((UInt8*)&src, output, sizeof(IntergralType));
-			//				WriteMini(output, sizeof(IntergralType) << 3, true);
-			//			}
-			//			else
-			//			{
-			//				WriteMini((UInt8*)&src, sizeof(IntergralType) << 3, true);
-			//			}
-			//#else
-			//			WriteMini((UInt8*)&src, sizeof(IntergralType) << 3, true);
-			//#endif
+			WriteMini((UInt8*)&src, sizeof(IntergralType) << 3, isUnsigned);
 		}
 
 		template <> inline void WriteMini(const JackieAddress &src)
 		{
 			//Write(src);
 			UInt8 version = src.GetIPVersion();
-			WriteMini(version);
+			WriteMini<UnSignedInteger>(version);
 
 			if (version == 4)
 			{
@@ -1704,38 +1663,38 @@ namespace JACKIE_INET
 				JackieAddress addr = src;
 				UInt32 binaryAddress = ~src.address.addr4.sin_addr.s_addr;
 				UInt16 p = addr.GetPortNetworkOrder();
-				WriteMini(binaryAddress);
-				WriteMini(p);
+				WriteMini<UnSignedInteger>(binaryAddress);
+				WriteMini<UnSignedInteger>(p);
 			}
 			else
 			{
 #if NET_SUPPORT_IPV6 == 1
 				UInt32 binaryAddress = src.address.addr6;
-				WriteMini(binaryAddress);
+				WriteMini<UnSignedInteger>(binaryAddress);
 #endif
 			}
 		}
 		template <> inline void WriteMini(const JackieGUID &src)
 		{
-			WriteMini(src.g);
+			WriteMini<UnSignedInteger>(src.g);
 		}
 		template <> inline void WriteMini(const UInt24 &var)
 		{
-			WriteMini(var.val);
+			WriteMini<UnSignedInteger>(var.val);
 			//Write(var);
 		}
 		template <> inline void WriteMini(const bool &src)
 		{
 			Write(src);
 		}
-		template <> ///@notice only For values between -1 and 1
+
 		inline void WriteMini(const float &src)
 		{
 			DCHECK(src > -1.01f && src < 1.01f);
 			float varCopy = src;
 			if (varCopy < -1.0f) varCopy = -1.0f;
 			if (varCopy > 1.0f) varCopy = 1.0f;
-			WriteMini((UInt16)((varCopy + 1.0f)*32767.5f));
+			WriteMini<UnSignedInteger>((UInt16)((varCopy + 1.0f)*32767.5f));
 		}
 		template <> ///@notice For values between -1 and 1
 		inline void WriteMini(const double &src)
@@ -1744,7 +1703,7 @@ namespace JACKIE_INET
 			double varCopy = src;
 			if (varCopy < -1.0f) varCopy = -1.0f;
 			if (varCopy > 1.0f) varCopy = 1.0f;
-			WriteMini((UInt32)((varCopy + 1.0)*2147483648.0));
+			WriteMini<UnSignedInteger>((UInt32)((varCopy + 1.0)*2147483648.0));
 		}
 
 		/// @access public 
