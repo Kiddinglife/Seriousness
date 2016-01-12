@@ -530,9 +530,9 @@ static void test_JackieStream__funcs()
 	DCHECK(particialByte == v);
 	DCHECK(s8.GetPayLoadBits() == 0);
 
-	for (int i = 100; i >= 0; i--)
+	for (int i = 1000; i >= 0; i--)
 	{
-		UInt32 looptimes = 10000;
+		UInt32 looptimes = 100;
 		for (UInt32 i = 1; i <= looptimes; i++)
 		{
 			s8.Write(uint24);

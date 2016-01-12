@@ -464,8 +464,9 @@ namespace JACKIE_INET
 		DCHECK(bits2Write > 0);
 		DCHECK(bits2Write <= jackieBits->GetPayLoadBits());
 
-		//?
-		// write some bits that makes jackieBits->mReadingPosBits aligned to next byte boudary
+		///?
+		/// test new  implementation 20 seconds
+		/// write some bits that makes jackieBits->mReadingPosBits aligned to next byte boudary
 		AppendBitsCouldRealloc(bits2Write);
 		BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
 		BitSize newBits2Read = 8 - numberOfBitsMod8;
@@ -508,12 +509,13 @@ namespace JACKIE_INET
 		DCHECK((jackieBits->mReadingPosBits & 7) == 0);
 		WriteBits(&jackieBits->data[jackieBits->mReadingPosBits >> 3], bits2Write, false);
 		jackieBits->mReadingPosBits += bits2Write;
-		//?
+		///?
 
+		/// test Old Implementation 25 seconds
 		//// ? official way
 		//AppendBitsCouldRealloc(bits2Write);
 		//BitSize numberOfBitsMod8 = (jackieBits->mReadingPosBits & 7);
-		///// write all bytes for efficiency
+		/// write all bytes for efficiency
 		//if (numberOfBitsMod8 == 0 && (mWritingPosBits & 7) == 0)
 		//{
 		//	int readOffsetBytes = jackieBits->mReadingPosBits >> 3;
@@ -524,8 +526,8 @@ namespace JACKIE_INET
 		//	jackieBits->mReadingPosBits = BYTES_TO_BITS(numBytes + readOffsetBytes);
 		//	mWritingPosBits += BYTES_TO_BITS(numBytes);
 		//}
-		///// write remaining bits one by one
-		////while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
+		/// write remaining bits one by one
+		//while (bits2Write-- > 0 && jackieBits->GetPayLoadBits() >= 1)
 		//while (bits2Write-- > 0)
 		//{
 		//	numberOfBitsMod8 = mWritingPosBits & 7;
@@ -553,7 +555,6 @@ namespace JACKIE_INET
 		//			data[mWritingPosBits >> 3] |= 0;
 		//		}
 		//	}
-
 		//	jackieBits->mReadingPosBits++;
 		//	mWritingPosBits++;
 		//}
