@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\source\ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\source\980easylogging++.h">
       <Filter>Header Files</Filter>
     </ClInclude>

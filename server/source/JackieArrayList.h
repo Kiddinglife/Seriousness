@@ -42,7 +42,6 @@ namespace DataStructures
 				list_size = allocation_size = 0;
 			}
 		}
-
 		JackieArrayList(const JackieArrayList& original_copy)
 		{
 			/// allocate memory for copying the elements from @param original_copy
@@ -92,7 +91,6 @@ namespace DataStructures
 			assert(position < list_size);
 			return listArray[position];
 		}
-
 		void Clear(bool doNotDeallocateSmallBlocks = false)
 		{
 			if (allocation_size == 0) return;
@@ -156,7 +154,6 @@ namespace DataStructures
 			list_size--;
 			return listArray[list_size];
 		}
-
 		/// @brief Push an element at the end of the stack.
 		/// @param[in] input The new element. 
 		inline void PushAtLast(const ElementType &input)

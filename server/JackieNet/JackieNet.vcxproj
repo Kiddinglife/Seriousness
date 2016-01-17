@@ -181,9 +181,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="..\source\ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\source\980easylogging++.h" />
     <ClInclude Include="..\source\atomic_ops.h" />
     <ClInclude Include="..\source\BasicTypes.h" />
