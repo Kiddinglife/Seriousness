@@ -61,12 +61,9 @@
 
 #include "DLLExport.h"
 #include "JackieReliabler.h"
-#include "IServerApplication.h"
 #include "JackieBits.h"
-//#include "SingleProducerConsumer.h"
 #include "JackieSimpleMutex.h"
-//#include "DS_OrderedList.h"
-//#include "RakString.h"
+#include "JackieString.h"
 #include "JACKIE_Thread.h"
 //#include "RakNetSmartPtr.h"
 #include "JackieWaitEvent.h"
@@ -81,7 +78,6 @@
 #if ENABLE_SECURE_HAND_SHAKE == 1
 #include "SecurityHandShake.h"
 #endif
-//#include "../thirdparty/folly/SpinLock.h"
 
 using namespace DataStructures;
 namespace JACKIE_INET

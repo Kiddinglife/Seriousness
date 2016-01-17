@@ -19,6 +19,7 @@
 #include "DefaultNetDefines.h"
 #include "NetTypes.h"
 #include "EasyLog.h"
+#include "JackieString.h"
 
 // MSWin uses _copysign, others use copysign...
 #ifndef _WIN32
@@ -251,7 +252,7 @@ namespace JACKIE_INET
 		/// true to write from your data to this bitstream.
 		/// false to read from this bitstream and write to your data
 		/// @param [in] templateType & inOutTemplateVar The value to write
-		/// @brief bidirectional serialize/deserialize any integral type to/from a bitstream. 
+		/// @brief bidirectional serialize/deserialize any integral type to/from a bitstream.
 		/// undefine DO_NOT_SWAP_ENDIAN if you need endian swapping.
 		/// for float and double,  use SerializeMini()
 		template <class templateType>
@@ -1488,6 +1489,31 @@ namespace JACKIE_INET
 			Write(inTemplateVar.g);
 		}
 
+		template <>
+		inline void Write(const char * const &inStringVar)
+		{
+			JackieString::Write(inStringVar, this);
+		}
+		template <>
+		inline void Write(const wchar_t * const &inStringVar)
+		{
+			//JackieWString::Serialize(inStringVar, this);
+		}
+		template <>
+		inline void Write(const UInt8 * const &src)
+		{
+			Write((const char*)src);
+		}
+		template <>
+		inline void Write(char * const &src)
+		{
+			Write((const char*)src);
+		}
+		template <>
+		inline void Write(UInt8 * const &src)
+		{
+			Write((const char*)src);
+		}
 
 		/// @func WriteChanged 
 		/// @brief write any changed integral type to a bitstream.
@@ -1704,6 +1730,43 @@ namespace JACKIE_INET
 			if (varCopy < -1.0f) varCopy = -1.0f;
 			if (varCopy > 1.0f) varCopy = 1.0f;
 			WriteMini<UnSignedInteger>((UInt32)((varCopy + 1.0)*2147483648.0));
+		}
+
+		/// Compress the string
+		template <>
+		inline void WriteMini(const JackieString &src)
+		{
+			src.WriteMini(this, 0, false);
+		}
+		//template <>
+		//inline void WriteMini(const JackieWString &src)
+		//{
+		//	src.Serialize(this);
+		//}
+		template <>
+		inline void WriteMini(const char * const &inStringVar)
+		{
+			JackieString::WriteMini(inStringVar, this, 0, false);
+		}
+		template <>
+		inline void WriteMini(const wchar_t * const &inStringVar)
+		{
+			//JackieWString::Serialize(inStringVar, this);
+		}
+		template <>
+		inline void WriteMini(const UInt8 * const &src)
+		{
+			WriteMini((const char*)src);
+		}
+		template <>
+		inline void WriteMini(char * const &src)
+		{
+			WriteMini((const char*)src);
+		}
+		template <>
+		inline void WriteMini(UInt8 * const &src)
+		{
+			WriteMini((const char*)src);
 		}
 
 		/// @access public 

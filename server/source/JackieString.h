@@ -8,6 +8,7 @@
 #include "NetTypes.h" // int64_t
 #include "JakieOrderArrayListMap.h"
 #include "JackieLinkedList.h"
+#include "JackieSimpleMutex.h"
 
 #ifdef _WIN32
 #include "WindowsIncludes.h"
@@ -39,7 +40,6 @@ char *_strlwr(char * str); //this won't compile on OSX for some reason
 
 namespace JACKIE_INET
 {
-	class JackieSimpleMutex;
 	class JackieBits;
 	class JackieString;
 
@@ -180,11 +180,20 @@ namespace JACKIE_INET
 	{
 	public:
 		// Constructors
+#if USE_SINGLE_THREAD == 1
 		JackieString();
-		JackieString(char input);
-		JackieString(unsigned char input);
+		JackieString( char input);
+		JackieString( unsigned char input);
 		JackieString(const unsigned char *format, ...);
 		JackieString(const char *format, ...);
+#else
+		JackieString(UInt8 threadid);
+		JackieString(UInt8 threadid, char input);
+		JackieString(UInt8 threadid, unsigned char input);
+		JackieString(UInt8 threadid, const unsigned char *format, ...);
+		JackieString(UInt8 threadid, const char *format, ...);
+#endif
+
 		virtual ~JackieString();
 		JackieString(const JackieString & rhs);
 
@@ -327,7 +336,11 @@ namespace JACKIE_INET
 		int StrICmp(const JackieString &rhs) const;
 
 		/// Clear the string
-		void Clear(void);
+#if USE_SINGLE_THREAD == 1
+		void Clear();
+#else
+		void Clear(int threadint);
+#endif
 
 		/// Print the string to the screen
 		void Printf(void);
@@ -385,38 +398,38 @@ namespace JACKIE_INET
 
 		/// Serialize to a bitstream, uncompressed (slightly faster)
 		/// \param[out] bs Bitstream to serialize to
-		void Serialize(JackieBits *bs) const;
+		void Write(JackieBits *bs) const;
 
 		/// Static version of the Serialize function
-		static void Serialize(const char *str, JackieBits *bs);
+		static void Write(const char *str, JackieBits *bs);
 
 		/// Serialize to a bitstream, compressed (better bandwidth usage)
 		/// \param[out]  bs Bitstream to serialize to
 		/// \param[in] languageId languageId to pass to the StringCompressor class
 		/// \param[in] writeLanguageId encode the languageId variable in the stream. If false, 0 is assumed, and DeserializeCompressed will not look for this variable in the stream (saves bandwidth)
 		/// \pre StringCompressor::AddReference must have been called to instantiate the class (Happens automatically from RakPeer::Startup())
-		void SerializeCompressed(JackieBits *bs, UInt8 languageId = 0, bool writeLanguageId = false) const;
+		void WriteMini(JackieBits *bs, UInt8 languageId = 0, bool writeLanguageId = false) const;
 
 		/// Static version of the SerializeCompressed function
-		static void SerializeCompressed(const char *str, JackieBits *bs, UInt8 languageId = 0, bool writeLanguageId = false);
+		static void WriteMini(const char *str, JackieBits *bs, UInt8 languageId = 0, bool writeLanguageId = false);
 
 		/// Deserialize what was written by Serialize
 		/// \param[in] bs Bitstream to serialize from
 		/// \return true if the deserialization was successful
-		bool Deserialize(JackieBits *bs);
+		bool Read(JackieBits *bs);
 
 		/// Static version of the Deserialize() function
-		static bool Deserialize(char *str, JackieBits *bs);
+		static bool Read(char *str, JackieBits *bs);
 
 		/// Deserialize compressed string, written by SerializeCompressed
 		/// \param[in] bs Bitstream to serialize from
 		/// \param[in] readLanguageId If true, looks for the variable langaugeId in the data stream. Must match what was passed to SerializeCompressed
 		/// \return true if the deserialization was successful
 		/// \pre StringCompressor::AddReference must have been called to instantiate the class (Happens automatically from RakPeer::Startup())
-		bool DeserializeCompressed(JackieBits *bs, bool readLanguageId = false);
+		bool ReadMini(JackieBits *bs, bool readLanguageId = false);
 
 		/// Static version of the DeserializeCompressed() function
-		static bool DeserializeCompressed(char *str, JackieBits *bs, bool readLanguageId = false);
+		static bool ReadMini(char *str, JackieBits *bs, bool readLanguageId = false);
 
 		static const char *ToString(Int64 i);
 		static const char *ToString(UInt64 i);
@@ -433,9 +446,10 @@ namespace JACKIE_INET
 
 		/// \internal
 		JackieString(SharedString *_sharedString);
-
 		/// \internal
 		SharedString *sharedString;
+		/// \internal
+		UInt8 threadid;
 
 		//	static SimpleMutex poolMutex;
 		//	static DataStructures::MemoryPool<SharedString> pool;
@@ -447,7 +461,13 @@ namespace JACKIE_INET
 
 		/// \internal
 		/// List of free objects to reduce memory reallocations
-		static DataStructures::JackieArrayList<SharedString*> freeList;
+		typedef DataStructures::JackieArrayList<SharedString*, 128> StringPool;
+#if USE_SINGLE_THREAD == 1
+		static StringPool freeList[1];
+#else
+		static StringPool freeList[32];
+#endif
+		//static DataStructures::JackieArrayList<SharedString*> freeList;
 
 		static int RakStringComp(JackieString const &key, JackieString const &data);
 
@@ -456,12 +476,17 @@ namespace JACKIE_INET
 
 	protected:
 		static JACKIE_INET::JackieString FormatForPUTOrPost(const char* type, const char* uri, const char* contentType, const char* body, const char* extraHeaders);
-		void Allocate(size_t len);
 		void Assign(const char *str);
 		void Assign(const char *str, va_list ap);
 
 		void Clone(void);
+#if USE_SINGLE_THREAD == 1
 		void Free(void);
+		void Allocate(size_t len);
+#else
+		void Free(int threadid);
+		void Allocate(size_t len, int threadid);
+#endif
 		unsigned char ToLower(unsigned char c);
 		unsigned char ToUpper(unsigned char c);
 		void Realloc(SharedString *sharedString, size_t bytes);

@@ -688,6 +688,14 @@ static void test_JackieStream__funcs()
 	}
 }
 
+#include "JackieString.h"
+static void test_jackie_string()
+{
+	JINFO << "Test jackie_string";
+	TIMED_FUNC(test);
+
+}
+
 enum
 {
 	GlobalFunctions_h,
@@ -726,6 +734,7 @@ enum
 
 	JackieStream_H,
 
+	JackieStringClass,
 
 	AllFuncs,
 
@@ -758,7 +767,10 @@ enum
 //static int testcase = ServerApplication_H;
 //static int testfunc = AllFuncs;
 
-static int testcase = JackieStream_H;
+//static int testcase = JackieStream_H;
+//static int testfunc = AllFuncs;
+
+static int testcase = JackieStringClass;
 static int testfunc = AllFuncs;
 
 int main(int argc, char** argv)

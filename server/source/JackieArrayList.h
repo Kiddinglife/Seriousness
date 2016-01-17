@@ -330,6 +330,7 @@ namespace DataStructures
 			}
 #endif
 			--list_size;
+			if (list_size > position)
 			listArray[position] = listArray[list_size];
 		}
 

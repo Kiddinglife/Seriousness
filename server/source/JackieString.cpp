@@ -4,7 +4,6 @@
 #include "JackieString.h"
 #include "OverrideMemory.h"
 #include "JackieBits.h"
-#include "JackieSimpleMutex.h"
 #include "GlobalFunctions.h"
 #include "JackieArraryQueue.h"
 #include "JakieOrderArrayListMap.h"
@@ -165,7 +164,7 @@ namespace JACKIE_INET
 			// Write to the bitstream in the reverse order that we stored the path, which gives us the correct order from the root to the leaf
 			while (tempPathLength-- > 0)
 			{
-				if (tempPath[tempPathLength])   // Write 1's and 0's because writing a bool will write the BitStream TYPE_CHECKING validation bits if that is defined along with the actual data bit, which is not what we want
+				if (tempPath[tempPathLength])   // Write 1's and 0's because writing a bool will write the JackieBits TYPE_CHECKING validation bits if that is defined along with the actual data bit, which is not what we want
 					bitStream.WriteBitOne();
 				else
 					bitStream.WriteBitZero();
@@ -215,7 +214,7 @@ namespace JACKIE_INET
 		}
 	}
 
-	// Pass an array of bytes to array and a preallocated BitStream to receive the output
+	// Pass an array of bytes to array and a preallocated JackieBits to receive the output
 	void HuffmanEncodingTree::EncodeArray(unsigned char *input, size_t sizeInBytes, JackieBits * output)
 	{
 		unsigned counter;
@@ -278,7 +277,7 @@ namespace JACKIE_INET
 		return outputWriteIndex;
 	}
 
-	// Pass an array of encoded bytes to array and a preallocated BitStream to receive the output
+	// Pass an array of encoded bytes to array and a preallocated JackieBits to receive the output
 	void HuffmanEncodingTree::DecodeArray(unsigned char *input, BitSize sizeInBits, JackieBits * output)
 	{
 		HuffmanEncodingTreeNode * currentNode;
@@ -703,12 +702,12 @@ namespace JACKIE_INET
 
 
 #ifdef _CSTRING_COMPRESSOR
-	void StringCompressor::EncodeString(const CString &input, int maxCharsToWrite, RakNet::BitStream *output)
+	void StringCompressor::EncodeString(const CString &input, int maxCharsToWrite, RakNet::JackieBits *output)
 	{
 		LPTSTR p = input;
 		EncodeString(p, maxCharsToWrite*sizeof(TCHAR), output, languageID);
 	}
-	bool StringCompressor::DecodeString(CString &output, int maxCharsToWrite, RakNet::BitStream *input, UInt8 languageId)
+	bool StringCompressor::DecodeString(CString &output, int maxCharsToWrite, RakNet::JackieBits *input, UInt8 languageId)
 	{
 		LPSTR p = output.GetBuffer(maxCharsToWrite*sizeof(TCHAR));
 		DecodeString(p, maxCharsToWrite*sizeof(TCHAR), input, languageID);
@@ -718,11 +717,11 @@ namespace JACKIE_INET
 #endif
 
 #ifdef _STD_STRING_COMPRESSOR
-	void StringCompressor::EncodeString(const std::string &input, int maxCharsToWrite, RakNet::BitStream *output, UInt8 languageId)
+	void StringCompressor::EncodeString(const std::string &input, int maxCharsToWrite, RakNet::JackieBits *output, UInt8 languageId)
 	{
 		EncodeString(input.c_str(), maxCharsToWrite, output, languageId);
 	}
-	bool StringCompressor::DecodeString(std::string *output, int maxCharsToWrite, RakNet::BitStream *input, UInt8 languageId)
+	bool StringCompressor::DecodeString(std::string *output, int maxCharsToWrite, RakNet::JackieBits *input, UInt8 languageId)
 	{
 		if (maxCharsToWrite <= 0)
 		{
@@ -757,16 +756,137 @@ namespace JACKIE_INET
 /// JackieString
 namespace JACKIE_INET
 {
+	SharedString JackieString::emptyString = { 0, 0, 0, (char*) "", (char*) "" };
+
 	JackieString::JackieString()
 	{
+		threadid = 0;
+
 	}
 
 	void JackieString::Clear()
 	{
-		throw std::logic_error("The method or operation is not implemented.");
+		Free();
 	}
+	void JackieString::Free()
+	{
+		if (sharedString == &emptyString) return;
+		sharedString->refCount--;
+		if (sharedString->refCount == 0)
+		{
+			static const size_t smallStringSize = 128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2;
+			if (sharedString->bytesUsed > smallStringSize)
+				jackieFree_Ex(sharedString->bigString, TRACE_FILE_AND_LINE_);
+			JackieString::freeList[threadid].InsertAtLast(sharedString);
+				sharedString = &emptyString;
+		}
+		sharedString = &emptyString;
+	}
+
 
 	JackieString::~JackieString()
 	{
+	}
+
+	void JackieString::Write(JackieBits *bs) const
+	{
+		JackieString::Write(sharedString->c_str, bs);
+	}
+	void JackieString::Write(const char *str, JackieBits *bs)
+	{
+		unsigned short l = (unsigned short)strlen(str);
+		bs->WriteMini(l);
+		bs->WriteAlignedBytes((const unsigned char*)str, (const unsigned int)l);
+	}
+
+	void JackieString::WriteMini(JackieBits *bs, UInt8 languageId,
+		bool writeLanguageId) const
+	{
+		JackieString::WriteMini(C_String(), bs, languageId, writeLanguageId);
+	}
+	void JackieString::WriteMini(const char *str, JackieBits *bs, UInt8 languageId, bool writeLanguageId)
+	{
+		if (writeLanguageId)
+			bs->WriteMini(languageId);
+		JackieStringCompressor::Instance()->EncodeString(str, 0xFFFF, bs, languageId);
+	}
+
+	bool JackieString::Read(JackieBits *bs)
+	{
+		Clear();
+
+		unsigned short l = 0;
+		bs->ReadMini(l);
+		if (l > 0)
+		{
+			Allocate(((unsigned int)l) + 1);
+			bs->ReadAlignedBytes((unsigned char*)sharedString->c_str, l);
+			if (l > 0)
+				sharedString->c_str[l] = 0;
+			else
+				Clear();
+		}
+		else
+			bs->AlignReadPosBitsByteBoundary();
+
+		return l > 0;
+	}
+	bool JackieString::Read(char *str, JackieBits *bs)
+	{
+		unsigned short l;
+		bs->ReadMini(l);
+		if (l > 0) bs->ReadAlignedBytes((unsigned char*)str, l);
+
+		if (l == 0) str[0] = 0;
+		str[l] = 0;
+
+		return l > 0;
+	}
+	bool JackieString::ReadMini(JackieBits *bs, bool readLanguageId)
+	{
+		UInt8 languageId;
+		if (readLanguageId)
+			bs->ReadMini(languageId);
+		else
+			languageId = 0;
+		return JackieStringCompressor::Instance()->DecodeString(this, 0xFFFF, bs, languageId);
+	}
+	bool JackieString::ReadMini(char *str, JackieBits *bs, bool readLanguageId)
+	{
+		UInt8 languageId;
+		if (readLanguageId)
+			bs->ReadMini(languageId);
+		else
+			languageId = 0;
+		return JackieStringCompressor::Instance()->DecodeString(str, 0xFFFF, bs, languageId);
+	}
+
+	const char *JackieString::ToString(Int64 i)
+	{
+		static int index = 0;
+		static char buff[64][64];
+#if defined(_WIN32)
+		sprintf(buff[index], "%I64d", i);
+#else
+		sprintf(buff[index], "%lld", (long long unsigned int) i);
+#endif
+		int lastIndex = index;
+		if (++index == 64)
+			index = 0;
+		return buff[lastIndex];
+	}
+	const char *JackieString::ToString(UInt64 i)
+	{
+		static int index = 0;
+		static char buff[64][64];
+#if defined(_WIN32)
+		sprintf(buff[index], "%I64u", i);
+#else
+		sprintf(buff[index], "%llu", (long long unsigned int) i);
+#endif
+		int lastIndex = index;
+		if (++index == 64)
+			index = 0;
+		return buff[lastIndex];
 	}
 }
