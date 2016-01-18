@@ -235,27 +235,6 @@ static void test_MemoryPool_funcs()
 #include "JakieOrderArrayListMap.h"
 #include "JackieLinkedList.h"
 
-JACKIE_THREAD_DECLARATION(lockfreeproducer)
-{
-	TIMED_FUNC();
-	for (int i = 0; i < 10; i++)
-	{
-		((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->PushTail(i);
-	}
-	return 0;
-}
-
-JACKIE_THREAD_DECLARATION(lockfreeconsumer)
-{
-
-	for (int i = 0; i < ((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->Size()
-		; i++)
-	{
-		int t;
-		((DataStructures::JackieSPSCQueue<int, 4 * 100000>*)arguments)->PopHead(t);
-	}
-	return 0;
-}
 
 static void test_Queue_funcs()
 {
@@ -693,7 +672,8 @@ static void test_jackie_string()
 {
 	JINFO << "Test jackie_string";
 	TIMED_FUNC(test);
-
+	JackieString str((UInt8)0, "hello");
+	//str.Printf();
 }
 
 enum
@@ -891,6 +871,9 @@ int main(int argc, char** argv)
 		break;
 	case JackieStream_H:
 		test_JackieStream__funcs();
+		break;
+	case JackieStringClass:
+		test_jackie_string();
 		break;
 	default:
 		break;

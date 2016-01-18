@@ -9,6 +9,7 @@
 #include "JakieOrderArrayListMap.h"
 #include "JackieLinkedList.h"
 #include "JackieSimpleMutex.h"
+#include "JACKIE_Atomic.h"
 
 #ifdef _WIN32
 #include "WindowsIncludes.h"
@@ -105,11 +106,12 @@ namespace JACKIE_INET
 	/// -Doesn't cause linker errors
 	struct SharedString
 	{
-		JackieSimpleMutex *refCountMutex;
-		unsigned int refCount;
+		//JackieSimpleMutex *refCountMutex;
+		//unsigned int refCount;
 		size_t bytesUsed;
 		char *bigString;
 		char *c_str;
+		JackieAtomicLong refCount;
 		char smallString[128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2];
 	};
 
@@ -180,19 +182,11 @@ namespace JACKIE_INET
 	{
 	public:
 		// Constructors
-#if USE_SINGLE_THREAD == 1
-		JackieString();
-		JackieString( char input);
-		JackieString( unsigned char input);
-		JackieString(const unsigned char *format, ...);
-		JackieString(const char *format, ...);
-#else
 		JackieString(UInt8 threadid);
 		JackieString(UInt8 threadid, char input);
 		JackieString(UInt8 threadid, unsigned char input);
 		JackieString(UInt8 threadid, const unsigned char *format, ...);
 		JackieString(UInt8 threadid, const char *format, ...);
-#endif
 
 		virtual ~JackieString();
 		JackieString(const JackieString & rhs);
@@ -336,11 +330,7 @@ namespace JACKIE_INET
 		int StrICmp(const JackieString &rhs) const;
 
 		/// Clear the string
-#if USE_SINGLE_THREAD == 1
 		void Clear();
-#else
-		void Clear(int threadint);
-#endif
 
 		/// Print the string to the screen
 		void Printf(void);
@@ -449,7 +439,7 @@ namespace JACKIE_INET
 		/// \internal
 		SharedString *sharedString;
 		/// \internal
-		UInt8 threadid;
+		UInt8 freeListIndex;
 
 		//	static SimpleMutex poolMutex;
 		//	static DataStructures::MemoryPool<SharedString> pool;
@@ -462,11 +452,7 @@ namespace JACKIE_INET
 		/// \internal
 		/// List of free objects to reduce memory reallocations
 		typedef DataStructures::JackieArrayList<SharedString*, 128> StringPool;
-#if USE_SINGLE_THREAD == 1
-		static StringPool freeList[1];
-#else
-		static StringPool freeList[32];
-#endif
+		static DataStructures::JackieArrayList<StringPool*, 32> freeList;
 		//static DataStructures::JackieArrayList<SharedString*> freeList;
 
 		static int RakStringComp(JackieString const &key, JackieString const &data);
@@ -480,13 +466,8 @@ namespace JACKIE_INET
 		void Assign(const char *str, va_list ap);
 
 		void Clone(void);
-#if USE_SINGLE_THREAD == 1
 		void Free(void);
 		void Allocate(size_t len);
-#else
-		void Free(int threadid);
-		void Allocate(size_t len, int threadid);
-#endif
 		unsigned char ToLower(unsigned char c);
 		unsigned char ToUpper(unsigned char c);
 		void Realloc(SharedString *sharedString, size_t bytes);
