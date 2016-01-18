@@ -28,7 +28,7 @@ namespace DataStructures
 				data_type());
 		}
 
-		JackieOrderArraryList(){}
+		JackieOrderArraryList() :orderedList(){}
 		virtual ~JackieOrderArraryList(){ Clear(); }
 
 		JackieOrderArraryList(const JackieOrderArraryList& original_copy)
@@ -65,7 +65,7 @@ namespace DataStructures
 			}
 
 			int res;
-			int index = orderedList.Size() >>1;
+			int index = orderedList.Size() >> 1;
 			int upperBound = orderedList.Size() - 1;
 			int lowerBound = 0;
 

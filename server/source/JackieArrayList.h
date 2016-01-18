@@ -364,6 +364,7 @@ namespace DataStructures
 		{
 			return list_size;
 		}
+		unsigned int AllocationSize() const { return allocation_size; }
 	};
 
 }

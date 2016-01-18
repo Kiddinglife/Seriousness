@@ -85,8 +85,6 @@ namespace JACKIE_INET
 		HuffmanEncodingTreeNode *root;
 
 		/// Used to hold bit encoding for one character
-
-
 		struct CharacterEncoding
 		{
 			unsigned char* encoding;
@@ -182,11 +180,11 @@ namespace JACKIE_INET
 	{
 	public:
 		// Constructors
-		JackieString(UInt8 threadid);
-		JackieString(UInt8 threadid, char input);
-		JackieString(UInt8 threadid, unsigned char input);
-		JackieString(UInt8 threadid, const unsigned char *format, ...);
-		JackieString(UInt8 threadid, const char *format, ...);
+		JackieString(UInt32 threadid);
+		JackieString(UInt32 threadid, char input);
+		JackieString(UInt32 threadid, unsigned char input);
+		JackieString(UInt32 threadid, const unsigned char *format, ...);
+		JackieString(UInt32 threadid, const char *format, ...);
 
 		virtual ~JackieString();
 		JackieString(const JackieString & rhs);
@@ -439,8 +437,9 @@ namespace JACKIE_INET
 		/// \internal
 		SharedString *sharedString;
 		/// \internal
-		UInt8 freeListIndex;
-
+		UInt32 freeListIndex;
+		UInt32 FreeListIndex() const { return freeListIndex; }
+		void FreeListIndex(UInt32 val) { freeListIndex = val; }
 		//	static SimpleMutex poolMutex;
 		//	static DataStructures::MemoryPool<SharedString> pool;
 		/// \internal

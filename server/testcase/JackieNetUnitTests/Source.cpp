@@ -672,8 +672,49 @@ static void test_jackie_string()
 {
 	JINFO << "Test jackie_string";
 	TIMED_FUNC(test);
-	JackieString str((UInt8)0, "hello");
-	//str.Printf();
+	JackieString str(0, "hello");
+	str = "In a previous job, I was asked to look at hashing functions and got into a dispute with my boss about how such functions should be designed. I had advocated the used of LFSRs or";
+
+	JackieBits js;
+	str.Write(&js);
+	UInt32 vv = js.GetWrittenBytesCount();
+	printf("%d\n", js.GetWrittenBytesCount());
+	str.WriteMini(&js);
+	printf("%d\n", js.GetWrittenBytesCount() - vv);
+	JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float) vv)*100);
+	str.Write(&js);
+
+	JackieString str2((UInt32)0);
+	str2.Read(&js);
+	str2.Printf();
+	printf("\n");
+	str2.ReadMini(&js);
+	str2.Printf();
+	printf("\n");
+	str2.Read(&js);
+	str2.Printf();
+	printf("\n");
+
+	printf("use jackie bits to read and write\n");
+	js.Reset();
+	js.Write(str);
+	js.WriteMini(str);
+	js.Write((char*)"hello man");
+
+	JackieString str3((UInt32)0);
+	js.Read(str3);
+	str3.Printf();
+	printf("\n");
+
+	js.ReadMini(str3);
+	str3.Printf();
+	printf("\n");
+
+	js.Read(str3);
+	str3.Printf();
+	printf("\n");
+
+
 }
 
 enum
@@ -874,6 +915,7 @@ int main(int argc, char** argv)
 		break;
 	case JackieStringClass:
 		test_jackie_string();
+		JackieString::FreeMemory();
 		break;
 	default:
 		break;

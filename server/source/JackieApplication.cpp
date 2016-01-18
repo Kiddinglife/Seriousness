@@ -5,6 +5,7 @@
 #include "JackieINetVersion.h"
 #include "JackieSlidingWindows.h"
 #include "JackieIPlugin.h"
+#include "JackieString.h"
 
 #if !defined ( __APPLE__ ) && !defined ( __APPLE_CC__ )
 #include <stdlib.h> // malloc
@@ -15,13 +16,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																																																																{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																																																																										{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																																																																{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																																																																										{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -64,7 +65,7 @@ JackieApplication::JackieApplication() : sendBitStream(MAXIMUM_MTU_SIZE
 
 	// Dummy call to PacketLogger to ensure it's included in exported symbols.
 	//PacketLogger::BaseIDTOString(0);
-	//StringCompressor::AddReference();
+	JackieStringCompressor::AddReference();
 	//RakNet::StringTable::AddReference();
 	WSAStartupSingleton::AddRef();
 
@@ -129,7 +130,6 @@ JackieApplication::~JackieApplication()
 {
 	JACKIE_INET::OP_DELETE_ARRAY(JISRecvParamsPool, TRACE_FILE_AND_LINE_);
 }
-
 
 JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLocalSockets,
 	UInt32 maxConn, UInt32 bindLocalSocketsCount, Int32 threadPriority /*= -99999*/)
@@ -298,7 +298,8 @@ JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLoc
 	if (maxConnections == 0)
 	{
 		// Don't allow more incoming connections than we have peers.
-		if (maxIncomingConnections > maxConn) maxIncomingConnections = maxConn;
+		if (maxIncomingConnections > maxConn)
+			maxIncomingConnections = maxConn;
 		maxConnections = maxConn;
 
 		remoteSystemList = JACKIE_INET::OP_NEW_ARRAY<JackieRemoteSystem>(maxConnections, TRACE_FILE_AND_LINE_);
@@ -306,6 +307,7 @@ JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLoc
 		// All entries in activeSystemList have valid pointers all the time.
 		activeSystemList = JACKIE_INET::OP_NEW_ARRAY<JackieRemoteSystem*>(maxConnections, TRACE_FILE_AND_LINE_);
 
+		// decrease the collision chance by increasing the hashtable size
 		index = maxConnections*RemoteEndPointLookupHashMutiple;
 		remoteSystemLookup = JACKIE_INET::OP_NEW_ARRAY<JackieRemoteIndex*>(index, TRACE_FILE_AND_LINE_);
 		memset((void**)remoteSystemLookup, 0, index*sizeof(JackieRemoteIndex*));
@@ -320,7 +322,6 @@ JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLoc
 			remoteSystemList[index].connectMode = JackieRemoteSystem::NO_ACTION;
 			remoteSystemList[index].MTUSize = defaultMTUSize;
 			remoteSystemList[index].remoteSystemIndex = (SystemIndex)index;
-
 #ifdef _DEBUG
 			remoteSystemList[index].reliabilityLayer.ApplyNetworkSimulator(_packetloss, _minExtraPing, _extraPingVariance);
 #endif
@@ -333,7 +334,6 @@ JACKIE_INET::StartupResult JackieApplication::Start(JackieBindingSocket *bindLoc
 	for (index = 0; index < pluginListTS.Size(); index++)
 	{
 		pluginListTS[index]->OnStartup();
-
 	}
 
 	for (index = 0; index < pluginListNTS.Size(); index++)
@@ -2088,7 +2088,7 @@ JackieRemoteSystem* JackieApplication::GetRemoteSystem(const JackieAddress& sa) 
 Int32 JackieApplication::GetRemoteSystemIndex(const JackieAddress &sa) const
 {
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
+	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple-1) ;
 	JackieRemoteIndex* curr = remoteSystemLookup[hashindex];
 	while (curr != 0)
 	{
@@ -2131,7 +2131,7 @@ void JackieApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 	remoteSystemList[index].systemAddress = sa;
 
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
+	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple-1);
 
 	JackieRemoteIndex *rsi = 0;
 	do { rsi = remoteSystemIndexPool.Allocate(); } while (rsi == 0);
@@ -2155,7 +2155,7 @@ void JackieApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 void JackieApplication::DeRefRemoteSystem(const JackieAddress &sa)
 {
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple);
+	hashindex = hashindex % (maxConnections *RemoteEndPointLookupHashMutiple-1);
 
 	JackieRemoteIndex *cur = remoteSystemLookup[hashindex];
 	JackieRemoteIndex *last = 0;

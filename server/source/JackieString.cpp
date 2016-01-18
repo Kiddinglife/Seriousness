@@ -83,7 +83,7 @@ namespace JACKIE_INET
 		HuffmanEncodingTreeNode * node;
 		HuffmanEncodingTreeNode *leafList[256]; // Keep a copy of the pointers to all the leaves so we can generate the encryption table bottom-up, which is easier
 		// 1.  Make 256 trees each with a weight equal to the frequency of the corresponding character
-		DataStructures::LinkedList<HuffmanEncodingTreeNode *> huffmanEncodingTreeNodeList;
+		DataStructures::JackieDoubleLinkedList<HuffmanEncodingTreeNode *> huffmanEncodingTreeNodeList;
 
 		FreeMemory();
 
@@ -588,6 +588,8 @@ namespace JACKIE_INET
 
 	JackieStringCompressor* JackieStringCompressor::Instance(void)
 	{
+		if (instance == 0)
+			AddReference();
 		return instance;
 	}
 
@@ -665,6 +667,14 @@ namespace JACKIE_INET
 		return true;
 	}
 
+	void JackieStringCompressor::AddReference(void)
+	{
+		if (++referenceCount == 1)
+		{
+			instance = JACKIE_INET::OP_NEW<JackieStringCompressor>(TRACE_FILE_AND_LINE_);
+		}
+	}
+
 	void JackieStringCompressor::EncodeString(const JackieString *input, int maxCharsToWrite, JackieBits *output, UInt8 languageId)
 	{
 		EncodeString(input->C_String(), maxCharsToWrite, output, languageId);
@@ -712,7 +722,7 @@ namespace JACKIE_INET
 		DecodeString(p, maxCharsToWrite*sizeof(TCHAR), input, languageID);
 		output.ReleaseBuffer(0)
 
-}
+	}
 #endif
 
 #ifdef _STD_STRING_COMPRESSOR
@@ -756,43 +766,61 @@ namespace JACKIE_INET
 	SharedString JackieString::emptyString = { 0, (char*) "", (char*) "" };
 	DataStructures::JackieArrayList<JackieString::StringPool*, 32> JackieString::freeList;
 
-	JackieString::JackieString(UInt8 freeListIndex)
+	JackieString::JackieString(UInt32 freeListIndex_)
 	{
-		freeListIndex = freeListIndex;
+		freeListIndex = freeListIndex_;
 		sharedString = &emptyString;
 	}
-	JackieString::JackieString(UInt8 freeListIndex, char input)
+	JackieString::JackieString(UInt32 freeListIndex_, char input)
 	{
-		freeListIndex = freeListIndex;
-		freeListIndex = 0;
+		freeListIndex = freeListIndex_;
 		char str[2];
 		str[0] = input;
 		str[1] = 0;
 		Assign(str);
 	}
-	JackieString::JackieString(UInt8 freeListIndex, unsigned char input)
+	JackieString::JackieString(UInt32 freeListIndex_, unsigned char input)
 	{
-		freeListIndex = freeListIndex;
+		freeListIndex = freeListIndex_;
 		char str[2];
 		str[0] = (char)input;
 		str[1] = 0;
 		Assign(str);
 	}
-	JackieString::JackieString(UInt8 freeListIndex, const unsigned char *format, ...)
+	JackieString::JackieString(UInt32 freeListIndex_, const unsigned char *format, ...)
 	{
-		freeListIndex = freeListIndex;
+		freeListIndex = freeListIndex_;
 		va_list ap;
 		va_start(ap, format);
 		Assign((const char*)format, ap);
 		va_end(ap);
 	}
-	JackieString::JackieString(UInt8 freeListIndex, const char *format, ...)
+	JackieString::JackieString(UInt32 freeListIndex_, const char *format, ...)
 	{
-		freeListIndex = freeListIndex;
+		freeListIndex = freeListIndex_;
 		va_list ap;
 		va_start(ap, format);
 		Assign(format, ap);
 		va_end(ap);
+	}
+	JackieString::JackieString(const JackieString & rhs)
+	{
+		if (rhs.sharedString == &emptyString)
+		{
+			sharedString = &emptyString;
+			return;
+		}
+
+		if (rhs.sharedString->refCount.GetValue() == 0)
+		{
+			sharedString = &emptyString;
+		}
+		else
+		{
+			rhs.sharedString->refCount.Increment();
+			sharedString = rhs.sharedString;
+			freeListIndex = rhs.freeListIndex;
+		}
 	}
 	JackieString::~JackieString()
 	{
@@ -825,10 +853,12 @@ namespace JACKIE_INET
 		for (unsigned int i = 0; i < freeList.Size(); i++)
 		{
 			strPool = freeList[i];
+			assert(strPool->Size() == strPool->AllocationSize()
+				&& "some shared string is still being used somewhere, you have memeoryleak. man, try to call freememory() at the end of program");
 			for (unsigned ii = 0; ii < strPool->Size(); ii++)
 			{
 				ss = (*strPool)[ii];
-				jackieFree_Ex(freeList[i], TRACE_FILE_AND_LINE_);
+				JACKIE_INET::OP_DELETE(ss, TRACE_FILE_AND_LINE_);
 			}
 			strPool->Clear();
 			JACKIE_INET::OP_DELETE(strPool, TRACE_FILE_AND_LINE_);
@@ -867,7 +897,6 @@ namespace JACKIE_INET
 			if (sharedString->bytesUsed > smallStringSize)
 				jackieFree_Ex(sharedString->bigString, TRACE_FILE_AND_LINE_);
 			freeList[freeListIndex]->InsertAtLast(sharedString);
-			sharedString = &emptyString;
 		}
 		sharedString = &emptyString;
 	}
@@ -875,19 +904,24 @@ namespace JACKIE_INET
 	{
 		if (freeList.Size() == 0)
 		{
-			StringPool* strPool;
-			SharedString *ss;
-
-			for (unsigned ii = 0; ii < freeList.Size(); ii++)
+			LockMutex();
+			if (freeList.Size() == 0)
 			{
-				strPool = JACKIE_INET::OP_NEW<StringPool>(TRACE_FILE_AND_LINE_);
-				freeList.InsertAtLast(strPool);
-				for (unsigned i = 0; i < strPool->Size(); i++)
+				StringPool* strPool;
+				SharedString *ss;
+
+				for (unsigned ii = 0; ii < 32; ii++)
 				{
-					ss = (SharedString*)jackieMalloc_Ex(sizeof(SharedString), TRACE_FILE_AND_LINE_);
-					strPool->InsertAtLast(ss);
+					strPool = JACKIE_INET::OP_NEW<StringPool>(TRACE_FILE_AND_LINE_);
+					freeList.InsertAtLast(strPool);
+					for (unsigned i = 0; i < 128; i++)
+					{
+						ss = JACKIE_INET::OP_NEW<SharedString>(TRACE_FILE_AND_LINE_);
+						strPool->InsertAtLast(ss);
+					}
 				}
 			}
+			UnlockMutex();
 		}
 
 		sharedString = (*freeList[freeListIndex])[freeList[freeListIndex]->Size() - 1];
@@ -961,10 +995,10 @@ namespace JACKIE_INET
 			&& strlen(stackBuff) < 511
 #endif
 			)
-		{
-			Assign(stackBuff);
-			return;
-		}
+			{
+				Assign(stackBuff);
+				return;
+			}
 		char *buff = 0, *newBuff;
 		size_t buffSize = 8096;
 		while (1)
@@ -1003,7 +1037,7 @@ namespace JACKIE_INET
 	void JackieString::Write(const char *str, JackieBits *bs)
 	{
 		unsigned short l = (unsigned short)strlen(str);
-		bs->WriteMini(l);
+		bs->Write(l);
 		bs->WriteAlignedBytes((const unsigned char*)str, (const unsigned int)l);
 	}
 
@@ -1022,9 +1056,8 @@ namespace JACKIE_INET
 	bool JackieString::Read(JackieBits *bs)
 	{
 		Clear();
-
 		unsigned short l = 0;
-		bs->ReadMini(l);
+		bs->Read(l);
 		if (l > 0)
 		{
 			Allocate(((unsigned int)l) + 1);
@@ -1042,7 +1075,7 @@ namespace JACKIE_INET
 	bool JackieString::Read(char *str, JackieBits *bs)
 	{
 		unsigned short l;
-		bs->ReadMini(l);
+		bs->Read(l);
 		if (l > 0) bs->ReadAlignedBytes((unsigned char*)str, l);
 
 		if (l == 0) str[0] = 0;
@@ -1069,6 +1102,50 @@ namespace JACKIE_INET
 		return JackieStringCompressor::Instance()->DecodeString(str, 0xFFFF, bs, languageId);
 	}
 
+	/// @Caution you must seup correct freeListIndex before valling this function
+	JackieString& JackieString::operator= (const char *str)
+	{
+		Free();
+		Assign(str);
+		return *this;
+	}
+	JackieString& JackieString::operator=(char *str)
+	{
+		return operator = ((const char*)str);
+	}
+	JackieString& JackieString::operator = (const unsigned char *str)
+	{
+		return operator = ((const char*)str);
+	}
+	JackieString& JackieString::operator = (char unsigned *str)
+	{
+		return operator = ((const char*)str);
+	}
+	JackieString& JackieString::operator = (const char c)
+	{
+		char buff[2];
+		buff[0] = c;
+		buff[1] = 0;
+		return operator = ((const char*)buff);
+	}
+	JackieString& JackieString::operator = (const JackieString& rhs)
+	{
+		Free();
+		if (rhs.sharedString == &emptyString)
+			return *this;
+
+		if (rhs.sharedString->refCount.GetValue() == 0)
+		{
+			sharedString = &emptyString;
+		}
+		else
+		{
+			sharedString = rhs.sharedString;
+			sharedString->refCount.Increment();
+			freeListIndex = rhs.freeListIndex;
+		}
+		return *this;
+	}
 
 	const char *JackieString::ToString(Int64 i)
 	{

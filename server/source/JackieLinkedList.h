@@ -7,9 +7,6 @@
 
 namespace DataStructures
 {
-	template <class LinkedListType>
-	class  LinkedList;
-
 	/// will dynalically allocate list node by new
 	template <class data_type>
 	class JACKIE_EXPORT JackieDoubleLinkedList
@@ -600,24 +597,23 @@ namespace DataStructures
 		void Cursor(ListNode * val) { position = val; }
 	};
 
-	template <class LinkedListType>
-	class JACKIE_EXPORT LinkedList : public JackieDoubleLinkedList<LinkedListType>
-	{
-	public:
-		LinkedList(){}
+	//template <class LinkedListType>
+	//class JACKIE_EXPORT LinkedList : public JackieDoubleLinkedList<LinkedListType>
+	//{
+	//public:
+	//	LinkedList();
+	//	LinkedList(const LinkedList& original_copy);
+	//	virtual ~LinkedList();
+	//	bool operator= (const LinkedList<LinkedListType>& original_copy);
+	//	LinkedList& operator++();  // LinkedList A; ++A;
+	//	LinkedList& operator++(int);  // Linked List A; A++;
+	//	LinkedList& operator--();  // LinkedList A; --A;
+	//	LinkedList& operator--(int);  // Linked List A; A--;
 
-		LinkedList(const LinkedList& original_copy);
-		virtual ~LinkedList();
-		bool operator= (const LinkedList<LinkedListType>& original_copy);
-		LinkedList& operator++();  // LinkedList A; ++A;
-		LinkedList& operator++(int);  // Linked List A; A++;
-		LinkedList& operator--();  // LinkedList A; --A;
-		LinkedList& operator--(int);  // Linked List A; A--;
-
-	private:
-		LinkedList Merge(LinkedList L1, LinkedList L2);
-		LinkedList Mergesort(const LinkedList& space);
-	};
+	//private:
+	//	LinkedList Merge(LinkedList L1, LinkedList L2);
+	//	LinkedList Mergesort(const LinkedList& space);
+	//};
 
 	/// Usually should use this
 	/// have all functions same to CircularList and LinkedList, 

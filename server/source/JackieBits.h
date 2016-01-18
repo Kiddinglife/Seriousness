@@ -675,8 +675,6 @@ namespace JACKIE_INET
 #endif
 			}
 		}
-
-
 		/// @method Read
 		/// @access public 
 		/// @returns void
@@ -692,8 +690,6 @@ namespace JACKIE_INET
 			dest = (data[mReadingPosBits >> 3] & (0x80 >> (mReadingPosBits & 7))) != 0;
 			mReadingPosBits++;
 		}
-
-
 		/// @method Read
 		/// @access public 
 		/// @returns void
@@ -728,8 +724,6 @@ namespace JACKIE_INET
 #endif
 			}
 		}
-
-
 		/// @func Read 
 		/// @brief read three bytes into stream
 		/// @access  public  
@@ -757,12 +751,38 @@ namespace JACKIE_INET
 				((UInt8 *)&dest.val)[0] = 0;
 			}
 		}
-
 		template <>
 		inline void Read(JackieGUID &dest)
 		{
 			return Read(dest.g);
 		}
+		template <>
+		inline void Read(JackieString &outTemplateVar)
+		{
+			outTemplateVar.Read(this);
+		}
+		//template <>
+		//inline bool Read(RakWString &outTemplateVar)
+		//{
+		//	return outTemplateVar.Deserialize(this);
+		//}
+		template <>
+		inline void Read(char *&varString)
+		{
+			JackieString::Read(varString, this);
+		}
+		//template <>
+		//inline bool Read(wchar_t *&varString)
+		//{
+		//	return RakWString::Deserialize(varString, this);
+		//}
+		template <>
+		inline void Read(UInt8 *&varString)
+		{
+			JackieString::Read((char*)varString, this);
+		}
+
+
 
 
 		/// @brief Read any integral type from a bitstream.  
@@ -862,6 +882,33 @@ namespace JACKIE_INET
 			dest = ((double)compressedFloat / 2147483648.0 - 1.0);
 		}
 
+
+		/// For strings
+		template <>
+		inline void ReadMini(JackieString &outTemplateVar)
+		{
+			outTemplateVar.ReadMini(this, false);
+		}
+		//template <>
+		//inline void ReadMiniTo(RakWString &outTemplateVar)
+		//{
+		//	 outTemplateVar.ReadMini(this);
+		//}
+		template <>
+		inline void ReadMini(char *&outTemplateVar)
+		{
+			JackieString::ReadMini(outTemplateVar, this, false);
+		}
+		//template <>
+		//inline void ReadMiniTo(wchar_t *&outTemplateVar)
+		//{
+		//	return RakWString::Deserialize(outTemplateVar, this);
+		//}
+		template <>
+		inline void ReadMini(UInt8 *&outTemplateVar)
+		{
+			JackieString::ReadMini((char*)outTemplateVar, this, false);
+		}
 
 		/// @access public 
 		/// @brief
@@ -1490,6 +1537,16 @@ namespace JACKIE_INET
 		}
 
 		template <>
+		inline void Write(const JackieString &src)
+		{
+			src.Write(this);
+		}
+		//template <>
+		//inline void WriteFrom(const RakWString &src)
+		//{
+		//	src.Serialize(this);
+		//}
+		template <>
 		inline void Write(const char * const &inStringVar)
 		{
 			JackieString::Write(inStringVar, this);
@@ -1746,7 +1803,7 @@ namespace JACKIE_INET
 		template <>
 		inline void WriteMini(const char * const &inStringVar)
 		{
-			JackieString::WriteMini(inStringVar, this, 0, false);
+			JackieString::WriteMini(inStringVar, this);
 		}
 		template <>
 		inline void WriteMini(const wchar_t * const &inStringVar)
