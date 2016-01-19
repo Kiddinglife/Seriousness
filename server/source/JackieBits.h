@@ -1864,16 +1864,21 @@ namespace JACKIE_INET
 			const IntegerType max,
 			bool allowOutsideRange = false)
 		{
-			//int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) -
-			//	GetLeadingZeroSize(IntegerType(max - mini));
 			IntegerType diff = max - mini;
 			int requiredBits = BYTES_TO_BITS(sizeof(IntegerType)) - GetLeadingZeroSize(diff);
 			WriteIntegerRange(value, mini, max, requiredBits, allowOutsideRange);
 		}
 
-		/// @Brief
+		/// @brief 
+		/// only work for positive integers but you can transfer nagative integers as postive
+		/// integers and transform it back to negative at receipt endpoint.
+		/// the smaller difference between min and max, the less bits used to transmit
+		/// eg. given a number of 105 in 100 - 120 is more efficiently compressed 
+		/// than that in 0 - 120, you actually is sending number of 105-100=5
+		/// it is even more efficient than using WriteMini()
+		/// @Remarks
 		/// Assume@valueBeyondMini's value is 00000000 - 00101100 
-		/// ------------------> Memory Address
+		/// Memory Address ------------------> 
 		/// 00000000   00101100   Big Endian
 		/// 00101100   00000000   Little Endian 
 		/// so for big endian, we need to reverse byte so that

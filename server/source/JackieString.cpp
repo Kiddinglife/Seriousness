@@ -588,8 +588,7 @@ namespace JACKIE_INET
 
 	JackieStringCompressor* JackieStringCompressor::Instance(void)
 	{
-		if (instance == 0)
-			AddReference();
+		if (instance == 0) AddReference();
 		return instance;
 	}
 

@@ -188,6 +188,7 @@
     <ClInclude Include="..\source\CompileFeaturesOverride.h" />
     <ClInclude Include="..\source\DefaultNetDefines.h" />
     <ClInclude Include="..\source\DLLExport.h" />
+    <ClInclude Include="..\source\JackieBytesPool.h" />
     <ClInclude Include="..\source\JackieLinkedList.h" />
     <ClInclude Include="..\source\EasyLog.h" />
     <ClInclude Include="..\source\GlobalFunctions.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="..\source\GlobalFunctions.cpp" />
     <ClCompile Include="..\source\JackieApplication.cpp" />
     <ClCompile Include="..\source\JackieBits.cpp" />
+    <ClCompile Include="..\source\JackieBytesPool.cpp" />
     <ClCompile Include="..\source\JackieINetSocket.cpp" />
     <ClCompile Include="..\source\JackieIPlugin.cpp" />
     <ClCompile Include="..\source\JackieReliabler.cpp" />

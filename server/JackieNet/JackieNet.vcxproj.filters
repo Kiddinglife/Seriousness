@@ -134,6 +134,9 @@
     <ClInclude Include="..\source\JackieLinkedList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\JackieBytesPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\GlobalFunctions.cpp">
@@ -194,6 +197,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\source\EasyLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\JackieBytesPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -681,7 +681,7 @@ static void test_jackie_string()
 	printf("%d\n", js.GetWrittenBytesCount());
 	str.WriteMini(&js);
 	printf("%d\n", js.GetWrittenBytesCount() - vv);
-	JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float) vv)*100);
+	JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100);
 	str.Write(&js);
 
 	JackieString str2((UInt32)0);
@@ -715,6 +715,44 @@ static void test_jackie_string()
 	printf("\n");
 
 
+
+
+}
+
+#include "JackieBytesPool.h"
+static void test_JackieBytesPool()
+{
+	TIMED_BLOCK(JackieBytesPoolTimer, "JackieBytesPool")
+	{
+		for (unsigned i = 0; i < 100; i++)
+		{
+			unsigned char* ptr[8000];
+			for (unsigned i = 0; i < 8000; i++)
+			{
+				ptr[i] = JackieBytesPool::GetInstance()->Allocate(i + 1, TRACE_FILE_AND_LINE_);
+			}
+			for (unsigned i = 0; i < 8000; i++)
+			{
+				JackieBytesPool::GetInstance()->Release(ptr[i], TRACE_FILE_AND_LINE_);
+			}
+		}
+	}
+
+	TIMED_BLOCK(NewDeleteTimer, "NewDeletePool")
+	{
+		for (unsigned i = 0; i < 100; i++)
+		{
+			unsigned char* ptr[8000];
+			for (unsigned i = 0; i < 8000; i++)
+			{
+				ptr[i] = (unsigned char*)jackieMalloc_Ex(i + 1, TRACE_FILE_AND_LINE_);
+			}
+			for (unsigned i = 0; i < 8000; i++)
+			{
+				jackieFree_Ex(ptr[i], TRACE_FILE_AND_LINE_);
+			}
+		}
+	}
 }
 
 enum
@@ -757,6 +795,8 @@ enum
 
 	JackieStringClass,
 
+	JackieBytePoolClass,
+
 	AllFuncs,
 
 };
@@ -791,7 +831,10 @@ enum
 //static int testcase = JackieStream_H;
 //static int testfunc = AllFuncs;
 
-static int testcase = JackieStringClass;
+//static int testcase = JackieStringClass;
+//static int testfunc = AllFuncs;
+
+static int testcase = JackieBytePoolClass;
 static int testfunc = AllFuncs;
 
 int main(int argc, char** argv)
@@ -916,6 +959,10 @@ int main(int argc, char** argv)
 	case JackieStringClass:
 		test_jackie_string();
 		JackieString::FreeMemory();
+		break;
+	case JackieBytePoolClass:
+		test_JackieBytesPool();
+		JackieBytesPool::DestroyInstance();
 		break;
 	default:
 		break;

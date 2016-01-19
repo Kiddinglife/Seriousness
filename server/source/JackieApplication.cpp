@@ -1621,7 +1621,7 @@ void JackieApplication::OnConnectionReply2(JISRecvParams* recvParams,
 						sendParams.useCallerDataAllocation = false;
 						sendParams.packetReliability = PacketReliability::RELIABLE_NOT_ACK_RECEIPT_OF_PACKET;
 						sendParams.receipt = 0;
-						this->SendImmediate(sendParams);
+						SendImmediate(sendParams);
 					}
 					// Failed, no connections available anymore notify user
 					else
