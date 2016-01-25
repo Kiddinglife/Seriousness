@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 			shsKeys.remoteServerPublicKey = serverPublicKey;
 			shsKeys.publicKeyMode = SecureConnectionMode::USE_KNOWN_PUBLIC_KEY;
 			char uname[] = "admin";
-			ConnectionAttemptResult connectResult = client->Connect_("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
+			ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname), &shsKeys);
 			//ConnectionAttemptResult connectResult = client->Connect("127.0.0.1", 38000, uname, sizeof(uname));
 			assert(connectResult == ConnectionAttemptResult::CONNECTION_ATTEMPT_POSTED);
 		}

@@ -473,12 +473,12 @@ namespace JACKIE_INET
 		/// when IsConnected() returns true or getting a packet with the type identifier 
 		/// ID_CONNECTION_REQUEST_ACCEPTED. 
 		/// @Author mengdi[Jackie]
-		ConnectionAttemptResult Connect_(const char* host,
+		void Connect_(const char* host,
 			UInt16 port, const char *passwd = 0, UInt8 passwdLength = 0,
 			JackieSHSKey *jackiePublicKey = 0, UInt8 localSocketIndex = 0,
 			UInt8 attemptTimes = 6, UInt16 attemptIntervalMS = 100000,
 			TimeMS timeout = 0, UInt32 extraData = 0);
-		void Connect(const char* host,
+		ConnectionAttemptResult Connect(const char* host,
 			UInt16 port, const char *passwd = 0, UInt8 passwdLength = 0,
 			JackieSHSKey *jackiePublicKey = 0, UInt8 localSocketIndex = 0,
 			UInt8 attemptTimes = 6, UInt16 attemptIntervalMS = 100000,

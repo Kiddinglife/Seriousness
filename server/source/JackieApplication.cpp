@@ -16,13 +16,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																																																																										{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																																																																															{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																																																																										{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																																																																															{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -420,7 +420,7 @@ inline void JackieApplication::ReclaimOneJISRecvParams(JISRecvParams *s, UInt32 
 	//JDEBUG << "Network Thread Reclaims One JISRecvParams";
 	DCHECK_EQ(deAllocRecvParamQ[index].PushTail(s), true);
 }
-void JackieApplication::ReclaimAllJISRecvParams(UInt32 Index)
+inline void JackieApplication::ReclaimAllJISRecvParams(UInt32 Index)
 {
 	//JDEBUG << "Recv thread " << Index << " Reclaim All JISRecvParams";
 
@@ -463,21 +463,19 @@ void JackieApplication::ClearAllRecvParamsQs()
 }
 
 
-void JackieApplication::ReclaimAllCommands()
+inline void JackieApplication::ReclaimAllCommands()
 {
 	//JDEBUG << "User Thread Reclaims All Commands";
 
 	Command* bufferedCommand = 0;
 	for (UInt32 index = 0; index < deAllocCommandQ.Size(); index++)
 	{
-		DCHECK_EQ(
-			deAllocCommandQ.PopHead(bufferedCommand),
-			true);
+		DCHECK_EQ(deAllocCommandQ.PopHead(bufferedCommand),true);
 		DCHECK_NOTNULL(bufferedCommand);
 		commandPool.Reclaim(bufferedCommand);
 	}
 }
-Command* JackieApplication::AllocCommand()
+inline Command* JackieApplication::AllocCommand()
 {
 	//JDEBUG << "User Thread Alloc An Command";
 	Command* ptr = 0;
@@ -537,14 +535,14 @@ void JackieApplication::InitIPAddress(void)
 	}
 }
 
-void JackieApplication::DeallocBindedSockets(void)
+inline void JackieApplication::DeallocBindedSockets(void)
 {
 	for (UInt32 index = 0; index < bindedSockets.Size(); index++)
 	{
 		if (bindedSockets[index] != 0) JISAllocator::DeallocJIS(bindedSockets[index]);
 	}
 }
-void JackieApplication::ClearSocketQueryOutputs(void)
+inline void JackieApplication::ClearSocketQueryOutputs(void)
 {
 	socketQueryOutput.Clear();
 }
@@ -2088,7 +2086,7 @@ JackieRemoteSystem* JackieApplication::GetRemoteSystem(const JackieAddress& sa) 
 Int32 JackieApplication::GetRemoteSystemIndex(const JackieAddress &sa) const
 {
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple-1) ;
+	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple - 1);
 	JackieRemoteIndex* curr = remoteSystemLookup[hashindex];
 	while (curr != 0)
 	{
@@ -2131,7 +2129,7 @@ void JackieApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 	remoteSystemList[index].systemAddress = sa;
 
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple-1);
+	hashindex = hashindex % (maxConnections * RemoteEndPointLookupHashMutiple - 1);
 
 	JackieRemoteIndex *rsi = 0;
 	do { rsi = remoteSystemIndexPool.Allocate(); } while (rsi == 0);
@@ -2155,7 +2153,7 @@ void JackieApplication::RefRemoteEndPoint(const JackieAddress &sa, UInt32 index)
 void JackieApplication::DeRefRemoteSystem(const JackieAddress &sa)
 {
 	UInt32 hashindex = JackieAddress::ToHashCode(sa);
-	hashindex = hashindex % (maxConnections *RemoteEndPointLookupHashMutiple-1);
+	hashindex = hashindex % (maxConnections *RemoteEndPointLookupHashMutiple - 1);
 
 	JackieRemoteIndex *cur = remoteSystemLookup[hashindex];
 	JackieRemoteIndex *last = 0;
@@ -2580,7 +2578,8 @@ UInt64 JackieApplication::CreateUniqueRandness(void)
 			thisTime = Get64BitsTimeUS();
 			diff = thisTime - lastTime;
 			diffByte ^= (unsigned char)((diff & 15) << (index * 2)); ///0xF = 1111 = 15
-			if (index == 3) diffByte ^= (unsigned char)((diff & 15) >> 2);
+			if (index == 3)
+				diffByte ^= (unsigned char)((diff & 15) >> 2);
 		}
 		((unsigned char*)&g)[4 + j] ^= diffByte;
 	}
@@ -2595,7 +2594,7 @@ void JackieApplication::CancelConnectionRequest(const JackieAddress& target)
 	connReqCancelQLock.Unlock();
 }
 
-void JackieApplication::Connect(const char* host,
+void JackieApplication::Connect_(const char* host,
 	UInt16 port, const char *passwd /*= 0*/, UInt8 passwdLength /*= 0*/,
 	JackieSHSKey *jackiePublicKey /*= 0*/, UInt8 localSocketIndex /*= 0*/,
 	UInt8 attemptTimes /*= 6*/, UInt16 attemptIntervalMS /*= 100000*/,
@@ -2631,7 +2630,7 @@ void JackieApplication::Connect(const char* host,
 	PostComand(conn_cmd);
 }
 
-ConnectionAttemptResult JackieApplication::Connect_(const char* host,
+ConnectionAttemptResult JackieApplication::Connect(const char* host,
 	UInt16 port, const char *passwd /*= 0*/, UInt8 passwdLength /*= 0*/,
 	JackieSHSKey *jackiePublicKey /*= 0*/, UInt8 ConnectionSocketIndex /*= 0*/,
 	UInt8 attemptTimes /*= 6*/, UInt16 AttemptIntervalMS /*= 100000*/,

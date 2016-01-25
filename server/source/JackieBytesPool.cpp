@@ -17,7 +17,7 @@ namespace DataStructures
 		case 1: //0
 			out = (unsigned char*)pool1.Allocate();
 			*out = 0;
-			return out+1;
+			return out + 1;
 			break;
 		case 2://1
 			out = (unsigned char*)pool2.Allocate();
@@ -95,7 +95,7 @@ namespace DataStructures
 		switch ((data - 1)[0])
 		{
 		case 0: //1
-			pool1.Reclaim((unsigned char(*)[1])(data-1));
+			pool1.Reclaim((unsigned char(*)[1])(data - 1));
 			break;
 		case 1://2
 			pool2.Reclaim((unsigned char(*)[2])(data - 1));
