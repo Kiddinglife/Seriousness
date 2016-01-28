@@ -3,7 +3,7 @@
 /// \brief similar to std::vector
 /// \details Usually the Queue class is used instead,
 /// since it has all the same functionality and is only worse at random access.
-/// À≥–Úœﬂ–‘±Ì
+/// È°∫Â∫èÁ∫øÊÄßË°®
 ///
 #ifndef __ARRARY_LIST_H__
 #define __ARRARY_LIST_H__
@@ -51,7 +51,7 @@ namespace DataStructures
 				return;
 			}
 
-			listArray = JACKIE_INET::OP_NEW_ARRAY < ElementType(original_copy.list_size, TRACE_FILE_AND_LINE_);
+			listArray = JACKIE_INET::OP_NEW_ARRAY < ElementType>(original_copy.list_size, TRACE_FILE_AND_LINE_);
 
 			for (int Index = 0; Index < original_copy.list_size; Index++)
 			{
@@ -60,7 +60,7 @@ namespace DataStructures
 
 			list_size = allocation_size = original_copy.list_size;
 		}
-		JackieArrayList<ElementType>& operator= (const JackieArrayList& originalCopy)
+		JackieArrayList& operator= (const JackieArrayList& originalCopy)
 		{
 			if (this == &originalCopy) return *this;
 
@@ -74,7 +74,7 @@ namespace DataStructures
 			if (originalCopy.list_size > allocation_size)
 			{
 				Clear();
-				listArray = JACKIE_INET::OP_NEW_ARRAY < ElementType(original_copy.list_size, TRACE_FILE_AND_LINE_);
+				listArray = JACKIE_INET::OP_NEW_ARRAY < ElementType>(original_copy.list_size, TRACE_FILE_AND_LINE_);
 				allocation_size = original_copy.list_size;
 			}
 

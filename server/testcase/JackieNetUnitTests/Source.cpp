@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
