@@ -8,7 +8,6 @@
 #ifndef __ARRARY_LIST_H__
 #define __ARRARY_LIST_H__
 
-#include <cstring>
 #include "DLLExport.h"
 #include "OverrideMemory.h"
 

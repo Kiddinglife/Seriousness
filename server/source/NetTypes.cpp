@@ -1,4 +1,4 @@
-﻿#include "NetTypes.h"
+#include "NetTypes.h"
 #include "SocketDefines.h"
 #include "WSAStartupSingleton.h"
 #include "GlobalFunctions.h"

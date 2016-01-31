@@ -1,4 +1,4 @@
-﻿#ifndef OVERRIDE_DEFINES_H_
+#ifndef OVERRIDE_DEFINES_H_
 #define OVERRIDE_DEFINES_H_
 
 //setup in complier preseesor

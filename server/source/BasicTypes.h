@@ -1,4 +1,4 @@
-﻿/*
+/*
 *  NativeTypes.h
 *  This source code is licensed under the BSD-style license found in the
 *  LICENSE file in the root directory of this source tree. An additional grant
@@ -40,6 +40,7 @@ typedef signed __int64   	  Int64;
 typedef long long   	          Int64;
 typedef unsigned long long int    UInt64;
 #endif
+
 
 #endif
 

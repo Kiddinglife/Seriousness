@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * \file NetTypes.h
  * \author mengdi
  * \date Oct 2015

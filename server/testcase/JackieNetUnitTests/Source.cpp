@@ -235,7 +235,6 @@ static void test_MemoryPool_funcs()
 #include "JakieOrderArrayListMap.h"
 #include "JackieLinkedList.h"
 
-
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
@@ -828,14 +827,14 @@ enum
 //static int testcase = ServerApplication_H;
 //static int testfunc = AllFuncs;
 
-//static int testcase = JackieStream_H;
-//static int testfunc = AllFuncs;
+static int testcase = JackieStream_H;
+static int testfunc = AllFuncs;
 
 //static int testcase = JackieStringClass;
 //static int testfunc = AllFuncs;
 
-static int testcase = JackieBytePoolClass;
-static int testfunc = AllFuncs;
+//static int testcase = JackieBytePoolClass;
+//static int testfunc = AllFuncs;
 
 int main(int argc, char** argv)
 {

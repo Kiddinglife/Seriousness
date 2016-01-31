@@ -1,4 +1,4 @@
-﻿#ifndef OVERRIDE_MEMORY_H_
+#ifndef OVERRIDE_MEMORY_H_
 #define OVERRIDE_MEMORY_H_
 
 #include "DLLExport.h"
