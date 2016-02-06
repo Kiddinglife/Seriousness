@@ -16,13 +16,13 @@ using namespace JACKIE_INET;
 #define UNCONNETED_RECVPARAMS_HANDLER0 \
 	if (recvParams->bytesRead >= sizeof(MessageID) + \
 	sizeof(OFFLINE_MESSAGE_DATA_ID) + JackieGUID::size())\
-																																																																																																																																																																																																																																{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
+																																																																																																																																																																																																																																			{*isOfflinerecvParams = memcmp(recvParams->data + sizeof(MessageID),\
 	OFFLINE_MESSAGE_DATA_ID, sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNETED_RECVPARAMS_HANDLER1 \
 	if (recvParams->bytesRead >=sizeof(MessageID) + sizeof(Time) + sizeof\
 	(OFFLINE_MESSAGE_DATA_ID))\
-																																																																																																																																																																																																																																{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
+																																																																																																																																																																																																																																			{*isOfflinerecvParams =memcmp(recvParams->data + sizeof(MessageID) + \
 	sizeof(Time), OFFLINE_MESSAGE_DATA_ID,sizeof(OFFLINE_MESSAGE_DATA_ID)) == 0;}
 
 #define UNCONNECTED_RECVPARAMS_HANDLER2 \
@@ -694,13 +694,13 @@ void JackieApplication::ProcessOneRecvParam(JISRecvParams* recvParams)
 
 	// 2. Try to process this recv params as unconnected
 	//bool isUnconnectedRecvPrrams;
-	IsOfflineRecvParams(recvParams, &isUnconnectedRecvPrrams);
+	IsOfflineRecvParams(recvParams, &this->isUnconnectedRecvPrrams);
 
 	/// no need to use return vlue
 	//bool notSend2ReliabilityLayer = ProcessOneUnconnectedRecvParams(recvParams, &isUnconnectedRecvPrrams);
 	//if (!notSend2ReliabilityLayer)
 
-	if (!isUnconnectedRecvPrrams)
+	if (!this->isUnconnectedRecvPrrams)
 	{
 		/// See if this datagram came from a connected system
 		JackieRemoteSystem* remoteEndPoint =
@@ -3327,6 +3327,5 @@ void JACKIE_INET::JackieApplication::SetBannedRemoteSystem(const char IP[32], Ti
 	//c->data = (char*)jackieMalloc_Ex(strlen(IP) + sizeof(TimeMS) + 1, TRACE_FILE_AND_LINE_);
 	//memcpy(c->data, IP, strlen(IP) + 1);
 	//memcpy(c->data + strlen(IP) + 1, &milliseconds, sizeof(TimeMS));
-
 	PostComand(c);
 }
