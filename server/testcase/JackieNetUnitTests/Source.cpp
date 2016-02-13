@@ -502,6 +502,7 @@ static void test_JackieStream__funcs()
 	s8.Read(uint24);
 	DCHECK(uint24.val == 24);
 
+
 	s8.WriteBits(&particialByte, 7, false);
 	UInt8 v = 0;
 	s8.ReadBits(&v, 7, false);
