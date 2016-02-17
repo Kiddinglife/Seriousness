@@ -667,6 +667,7 @@ static void test_JackieStream__funcs()
 	}
 }
 
+#include <gtest/gtest.h>
 #include "JackieString.h"
 static void test_jackie_string()
 {

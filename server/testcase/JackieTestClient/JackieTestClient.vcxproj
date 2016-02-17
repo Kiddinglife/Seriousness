@@ -23,6 +23,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5A6456F4-F64A-4137-983D-FD49E87CB450}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -51,7 +54,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <NuGetPackageImportStamp>c6c7c5cb</NuGetPackageImportStamp>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)testcase\</OutDir>
@@ -96,5 +101,14 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\..\packages\gtest.1.7.0\build\native\gtest.targets" Condition="Exists('..\..\packages\gtest.1.7.0\build\native\gtest.targets')" />
+    <Import Project="..\..\packages\gmock.1.7.0\build\native\gmock.targets" Condition="Exists('..\..\packages\gmock.1.7.0\build\native\gmock.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\packages\gtest.1.7.0\build\native\gtest.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\gtest.1.7.0\build\native\gtest.targets'))" />
+    <Error Condition="!Exists('..\..\packages\gmock.1.7.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\gmock.1.7.0\build\native\gmock.targets'))" />
+  </Target>
 </Project>
