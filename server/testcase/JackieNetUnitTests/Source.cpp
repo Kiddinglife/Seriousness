@@ -1,4 +1,5 @@
 #include <iostream>
+#include <gtest/gtest.h>
 #define _ELPP_STRICT_ROLLOUT
 //#define ELPP_DISABLE_DEBUG_LOGS
 #define ELPP_THREAD_SAFE 
@@ -12,8 +13,64 @@ INITIALIZE_EASYLOGGINGPP
 #include "NetTypes.h"
 #include "GlobalFunctions.h"
 #include "JackieIPlugin.h"
+#include "NetTypes.h"
 
 using namespace JACKIE_INET;
+
+TEST(IsDomainIPAddrTest, test_return_false_when_given_numberic_addr)
+{
+	const char* host_Num = "192.168.1.168";
+
+	EXPECT_FALSE(isDomainIPAddr(host_Num));
+}
+
+TEST(IsDomainIPAddrTest, test_return_true_when_given_domain_addr)
+{
+	const char* host_domain = "www.baidu.com";
+	EXPECT_TRUE(isDomainIPAddr(host_domain));
+}
+
+TEST(IntegerToStringTest, test_given_positive_and_nagative_integers)
+{
+	char result[8];
+
+	Itoa(12, result, 10);
+	EXPECT_STREQ("12", result);
+
+	Itoa(-12, result, 10);
+	EXPECT_STREQ("-12", result);
+
+	Itoa(-12.5, result, 10);
+	EXPECT_STREQ("-12", result);
+}
+
+TEST(DomainNameToIPTest, test_return_ips)
+{
+	char result[65] = { 0 };
+
+	DomainNameToIP("", result);
+	EXPECT_STREQ("192.168.56.1", result);
+	printf("'' ip addr ('%s')\n", result);
+
+	DomainNameToIP("localhost", result);
+	EXPECT_STREQ("127.0.0.1", result);
+	printf("localhost ip addr ('%s')\n", result);
+
+	DomainNameToIP("192.168.2.5", result);
+	EXPECT_STREQ("192.168.2.5", result);
+
+	DomainNameToIP("www.baidu.com", result);
+	printf("baidu ip addr ('%s')\n", result);
+
+	DomainNameToIP("DESKTOP-E2KL25B", result);
+	EXPECT_STREQ("192.168.56.1", result);
+	printf("hostname ip addr ('%s')\n", result);
+}
+
+TEST(JackieAddressTest, test_JackieAddress_size_equals_7)
+{
+	EXPECT_EQ(7, JackieAddress::size());
+}
 
 static void test_superfastfunction_func()
 {
@@ -21,48 +78,8 @@ static void test_superfastfunction_func()
 	char* name = "jackie";
 	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
 }
-static void test_isDomainIPAddr_func()
-{
-	std::cout << "\nGlobalFunctions_h::test_isDomainIPAddr_func() starts...\n";
-	const char* host_domain = "www.baidu.com";
-	const char* host_Num = "192.168.1.168";
-	std::cout << "host_domain = www.baidu.com " << isDomainIPAddr(host_domain);
-	std::cout << "\nhost_domain = 192.168.1.168 " << isDomainIPAddr(host_Num) << "\n";
-}
-static void test_itoa_func()
-{
-	std::cout << "\nGlobalFunctions_h::test_itoa_func() starts...\n";
-	char result[3];
-	std::cout << "\nvalue(int 12)= " << Itoa(12, result, 10) << "\n";
-}
-static void test_DomainNameToIP_func()
-{
-	// needed for getaddrinfo
-	std::cout << "\nGlobalFunctions_h::test_DomainNameToIP_func() starts...\n";
-	char ip[65] = { 0 };
 
-	DomainNameToIP("", ip);
-	std::cout << "\nvalue("")=ip " << ip << "\n"; //=lan ip address192.168.1.107
 
-	DomainNameToIP("localhost", ip);
-	std::cout << "\nvalue(localhost)=ip " << ip << "\n"; //=loopback ip addr 127.0.0.1
-
-	DomainNameToIP("192.168.1.108", ip);
-	std::cout << "\nvalue(localhost)=ip " << ip << "\n"; // = return 192.168.1.108
-
-	DomainNameToIP("www.baidu.com", ip);
-	std::cout << "\nvalue(www.baidu.com)=ip " << ip << "\n"; // = return 61.135.169.121
-
-	DomainNameToIP("ZMD-SERVER", ip);
-	std::cout << "\nvalue(ZMD-SERVER)=ip " << ip << "\n"; // = return 192.168.1.107
-}
-
-#include "NetTypes.h"
-static void test_size_func()
-{
-	std::cout << "JACKIE_INET_Address::test_size_func() starts...\n";
-	std::cout << "size()= " << JACKIE_INET::JackieAddress::size() << "\n";
-}
 static void test_ToHashCode_func()
 {
 	std::cout << "JACKIE_INET_Address::test_ToHashCode_func() starts...\n";
@@ -838,135 +855,141 @@ static int testfunc = AllFuncs;
 //static int testcase = JackieBytePoolClass;
 //static int testfunc = AllFuncs;
 
+//int my_main(int argc, char** argv)
+//{
+//
+//	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+//	el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
+//
+//	el::Configurations defaultConf;
+//
+//	// set to default config
+//	//defaultConf.setToDefault(); 
+//
+//	//// To set GLOBAL configurations you may use including all levels 
+//	//defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
+//	//defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "1");
+//	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n");
+//
+//	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
+//	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
+//	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] AtLine[%line]\n%msg\n");
+//	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%logger][tid %thread] AtLine[%line]\n%msg\n");
+//	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread][line %line]\n%msg\n");
+//
+//
+//	/// reconfigureLogger will create new logger if ir does not exists
+//	/// just simply add wahtever logger you want, best way is using class name as logger name
+//	el::Loggers::reconfigureLogger("default", defaultConf);
+//	el::Loggers::reconfigureLogger(JackieNetName, defaultConf);
+//	el::Loggers::reconfigureLogger("performance", defaultConf);
+//
+//	// Clears everything because configurations uses heap so we want to retain it.
+//	// otherwise it is retained by internal memory management at the end of program
+//	// execution
+//	defaultConf.clear();
+//
+//	//LOG(INFO) << "Log using default file";
+//	//LOG(ERROR) << "Log using default file";
+//	//LOG(WARNING) << "Log using default file";
+//	////LOG(FATAL) << "Log using default file";
+//	//LOG(DEBUG) << "Log using default file";
+//	//JDEBUG << "test debug";
+//
+//	START_EASYLOGGINGPP(argc, argv);
+//	switch (testcase)
+//	{
+//	case GlobalFunctions_h:
+//		switch (testfunc)
+//		{
+//		case superfastfunction_func:
+//			test_superfastfunction_func();
+//			break;
+//		case isDomainIPAddr_func:
+//			//test_isDomainIPAddr_func();
+//			break;
+//		case Itoa_func:
+//			//test_itoa_func();
+//			break;
+//		case DomainNameToIP_func:
+//			test_DomainNameToIP_func();
+//			break;
+//		default:
+//			test_superfastfunction_func();
+//			//test_isDomainIPAddr_func();
+//			test_itoa_func();
+//			test_DomainNameToIP_func();
+//			break;
+//		}
+//		break;
+//	case JACKIE_INET_Address_h:
+//		switch (testfunc)
+//		{
+//		case size_func:
+//			test_size_func();
+//			break;
+//		case ToHashCode_func:
+//			test_ToHashCode_func();
+//			break;
+//		case Ctor_ToString_FromString_funcs:
+//			test_Ctor_ToString_FromString_funcs();
+//			break;
+//		case SetToLoopBack_func:
+//			test_SetToLoopBack_func();
+//			break;
+//		case IsLoopback_func:
+//			test_IsLoopback_func();
+//			break;
+//		case IsLANAddress_func:
+//			test_IsLANAddress_func();
+//			break;
+//		default:
+//			test_size_func();
+//			test_ToHashCode_func();
+//			test_Ctor_ToString_FromString_funcs();
+//			test_SetToLoopBack_func();
+//			test_IsLoopback_func();
+//			test_IsLANAddress_func();
+//			break;
+//		}
+//		break;
+//	case JACKIE_INet_GUID_h:
+//		test_JACKIE_INet_GUID_ToString_func();
+//		break;
+//	case CLASS_JACKIE_INET_Address_GUID_Wrapper:
+//		test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
+//		break;
+//	case NetTime_h:
+//		test_NetTime_h_All_funcs();
+//		break;
+//	case MemoryPool_h:
+//		test_MemoryPool_funcs();
+//		break;
+//	case CircularArrayQueueSingleThread:
+//		test_Queue_funcs();
+//		break;
+//	case ServerApplication_H:
+//		test_ServerApplication_funcs();
+//		break;
+//	case JackieStream_H:
+//		test_JackieStream__funcs();
+//		break;
+//	case JackieStringClass:
+//		test_jackie_string();
+//		JackieString::FreeMemory();
+//		break;
+//	case JackieBytePoolClass:
+//		test_JackieBytesPool();
+//		JackieBytesPool::DestroyInstance();
+//		break;
+//	default:
+//		break;
+//	}
+//	return 0;
+//}
+
 int main(int argc, char** argv)
 {
-
-	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
-	el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
-
-	el::Configurations defaultConf;
-
-	// set to default config
-	//defaultConf.setToDefault(); 
-
-	//// To set GLOBAL configurations you may use including all levels 
-	//defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
-	//defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "1");
-	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n");
-
-	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
-	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] AtLine[%line]\n%msg\n");
-	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%logger][tid %thread] AtLine[%line]\n%msg\n");
-	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread][line %line]\n%msg\n");
-
-
-	/// reconfigureLogger will create new logger if ir does not exists
-	/// just simply add wahtever logger you want, best way is using class name as logger name
-	el::Loggers::reconfigureLogger("default", defaultConf);
-	el::Loggers::reconfigureLogger(JackieNetName, defaultConf);
-	el::Loggers::reconfigureLogger("performance", defaultConf);
-
-	// Clears everything because configurations uses heap so we want to retain it.
-	// otherwise it is retained by internal memory management at the end of program
-	// execution
-	defaultConf.clear();
-
-	//LOG(INFO) << "Log using default file";
-	//LOG(ERROR) << "Log using default file";
-	//LOG(WARNING) << "Log using default file";
-	////LOG(FATAL) << "Log using default file";
-	//LOG(DEBUG) << "Log using default file";
-	//JDEBUG << "test debug";
-
-	START_EASYLOGGINGPP(argc, argv);
-	switch (testcase)
-	{
-	case GlobalFunctions_h:
-		switch (testfunc)
-		{
-		case superfastfunction_func:
-			test_superfastfunction_func();
-			break;
-		case isDomainIPAddr_func:
-			test_isDomainIPAddr_func();
-			break;
-		case Itoa_func:
-			test_itoa_func();
-			break;
-		case DomainNameToIP_func:
-			test_DomainNameToIP_func();
-			break;
-		default:
-			test_superfastfunction_func();
-			test_isDomainIPAddr_func();
-			test_itoa_func();
-			test_DomainNameToIP_func();
-			break;
-		}
-		break;
-	case JACKIE_INET_Address_h:
-		switch (testfunc)
-		{
-		case size_func:
-			test_size_func();
-			break;
-		case ToHashCode_func:
-			test_ToHashCode_func();
-			break;
-		case Ctor_ToString_FromString_funcs:
-			test_Ctor_ToString_FromString_funcs();
-			break;
-		case SetToLoopBack_func:
-			test_SetToLoopBack_func();
-			break;
-		case IsLoopback_func:
-			test_IsLoopback_func();
-			break;
-		case IsLANAddress_func:
-			test_IsLANAddress_func();
-			break;
-		default:
-			test_size_func();
-			test_ToHashCode_func();
-			test_Ctor_ToString_FromString_funcs();
-			test_SetToLoopBack_func();
-			test_IsLoopback_func();
-			test_IsLANAddress_func();
-			break;
-		}
-		break;
-	case JACKIE_INet_GUID_h:
-		test_JACKIE_INet_GUID_ToString_func();
-		break;
-	case CLASS_JACKIE_INET_Address_GUID_Wrapper:
-		test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
-		break;
-	case NetTime_h:
-		test_NetTime_h_All_funcs();
-		break;
-	case MemoryPool_h:
-		test_MemoryPool_funcs();
-		break;
-	case CircularArrayQueueSingleThread:
-		test_Queue_funcs();
-		break;
-	case ServerApplication_H:
-		test_ServerApplication_funcs();
-		break;
-	case JackieStream_H:
-		test_JackieStream__funcs();
-		break;
-	case JackieStringClass:
-		test_jackie_string();
-		JackieString::FreeMemory();
-		break;
-	case JackieBytePoolClass:
-		test_JackieBytesPool();
-		JackieBytesPool::DestroyInstance();
-		break;
-	default:
-		break;
-	}
-	return 0;
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }
