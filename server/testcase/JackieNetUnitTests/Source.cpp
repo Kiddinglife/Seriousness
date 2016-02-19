@@ -72,32 +72,32 @@ TEST(JackieAddressTest, test_JackieAddress_size_equals_7)
 	EXPECT_EQ(7, JackieAddress::size());
 }
 
-static void test_superfastfunction_func()
+TEST(JackieAddressTest, TestToHashCode)
 {
-	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
-	char* name = "jackie";
-	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
+	JackieAddress addr1("192.168.56.1|32000");
+	printf("hash code for addr '%s' is %ld\n'", addr1.ToString(), JackieAddress::ToHashCode(addr1));
+
+	JackieAddress addr2("localhost|32000");
+	printf("hash code for addr '%s' is %ld\n'", addr2.ToString(), JackieAddress::ToHashCode(addr2));
+
+	JackieAddress addr3("localhost", 32000);
+	printf("hash code for addr '%s' is %ld\n'", addr3.ToString(), JackieAddress::ToHashCode(addr3));
+
+	JackieAddress addr4("192.168.56.1", 32000);
+	printf("hash code for addr '%s' is %ld\n'", addr4.ToString(), JackieAddress::ToHashCode(addr4));
+
 }
 
-
-static void test_ToHashCode_func()
+TEST(JackieAddressTest, TestCtorToStringFromString)
 {
-	std::cout << "JACKIE_INET_Address::test_ToHashCode_func() starts...\n";
-	JACKIE_INET::JackieAddress addr;
-	std::cout << "hash_code()= " << JACKIE_INET::JackieAddress::ToHashCode(addr)
-		<< "\n";
-}
-static void test_Ctor_ToString_FromString_funcs()
-{
-	printf_s("JACKIE_INET_Address::test_Ctor_ToString_FromString_funcs() starts...\n");
-
 	JACKIE_INET::JackieAddress default_ctor_addr;
 	const char* str1 = default_ctor_addr.ToString();
 	printf_s("default_ctor_addr_to_str = %s\n", str1);
 
-	JACKIE_INET::JackieAddress param_ctor_addr_localhost("localhost:12345");
+	JACKIE_INET::JackieAddress param_ctor_addr_localhost("localhost", 12345);
 	const char* str2 = param_ctor_addr_localhost.ToString();
 	printf_s("param_ctor_addr_localhost = %s\n", str2);
+	EXPECT_STREQ("127.0.0.1|12345", str2);
 
 	// THIS IS WRONG, so when you use domain name, you have to seprate two-params ctor
 	//JACKIE_INET::JACKIE_INET_Address param_ctor_addr_domain("ZMD-SERVER:1234");
@@ -105,7 +105,15 @@ static void test_Ctor_ToString_FromString_funcs()
 	JACKIE_INET::JackieAddress param_ctor_addr_domain("ZMD-SERVER", 1234);
 	const char* str3 = param_ctor_addr_domain.ToString();
 	printf_s("param_ctor_addr_domain = %s\n", str3);
+	EXPECT_STREQ("127.0.0.1|1234", str3);
 }
+static void test_superfastfunction_func()
+{
+	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
+	char* name = "jackie";
+	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
+}
+
 static void test_SetToLoopBack_func()
 {
 	printf_s("JACKIE_INET_Address::test_SetToLoopBack_func() starts...\n");
