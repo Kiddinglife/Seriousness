@@ -17,20 +17,19 @@ INITIALIZE_EASYLOGGINGPP
 
 using namespace JACKIE_INET;
 
-TEST(IsDomainIPAddrTest, test_return_false_when_given_numberic_addr)
+TEST(IsDomainIPAddrTest, when_given_numberic_addr_return_false)
 {
 	const char* host_Num = "192.168.1.168";
-
 	EXPECT_FALSE(isDomainIPAddr(host_Num));
 }
 
-TEST(IsDomainIPAddrTest, test_return_true_when_given_domain_addr)
+TEST(IsDomainIPAddrTest, when_given_domain_addr_return_true)
 {
 	const char* host_domain = "www.baidu.com";
 	EXPECT_TRUE(isDomainIPAddr(host_domain));
 }
 
-TEST(IntegerToStringTest, test_given_positive_and_nagative_integers)
+TEST(ItoaTest, when_given_positive_and_nagative_integers_return_correct_string)
 {
 	char result[8];
 
@@ -44,27 +43,34 @@ TEST(IntegerToStringTest, test_given_positive_and_nagative_integers)
 	EXPECT_STREQ("-12", result);
 }
 
-TEST(DomainNameToIPTest, test_return_ips)
+TEST(DomainNameToIPTest, when_given_localhost_string_return_127001)
 {
 	char result[65] = { 0 };
-
-	DomainNameToIP("", result);
-	EXPECT_STREQ("192.168.56.1", result);
-	printf("'' ip addr ('%s')\n", result);
-
 	DomainNameToIP("localhost", result);
 	EXPECT_STREQ("127.0.0.1", result);
 	printf("localhost ip addr ('%s')\n", result);
+}
 
-	DomainNameToIP("192.168.2.5", result);
-	EXPECT_STREQ("192.168.2.5", result);
-
-	DomainNameToIP("www.baidu.com", result);
-	printf("baidu ip addr ('%s')\n", result);
-
+TEST(DomainNameToIPTest, when_given_hostname_return_bound_ip_for_that_nic)
+{
+	char result[65] = { 0 };
 	DomainNameToIP("DESKTOP-E2KL25B", result);
 	EXPECT_STREQ("192.168.56.1", result);
 	printf("hostname ip addr ('%s')\n", result);
+}
+
+TEST(DomainNameToIPTest, when_given_numberic_addr_return_same_ip_addr)
+{
+	char result[65] = { 0 };
+	DomainNameToIP("192.168.2.5", result);
+	EXPECT_STREQ("192.168.2.5", result);
+}
+
+TEST(DomainNameToIPTest, when_given_external_domain_return_correct_ip_addr)
+{
+	char result[65] = { 0 };
+	DomainNameToIP("www.baidu.com", result);
+	printf("baidu ip addr ('%s')\n", result);
 }
 
 TEST(JackieAddressTest, test_JackieAddress_size_equals_7)
@@ -77,7 +83,7 @@ TEST(JackieAddressTest, TestToHashCode)
 	JackieAddress addr1("192.168.56.1|32000");
 	printf("hash code for addr '%s' is %ld\n'", addr1.ToString(), JackieAddress::ToHashCode(addr1));
 
-	JackieAddress addr2("localhost|32000");
+	JackieAddress addr2("localhost:32000");
 	printf("hash code for addr '%s' is %ld\n'", addr2.ToString(), JackieAddress::ToHashCode(addr2));
 
 	JackieAddress addr3("localhost", 32000);
@@ -88,6 +94,7 @@ TEST(JackieAddressTest, TestToHashCode)
 
 }
 
+/// usually seprate the ip addr and port number and you will ne fine
 TEST(JackieAddressTest, TestCtorToStringFromString)
 {
 	JACKIE_INET::JackieAddress default_ctor_addr;
@@ -102,11 +109,15 @@ TEST(JackieAddressTest, TestCtorToStringFromString)
 	// THIS IS WRONG, so when you use domain name, you have to seprate two-params ctor
 	//JACKIE_INET::JACKIE_INET_Address param_ctor_addr_domain("ZMD-SERVER:1234");
 
-	JACKIE_INET::JackieAddress param_ctor_addr_domain("ZMD-SERVER", 1234);
+	// If you have multiple ip address bound on hostname, this will return the first one,
+	// so sometimes, it will not be the one you want to use, so better way is to assign the ip address
+	// manually.
+	JACKIE_INET::JackieAddress param_ctor_addr_domain("DESKTOP-E2KL25B", 1234);
 	const char* str3 = param_ctor_addr_domain.ToString();
 	printf_s("param_ctor_addr_domain = %s\n", str3);
-	EXPECT_STREQ("127.0.0.1|1234", str3);
+	EXPECT_STREQ("192.168.56.1|1234", str3);
 }
+
 static void test_superfastfunction_func()
 {
 	std::cout << "\nGlobalFunctions_h::test_superfastfunction_func() starts...\n";
@@ -114,6 +125,10 @@ static void test_superfastfunction_func()
 	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
 }
 
+TEST(JackieAddressTest, TestCtorToStringFromString)
+{
+
+}
 static void test_SetToLoopBack_func()
 {
 	printf_s("JACKIE_INET_Address::test_SetToLoopBack_func() starts...\n");
