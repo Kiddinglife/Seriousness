@@ -73,37 +73,28 @@ TEST(DomainNameToIPTest, when_given_external_domain_return_correct_ip_addr)
 	printf("baidu ip addr ('%s')\n", result);
 }
 
-TEST(JackieAddressTest, test_JackieAddress_size_equals_7)
+TEST(JackieAddressTests, test_JackieAddress_size_equals_7)
 {
 	EXPECT_EQ(7, JackieAddress::size());
 }
 
-TEST(JackieAddressTest, TestToHashCode)
+TEST(JackieAddressTests, TestToHashCode)
 {
-	JackieAddress addr1("192.168.56.1|32000");
-	printf("hash code for addr '%s' is %ld\n'", addr1.ToString(), JackieAddress::ToHashCode(addr1));
-
-	JackieAddress addr2("localhost:32000");
-	printf("hash code for addr '%s' is %ld\n'", addr2.ToString(), JackieAddress::ToHashCode(addr2));
-
 	JackieAddress addr3("localhost", 32000);
 	printf("hash code for addr '%s' is %ld\n'", addr3.ToString(), JackieAddress::ToHashCode(addr3));
 
 	JackieAddress addr4("192.168.56.1", 32000);
 	printf("hash code for addr '%s' is %ld\n'", addr4.ToString(), JackieAddress::ToHashCode(addr4));
-
 }
 
 /// usually seprate the ip addr and port number and you will ne fine
-TEST(JackieAddressTest, TestCtorToStringFromString)
+TEST(JackieAddressTests, TestCtorToStringFromString)
 {
 	JACKIE_INET::JackieAddress default_ctor_addr;
 	const char* str1 = default_ctor_addr.ToString();
-	printf_s("default_ctor_addr_to_str = %s\n", str1);
 
 	JACKIE_INET::JackieAddress param_ctor_addr_localhost("localhost", 12345);
 	const char* str2 = param_ctor_addr_localhost.ToString();
-	printf_s("param_ctor_addr_localhost = %s\n", str2);
 	EXPECT_STREQ("127.0.0.1|12345", str2);
 
 	// THIS IS WRONG, so when you use domain name, you have to seprate two-params ctor
@@ -114,7 +105,6 @@ TEST(JackieAddressTest, TestCtorToStringFromString)
 	// manually.
 	JACKIE_INET::JackieAddress param_ctor_addr_domain("DESKTOP-E2KL25B", 1234);
 	const char* str3 = param_ctor_addr_domain.ToString();
-	printf_s("param_ctor_addr_domain = %s\n", str3);
 	EXPECT_STREQ("192.168.56.1|1234", str3);
 }
 
@@ -125,106 +115,92 @@ static void test_superfastfunction_func()
 	std::cout << "name hash code = " << (name, strlen(name) + 1, strlen(name) + 1);
 }
 
-TEST(JackieAddressTest, TestCtorToStringFromString)
-{
 
-}
-static void test_SetToLoopBack_func()
+TEST(JackieAddressTests, SetToLoopBack_when_given_ip4_return_ip4_loopback)
 {
-	printf_s("JACKIE_INET_Address::test_SetToLoopBack_func() starts...\n");
-
 	JACKIE_INET::JackieAddress addr("192.168.1.108", 12345);
-	const char* str = addr.ToString();
-	printf_s("addr = %s\n", str);
-
 	addr.SetToLoopBack(4);
-	str = addr.ToString();
-	printf_s("After SetToLoopBack(4), addr = %s\n", str);
+	EXPECT_STREQ("127.0.0.1|12345", addr.ToString());
+}
 
-	/// if you do not define ipv6, this will use ipv4
+// this function will not work if you do not define NET_SUPPORT_IP6 MACRO
+TEST(JackieAddressTests, SetToLoopBack_when_given_ip6_return_ip6_loopback)
+{
+	JACKIE_INET::JackieAddress addr("192.168.1.108", 12345);
 	addr.SetToLoopBack(6);
-	str = addr.ToString();
-	printf_s("After SetToLoopBack(6), addr = %s\n", str);
+	EXPECT_STREQ("192.168.1.108|12345", addr.ToString());
 }
-static void test_IsLoopback_func()
+
+struct val
 {
-	printf_s("JACKIE_INET_Address::test_IsLoopback_func() starts...\n");
+	val(const char* ip, USHORT port, bool expval)
+	{
+		addr.FromString(ip, port);
+		expectedVal = expval;
+	}
+	JACKIE_INET::JackieAddress addr;
+	bool expectedVal;
+};
+class  IsLoopbackParamTest : public::testing::TestWithParam <val >{};
+TEST_P(IsLoopbackParamTest, handle_return_vals){ val ret = GetParam(); EXPECT_EQ(ret.expectedVal, ret.addr.IsLoopback()); }
+INSTANTIATE_TEST_CASE_P(JackieAddressTests, IsLoopbackParamTest, testing::Values(val("localhost", 123456, true), val("192.168.107.1", 123456, false)));
 
-	JACKIE_INET::JackieAddress addr("LOCALHOST", 12345);
-	const char* str = addr.ToString();
-	addr.IsLoopback() ?
-		printf_s("addr (%s) is loopback addr \n", str) :
-		printf_s("addr (%s) is not loopback addr \n", str);
-
-	JACKIE_INET::JackieAddress addr1("192.168.1.103", 12345);
-	const char* str1 = addr1.ToString();
-	addr1.IsLoopback() ?
-		printf_s("addr (%s) is loopback addr \n", str1) :
-		printf_s("addr (%s) is not loopback addr \n", str1);
-}
-static void test_IsLANAddress_func()
+TEST(JackieAddressTests, IsLANAddress_when_given_localhost_return_true)
 {
-	printf_s("JACKIE_INET_Address::test_IsLoopback_func() starts...\n");
-
 	JACKIE_INET::JackieAddress addr("localhost", 12345);
-	const char* str = addr.ToString();
-	addr.IsLoopback() ?
-		printf_s("addr (%s) is LANA addr \n", str) :
-		printf_s("addr (%s) is not LANA addr \n", str);
-
-	JACKIE_INET::JackieAddress addr1("www.baidu.com", 12345);
-	const char* str1 = addr1.ToString();
-	addr1.IsLoopback() ?
-		printf_s("addr (%s) is LANA addr \n", str1) :
-		printf_s("addr (%s) is not LANA addr \n", str1);
+	EXPECT_FALSE(addr.IsLANAddress()) << " localhost";
 }
 
-static void test_JACKIE_INet_GUID_ToString_func()
+TEST(JackieAddressTests, IsLANAddress_when_given_non_localhost_return_false)
 {
-	std::cout << "JACKIE_INet_GUID::test_ToString_func() starts...\n";
-
-	printf_s("%s\n", JACKIE_INET::JACKIE_NULL_GUID.ToString());
-
-	JACKIE_INET::JackieGUID gui(12);
-	printf_s("%s\n", gui.ToString());
-
-	printf_s("%d\n", JACKIE_INET::JackieGUID::ToUInt32(gui));
+	JACKIE_INET::JackieAddress addr("192.168.1.108", 12345);
+	EXPECT_TRUE(addr.IsLANAddress()) << " 192.168.1.108";
 }
 
-static void test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func()
+TEST(JackieGUIDTests, ToUInt32_)
 {
-	std::cout << "JackieAddressGuidWrapper::test_ToHashCode_func() starts...\n";
-
-	JACKIE_INET::JackieAddressGuidWrapper wrapper;
-	printf_s("ToString(%s)\n", wrapper.ToString());
-	printf_s("ToHashCode(%d)\n",
-		JACKIE_INET::JackieAddressGuidWrapper::ToHashCode(wrapper));
-
-	JACKIE_INET::JackieGUID gui(12);
-	JACKIE_INET::JackieAddress adrr("localhost", (UInt16)123456);
-	JACKIE_INET::JackieAddressGuidWrapper wrapper1(gui);
-	printf_s("ToString(%s)\n", wrapper1.ToString());
-	printf_s("ToHashCode(%d)\n",
-		JACKIE_INET::JackieAddressGuidWrapper::ToHashCode(wrapper1));
+	JackieGUID gui(12);
+	EXPECT_STREQ("12", gui.ToString());
+	EXPECT_EQ(12, JackieGUID::ToUInt32(gui));
 }
 
-#include "NetTime.h"
-static void test_NetTime_h_All_funcs()
+TEST(JackieGUIDTests, TestToString)
 {
-	std::cout << "Test_NetTime_h_All_funcs starts...\n";
+	EXPECT_STREQ("JACKIE_INet_GUID_Null", JACKIE_NULL_GUID.ToString());
+	JackieGUID gui(12);
+	EXPECT_STREQ("12", gui.ToString());
+}
 
-	char buffer[128];
+TEST(JackieGUIDTests, TestToHashCode)
+{
+	JackieAddressGuidWrapper wrapper;
+	EXPECT_STREQ("204.204.204.204|52428", wrapper.ToString());
+	EXPECT_EQ(-395420190, JackieAddressGuidWrapper::ToHashCode(wrapper));
+
+	JackieGUID gui(12);
+	JackieAddressGuidWrapper wrapper1(gui);
+	EXPECT_STREQ("12", wrapper1.ToString());
+	EXPECT_EQ(12, JackieAddressGuidWrapper::ToHashCode(wrapper1));
+
+	JackieAddress adrr("localhost", 12345);
+	JackieAddressGuidWrapper wrapper2(adrr);
+	EXPECT_STREQ("127.0.0.1|12345", wrapper2.ToString());
+	EXPECT_EQ(JackieAddress::ToHashCode(adrr), JackieAddressGuidWrapper::ToHashCode(wrapper2));
+}
+
+TEST(NetTimeTests, test_gettimeofday)
+{
 	time_t rawtime;
 	struct timeval tv;
-	// If you get an arror about an incomplete type, just delete this file
 	struct timezone tz;
 	gettimeofday(&tv, &tz);
-	// time ( &rawtime );
 	rawtime = tv.tv_sec;
 
+	char buffer[128];
 	struct tm * timeinfo;
 	timeinfo = localtime(&rawtime);
 	strftime(buffer, 128, "%x %X", timeinfo);
+
 	char buff[32];
 	sprintf_s(buff, ":%i", tv.tv_usec / 1000);
 	strcat_s(buffer, buff);
@@ -236,11 +212,9 @@ static void test_NetTime_h_All_funcs()
 	printf_s("GetTime(%i)\n", GetTimeMS());
 }
 
-using namespace JACKIE_INET;
 #include "JackieINetSocket.h"
-static void test_GetMyIP_Wins_Linux_funcs()
+TEST(JISBerkleyTests, test_GetMyIPBerkley)
 {
-	std::cout << "test_GetMyIP_Wins_Linux_funcs starts...\n";
 	JackieAddress addr[MAX_COUNT_LOCAL_IP_ADDR];
 	JACKIE_INET::JISBerkley::GetMyIPBerkley(addr);
 	for (int i = 0; i < MAX_COUNT_LOCAL_IP_ADDR; i++)
@@ -267,14 +241,55 @@ static void test_MemoryPool_funcs()
 	}
 }
 
-#include "JackieArraryQueue.h"
 #include "JackieSPSCQueue.h"
+struct TestQueueElement
+{
+	int a;
+	int b;
+};
+TEST(JackieSPSCQueueTests, when_pushTail_and_then_popHead_element_should_be_equal)
+{
+	DataStructures::JackieSPSCQueue<TestQueueElement, 100000> lockfree;
+	TestQueueElement elepush;
+	TestQueueElement elepop;
+	for (int i = 0; i < 100000; i++)
+	{
+		elepush.a = i;
+		elepush.b = i;
+		lockfree.PushTail(elepush);
+		lockfree.PopHead(elepop);
+		EXPECT_EQ(elepush.a, elepop.a);
+		EXPECT_EQ(elepush.b, elepop.b);
+	}
+
+}
+
+TEST(JackieSPSCQueueTests, when_pushTail_first_and_then_popHead_element_should_be_equal)
+{
+	DataStructures::JackieSPSCQueue<TestQueueElement, 10000> lockfree;
+	TestQueueElement elepush;
+	TestQueueElement elepop;
+	for (int i = 0; i < 10000; i++)
+	{
+		elepush.a = i;
+		elepush.b = i;
+		lockfree.PushTail(elepush);
+	}
+
+	for (int i = 0; i < 10000; i++)
+	{
+		lockfree.PopHead(elepop);
+		EXPECT_EQ(i, elepop.a);
+		EXPECT_EQ(i, elepop.b);
+	}
+}
+
+#include "JackieArraryQueue.h"
 #include "EasyLog.h"
 #include "JackieArrayList.h"
 #include "JackieOrderArraryList.h"
 #include "JakieOrderArrayListMap.h"
 #include "JackieLinkedList.h"
-
 static void test_Queue_funcs()
 {
 	JINFO << "test_Queue_funcs STARTS...";
@@ -711,8 +726,8 @@ static void test_JackieStream__funcs()
 #include "JackieString.h"
 static void test_jackie_string()
 {
-	JINFO << "Test jackie_string";
-	TIMED_FUNC(test);
+	//JINFO << "Test jackie_string";
+	//TIMED_FUNC(test);
 	JackieString str(0, "hello");
 	str = "In a previous job, I was asked to look at hashing functions and got into a dispute with my boss about how such functions should be designed. I had advocated the used of LFSRs or";
 
@@ -722,7 +737,7 @@ static void test_jackie_string()
 	printf("%d\n", js.GetWrittenBytesCount());
 	str.WriteMini(&js);
 	printf("%d\n", js.GetWrittenBytesCount() - vv);
-	JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100);
+	//JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100);
 	str.Write(&js);
 
 	JackieString str2((UInt32)0);
@@ -796,223 +811,46 @@ static void test_JackieBytesPool()
 	}
 }
 
-enum
+class TestFMNFindAllFiles : public testing::Test
 {
-	GlobalFunctions_h,
-	superfastfunction_func,
-	isDomainIPAddr_func,
-	DomainNameToIP_func,
-	Itoa_func,
+public:
 
-	JACKIE_INET_Address_h,
-	size_func,
-	ToHashCode_func,
-	Ctor_ToString_FromString_funcs,
-	SetToLoopBack_func,
-	IsLoopback_func,
-	IsLANAddress_func,
+	static void SetUpTestCase()
+	{
+		std::cout << "SetUp before all test case." << std::endl;
+	}
 
-	JACKIE_INet_GUID_h,
-	JACKIE_INet_GUID_ToString_func,
+	static void TearDownTestCase()
+	{
+		std::cout << "TearDown after all test case." << std::endl;
+	}
 
-	CLASS_JACKIE_INET_Address_GUID_Wrapper,
-	JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func,
+	void SetUp() override
+	{
+		std::cout << "SetUp every test case." << std::endl;
+	}
 
-	NetTime_h,
+	void TearDown() override
+	{
+		std::cout << "TearDown every test case." << std::endl;
+	}
 
-	ClassJISAllocator,
-
-	JACKIE_INet_Socket_h,
-	ClassJISBerkley,
-
-	MemoryPool_h,
-
-	CircularArrayQueueSingleThread,
-	Test_Queue_funcs,
-
-	ServerApplication_H,
-
-	JackieStream_H,
-
-	JackieStringClass,
-
-	JackieBytePoolClass,
-
-	AllFuncs,
-
+private:
+	/**@brief    ²âÊÔ¶ÔÏó */
+	JackieAddress     mTestFindAllFiles;
 };
 
-//static int testcase = GlobalFunctions_h;
-//static int testfunc = AllFuncs;
+TEST_F(TestFMNFindAllFiles, test1)
+{
+}
 
-//static int testcase = JACKIE_INET_Address_h;
-//static int testfunc = AllFuncs;
-
-//static int testcase = JACKIE_INet_GUID_h;
-//static int testfunc = AllFuncs;
-
-//static int testcase = JackieAddressGuidWrapper;
-//static int testfunc = AllFuncs;
-
-//static int testcase = NetTime_h;
-//static int testfunc = AllFuncs;
-
-//static int testcase = JACKIE_INet_Socket_h;
-//static int testfunc = ClassJISBerkley;
-
-//static int testcase = MemoryPool_h;
-//static int testfunc = AllFuncs;
-
-//static int testcase = CircularArrayQueueSingleThread;
-//static int testfunc = Test_Queue_funcs;
-
-//static int testcase = ServerApplication_H;
-//static int testfunc = AllFuncs;
-
-static int testcase = JackieStream_H;
-static int testfunc = AllFuncs;
-
-//static int testcase = JackieStringClass;
-//static int testfunc = AllFuncs;
-
-//static int testcase = JackieBytePoolClass;
-//static int testfunc = AllFuncs;
-
-//int my_main(int argc, char** argv)
-//{
-//
-//	el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
-//	el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
-//
-//	el::Configurations defaultConf;
-//
-//	// set to default config
-//	//defaultConf.setToDefault(); 
-//
-//	//// To set GLOBAL configurations you may use including all levels 
-//	//defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
-//	//defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "1");
-//	defaultConf.setGlobally(el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] InFile[%fbase] AtLine[%line]\n%msg\n");
-//
-//	// set individual option, @NOTICE you have to set this after setGlobally() to make it work
-//	//defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "%datetime %level %msg");
-//	defaultConf.set(el::Level::Debug, el::ConfigurationType::Format, "[%level][%datetime][%logger][tid %thread] AtLine[%line]\n%msg\n");
-//	defaultConf.set(el::Level::Trace, el::ConfigurationType::Format, "[%level][%logger][tid %thread] AtLine[%line]\n%msg\n");
-//	defaultConf.set(el::Level::Info, el::ConfigurationType::Format, "[%level][%logger][tid %thread][line %line]\n%msg\n");
-//
-//
-//	/// reconfigureLogger will create new logger if ir does not exists
-//	/// just simply add wahtever logger you want, best way is using class name as logger name
-//	el::Loggers::reconfigureLogger("default", defaultConf);
-//	el::Loggers::reconfigureLogger(JackieNetName, defaultConf);
-//	el::Loggers::reconfigureLogger("performance", defaultConf);
-//
-//	// Clears everything because configurations uses heap so we want to retain it.
-//	// otherwise it is retained by internal memory management at the end of program
-//	// execution
-//	defaultConf.clear();
-//
-//	//LOG(INFO) << "Log using default file";
-//	//LOG(ERROR) << "Log using default file";
-//	//LOG(WARNING) << "Log using default file";
-//	////LOG(FATAL) << "Log using default file";
-//	//LOG(DEBUG) << "Log using default file";
-//	//JDEBUG << "test debug";
-//
-//	START_EASYLOGGINGPP(argc, argv);
-//	switch (testcase)
-//	{
-//	case GlobalFunctions_h:
-//		switch (testfunc)
-//		{
-//		case superfastfunction_func:
-//			test_superfastfunction_func();
-//			break;
-//		case isDomainIPAddr_func:
-//			//test_isDomainIPAddr_func();
-//			break;
-//		case Itoa_func:
-//			//test_itoa_func();
-//			break;
-//		case DomainNameToIP_func:
-//			test_DomainNameToIP_func();
-//			break;
-//		default:
-//			test_superfastfunction_func();
-//			//test_isDomainIPAddr_func();
-//			test_itoa_func();
-//			test_DomainNameToIP_func();
-//			break;
-//		}
-//		break;
-//	case JACKIE_INET_Address_h:
-//		switch (testfunc)
-//		{
-//		case size_func:
-//			test_size_func();
-//			break;
-//		case ToHashCode_func:
-//			test_ToHashCode_func();
-//			break;
-//		case Ctor_ToString_FromString_funcs:
-//			test_Ctor_ToString_FromString_funcs();
-//			break;
-//		case SetToLoopBack_func:
-//			test_SetToLoopBack_func();
-//			break;
-//		case IsLoopback_func:
-//			test_IsLoopback_func();
-//			break;
-//		case IsLANAddress_func:
-//			test_IsLANAddress_func();
-//			break;
-//		default:
-//			test_size_func();
-//			test_ToHashCode_func();
-//			test_Ctor_ToString_FromString_funcs();
-//			test_SetToLoopBack_func();
-//			test_IsLoopback_func();
-//			test_IsLANAddress_func();
-//			break;
-//		}
-//		break;
-//	case JACKIE_INet_GUID_h:
-//		test_JACKIE_INet_GUID_ToString_func();
-//		break;
-//	case CLASS_JACKIE_INET_Address_GUID_Wrapper:
-//		test_JACKIE_INET_Address_GUID_Wrapper_ToHashCodeString_func();
-//		break;
-//	case NetTime_h:
-//		test_NetTime_h_All_funcs();
-//		break;
-//	case MemoryPool_h:
-//		test_MemoryPool_funcs();
-//		break;
-//	case CircularArrayQueueSingleThread:
-//		test_Queue_funcs();
-//		break;
-//	case ServerApplication_H:
-//		test_ServerApplication_funcs();
-//		break;
-//	case JackieStream_H:
-//		test_JackieStream__funcs();
-//		break;
-//	case JackieStringClass:
-//		test_jackie_string();
-//		JackieString::FreeMemory();
-//		break;
-//	case JackieBytePoolClass:
-//		test_JackieBytesPool();
-//		JackieBytesPool::DestroyInstance();
-//		break;
-//	default:
-//		break;
-//	}
-//	return 0;
-//}
-
+TEST_F(TestFMNFindAllFiles, test2)
+{
+}
 int main(int argc, char** argv)
 {
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+	testing::GTEST_FLAG(break_on_failure) = true;
+	testing::InitGoogleTest(&argc, argv);;
+	int ret = RUN_ALL_TESTS();
+	return ret;
 }

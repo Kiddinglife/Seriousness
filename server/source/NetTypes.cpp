@@ -226,7 +226,7 @@ namespace JACKIE_INET
 	}
 	bool JackieAddress::IsLANAddress(void)
 	{
-#if defined(__WIN32__)
+#if defined(WIN32)
 		return address.addr4.sin_addr.S_un.S_un_b.s_b1 == 10 || address.addr4.sin_addr.S_un.S_un_b.s_b1 == 192;
 #else
 		return (address.addr4.sin_addr.s_addr >> 24) == 10 ||

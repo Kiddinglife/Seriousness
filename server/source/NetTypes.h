@@ -77,9 +77,9 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #endif
 
 	//#define SEND_10040_ERR(sock, sendParams)\
-				//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
-				//sendParams.bytesWritten == 10040)\
-				//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
+					//if (sock->Send(&sendParams, TRACE_FILE_AND_LINE_) <= 0 &&\
+					//sendParams.bytesWritten == 10040)\
+					//{JERROR <<"line 660::void ServerApplication::StopRecvThread()::return 10040 error !!!";}
 
 
 	/// \sa NetworkIDObject.h
@@ -434,7 +434,9 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		SystemIndex GetSystemIndex(void) const
 		{
 			if (guid != JACKIE_NULL_GUID)
-				return guid.systemIndex; else return systemAddress.systemIndex;
+				return guid.systemIndex;
+			else
+				return systemAddress.systemIndex;
 		}
 
 		bool IsUndefined(void) const
@@ -858,7 +860,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 		/// Valid after connectMode reaches HANDLING_CONNECTION_REQUEST
 		char client_public_key[cat::EasyHandshake::PUBLIC_KEY_BYTES];
 #endif
-		enum ConnectMode: unsigned char
+		enum ConnectMode : unsigned char
 		{
 			NO_ACTION,
 			DISCONNECT_ASAP,
@@ -914,7 +916,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 				unsigned short remotePortRakNetWasStartedOn_PS3;
 			};
 			//sizeof(unsigned int) * 4 + sizeof(short) * 2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID) = 35 bytes
-			char arrayparams[sizeof(unsigned int)*4 + sizeof(short)*2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID)];
+			char arrayparams[sizeof(unsigned int) * 4 + sizeof(short) * 2 + sizeof(JackieINetSocket*) + sizeof(char) * 7 + sizeof(NetworkID)];
 		};
 	};
 
@@ -966,7 +968,7 @@ do{result = Queue.PushTail(ELEMENT);if( !result ) JACKIE_Sleep(10);} while( !res
 #else
 		return DomainNameToIP_Berkley_IPV4And6(domainName, ip);
 #endif
-	}
+}
 
 	/// Return false if Numeric IP address. Return true if domain NonNumericHostString
 	JACKIE_EXPORT extern bool  isDomainIPAddr(const char *host);
