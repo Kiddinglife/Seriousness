@@ -228,9 +228,8 @@ struct TestMemoryPool
 {
 	int allocationId;
 };
-static void test_MemoryPool_funcs()
+TEST(JackieMemoryPoolTests, test_alloca_and_release)
 {
-	std::cout << "test_MemoryPool_funcs starts...\n";
 	DataStructures::JackieMemoryPool<TestMemoryPool> memoryPool;
 	for (int i = 0; i < 100000; i++)
 	{
@@ -284,163 +283,207 @@ TEST(JackieSPSCQueueTests, when_pushTail_first_and_then_popHead_element_should_b
 	}
 }
 
-#include "JackieArraryQueue.h"
-#include "EasyLog.h"
-#include "JackieArrayList.h"
-#include "JackieOrderArraryList.h"
-#include "JakieOrderArrayListMap.h"
-#include "JackieLinkedList.h"
-static void test_Queue_funcs()
+struct vec { float x; float y; float z; };
+TEST(JackieBitsTests, test_all_reads_and_writes)
 {
-	JINFO << "test_Queue_funcs STARTS...";
+	JackieBits s8;
 
-	DataStructures::JackieSPSCQueue<int, 4 * 100000> lockfree;
-	TIMED_BLOCK(LockFreeQueueTimer, "JackieSPSCQueue")
+	UInt24 uint24 = 24;
+	UInt8 uint8 = 8;
+	UInt16 uint16 = 16;
+	UInt32 uint32 = 32;
+	UInt64 uint64 = 64;
+	Int8 int8 = -8;
+	Int16 int16 = -16;
+	Int32 int32 = -32;
+	Int64 int64 = -64;
+
+	UInt8 particialByte = 0xf0; /// 11110000
+	JackieGUID guid(123);
+	JackieAddress addr("192.168.1.107", 32000);
+	vec vector_ = { 0.2f, -0.4f, -0.8f };
+	vec vector__ = { 2.234f, -4.78f, -32.2f };
+
+	UInt32 curr = 12;
+	UInt32 min = 8;
+	UInt32 max = 64;
+	s8.WriteIntegerRange(curr, min, max);
+	curr = 0;
+	s8.ReadIntegerRange(curr, min, max);
+	EXPECT_TRUE(curr == 12);
+
+	s8.Write(uint24);
+	uint24 = 0;
+	s8.Read(uint24);
+	EXPECT_TRUE(uint24.val == 24);
+
+
+	s8.WriteBits(&particialByte, 7, false);
+	UInt8 v = 0;
+	s8.ReadBits(&v, 7, false);
+	EXPECT_TRUE(particialByte == v);
+	EXPECT_TRUE(s8.GetPayLoadBits() == 0);
+
+	for (int i = 1000; i >= 0; i--)
 	{
-		for (int i = 0; i < 10; i++)
+		UInt32 looptimes = 100;
+		for (UInt32 i = 1; i <= looptimes; i++)
 		{
-			lockfree.PushTail(i);
+			s8.Write(uint24);
+
+			s8.WriteMini(guid);
+
+			s8.WriteMini(uint24);
+
+			s8.WriteMini(addr);
+
+			s8.WriteMini(uint24);
+
+			s8.Write(uint8);
+			s8.Write(int64);
+			s8.WriteMini(uint8);
+			s8.WriteMini<SignedInteger>(int64);
+
+			s8.Write(uint16);
+			s8.Write(int32);
+			s8.WriteMini<UnSignedInteger>(uint16);
+			s8.WriteMini<SignedInteger>(int32);
+
+			s8.WriteBits(&particialByte, 4, true);
+			s8.Write(uint24);
+			s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
+
+			s8.WriteIntegerRange(curr, min, max);
+
+			s8.WriteVector(vector__.x, vector__.y, vector__.z);
+
+			s8.Write(uint32);
+			s8.Write(int16);
+			s8.WriteMini(uint32);
+			s8.WriteMini<SignedInteger>(int16);
+
+			s8.WriteBits(&particialByte, 4, false);
+
+			s8.Write(uint64);
+			s8.Write(int8);
+			s8.WriteMini(uint64);
+			s8.WriteMini<UnSignedInteger>(int8);
+
+			s8.WriteBits(&particialByte, 7, false);
 		}
-		for (int i = 0; i < 10; i++)
+
+		JackieBits s9;
+		s9.Write(s8);
+
+		for (UInt32 i = 1; i <= looptimes; i++)
 		{
-			int t;
-			lockfree.PopHead(t);
+			uint24 = 0;
+			s9.Read(uint24);
+			EXPECT_TRUE(uint24.val == 24);
+
+			JackieGUID guidd;
+			s9.ReadMini(guidd);
+			EXPECT_TRUE(guid == guidd);
+
+			UInt24 mini_uint24 = 0;
+			s9.ReadMini(mini_uint24);
+			EXPECT_TRUE(mini_uint24.val == 24);
+
+			JackieAddress addrr;
+			s9.ReadMini(addrr);
+			EXPECT_TRUE(addr == addrr);
+
+			mini_uint24 = 0;
+			s9.ReadMini(mini_uint24);
+			EXPECT_TRUE(mini_uint24.val == 24);
+
+			s9.Read(uint8);
+			s9.Read(int64);
+			UInt8 mini_uint8;
+			s9.ReadMini(mini_uint8);
+			EXPECT_TRUE(mini_uint8 == uint8);
+
+			Int64 mini_int64;
+			s9.ReadMini<SignedInteger>(mini_int64);
+			EXPECT_TRUE(mini_int64 == int64);
+
+			s9.Read(uint16);
+			s9.Read(int32);
+			UInt16 mini_uint16;
+			s9.ReadMini(mini_uint16);
+			EXPECT_TRUE(mini_uint16 == uint16);
+
+			Int32 mini_int32;
+			s9.ReadMini<SignedInteger>(mini_int32);
+			EXPECT_TRUE(mini_int32 == int32);
+
+
+			UInt8 v = 0;
+			s9.ReadBits(&v, 4, true);
+			EXPECT_TRUE(v == 0);
+
+			uint24 = 0;
+			s9.Read(uint24);
+			EXPECT_TRUE(uint24.val == 24);
+
+			vec vectorr;
+			s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
+			EXPECT_TRUE(fabs(vectorr.x - vector_.x) <= 0.0001f);
+			EXPECT_TRUE(fabs(vectorr.y - vector_.y) <= 0.0001f);
+			EXPECT_TRUE(fabs(vectorr.y - vector_.y) <= 0.0001f);
+
+			UInt32 v1;
+			s9.ReadIntegerRange(v1, min, max);
+			EXPECT_TRUE(v1 == curr);
+
+			vec vectorrr;
+			s9.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
+			EXPECT_TRUE(fabs(vectorrr.x - vector__.x) <= 0.001f);
+			EXPECT_TRUE(fabs(vectorrr.y - vector__.y) <= 0.001f);
+			EXPECT_TRUE(fabs(vectorrr.y - vector__.y) <= 0.001f);
+
+			s9.Read(uint32);
+			s9.Read(int16);
+			UInt32 mini_uint32;
+			s9.ReadMini(mini_uint32);
+			EXPECT_TRUE(mini_uint32 == uint32);
+
+			Int16 mini_int16;
+			s9.ReadMini<SignedInteger>(mini_int16);
+			EXPECT_TRUE(mini_int16 == int16);
+
+			v = 0;
+			s9.ReadBits(&v, 4, false);
+			EXPECT_TRUE(particialByte == ((v >> 4) << 4));
+
+			s9.Read(uint64);
+			s9.Read(int8);
+			UInt64 mini_uint64;
+			s9.ReadMini(mini_uint64);
+			EXPECT_TRUE(mini_uint64 == uint64);
+
+			Int8 mini_int8;
+			s9.ReadMini<SignedInteger>(mini_int8);
+			EXPECT_TRUE(mini_int8 == int8);
+
+			v = 0;
+			s9.ReadBits(&v, 7, false);
+			EXPECT_TRUE(particialByte == ((v >> 1) << 1));
+
+			EXPECT_TRUE(uint8 == 8);
+			EXPECT_TRUE(int8 == -8);
+			EXPECT_TRUE(uint16 == 16);
+			EXPECT_TRUE(int16 == -16);
+			EXPECT_TRUE(uint24.val == 24);
+			EXPECT_TRUE(uint32 == 32);
+			EXPECT_TRUE(int32 == -32);
+			EXPECT_TRUE(uint64 == 64);
+			EXPECT_TRUE(int64 == -64);
 		}
-		for (unsigned int i = 0; i < lockfree.Size(); i++)
-		{
-			//printf_s("%d, ", lockfree[i]);
-		}
+
+		s8.Reset();
+		s9.Reset();
 	}
-
-	DataStructures::JackieArraryQueue<int> alloc;
-	DataStructures::JackieArraryQueue<int> dealloc;
-	TIMED_BLOCK(RingBufferQueueTimer, "RingBufferQueueTimer")
-	{
-		for (int i = 0; i < 100000; i++)
-		{
-			alloc.PushTail(i);
-			alloc.PopHead(i);
-			dealloc.PushTail(i);
-			dealloc.PopHead(i);
-		}
-	}
-
-	DataStructures::JackieArrayList<int, 100001> list;
-	TIMED_BLOCK(ListTimer, "ListTimer")
-	{
-		for (int i = 0; i < 5000; i++)
-		{
-			list.PushAtLast(i);
-		}
-
-		list.InsertAtIndex(1, 6);
-		list.RemoveAtIndex(24);
-		list.ReplaceAtIndex(23, 0, 23);
-
-		for (int i = 4; i < 100; i++)
-		{
-			list.RemoveAtIndex(i);
-		}
-		int t = list.PopAtLast();
-	}
-
-	DataStructures::JackieOrderArraryList<int, int> olist;
-	TIMED_BLOCK(olistTimer, "olist")
-	{
-		for (int i = 0; i < 10; i++)
-		{
-			olist.Insert(i, i, true);
-		}
-
-		olist.Insert(-3, -3, true);
-		olist.RemoveAtIndex(4);
-
-		for (int i = 0; i < 10; i++)
-		{
-			//JINFO << olist[i];
-		}
-	}
-
-	DataStructures::JakieOrderArrayListMap<std::string, int> omap;
-	TIMED_BLOCK(omapTimer, "omap")
-	{
-		omap.Set("set", 1);
-		omap.SetExisting("set", 2);
-		omap.SetNew("SetNew", 3);
-		int setval = omap.Get("set");
-		//JINFO << "set = " << setval;
-		setval = omap.Get("SetNew");
-		//JINFO << "set = " << setval;
-		omap.Delete("set");
-	}
-
-	DataStructures::JackieDoubleLinkedList<int> linkedlist;
-	TIMED_BLOCK(LinkedlisttIMER, "linkedlist")
-	{
-		linkedlist.Beginning();
-		linkedlist.Add(4);
-		linkedlist.Add(3);
-		linkedlist.Insert(2);
-		linkedlist.Add(1);
-		linkedlist.Sort();
-
-		for (size_t i = 0; i < linkedlist.Size(); i++)
-		{
-			printf("%d ", linkedlist.Peek());
-			linkedlist++;
-		}
-		printf("\n");
-		DCHECK(linkedlist.Has(3));
-		DCHECK(linkedlist.Find(3));
-		linkedlist.Remove();
-		DCHECK(linkedlist.Has(3) == false);
-		linkedlist.Find(4);
-		linkedlist.Replace(-1);
-		linkedlist.Beginning();
-		for (size_t i = 0; i < linkedlist.Size(); i++)
-		{
-			printf("%d ", linkedlist.Peek());
-			linkedlist++;
-		}
-		printf("\n");
-	}
-
-	//DataStructures::ArrayCircularList<int, 1000> arrayCircularList;
-	//TIMED_BLOCK(ArrayCircularListTimer, "ArrayCircularListTimer")
-	//{
-	//	int val;
-	//	arrayCircularList.Add(2);
-	//	arrayCircularList.Add(3);
-	//	arrayCircularList.Add(8);
-
-	//	arrayCircularList.Print();
-
-	//	bool flag = arrayCircularList.Has(8);
-	//	DCHECK(flag == true);
-	//	flag = arrayCircularList.Has(13);
-	//	DCHECK(flag == false);
-
-	//	arrayCircularList.Remove(8);
-	//	flag = arrayCircularList.Has(8);
-	//	DCHECK(flag == false);
-
-	//	val = arrayCircularList.Pop();
-	//	DCHECK(val == 2);
-	//	flag = arrayCircularList.Has(2);
-	//	DCHECK(flag == false);
-
-	//	arrayCircularList.Print();
-
-	//	arrayCircularList.Add(2);
-	//	arrayCircularList.Add(8);
-
-	//	arrayCircularList.Print();
-
-	//	flag = arrayCircularList.Has(8);
-	//	DCHECK(flag == true);
-	//	flag = arrayCircularList.Has(3);
-	//	DCHECK(flag == true);
-	//}
 }
 
 #include "JackieBits.h"
@@ -518,246 +561,47 @@ static void test_ServerApplication_funcs()
 
 }
 
-#include "JackieBits.h"
-struct vec{ float x, y, z; };
-static void test_JackieStream__funcs()
+TEST(JackieStringTests, test_work_with_JackieBits)
 {
-	TIMED_FUNC(test);
-
-	JINFO << "Test alll write and read";
-	JackieBits s8;
-
-	UInt24 uint24 = 24;
-	UInt8 uint8 = 8;
-	UInt16 uint16 = 16;
-	UInt32 uint32 = 32;
-	UInt64 uint64 = 64;
-	Int8 int8 = -8;
-	Int16 int16 = -16;
-	Int32 int32 = -32;
-	Int64 int64 = -64;
-
-	UInt8 particialByte = 0xf0; /// 11110000
-	JackieGUID guid(123);
-	JackieAddress addr("192.168.1.107", 32000);
-	vec vector_ = { 0.2f, -0.4f, -0.8f };
-	vec vector__ = { 2.234f, -4.78f, -32.2f };
-
-	UInt32 curr = 12;
-	UInt32 min = 8;
-	UInt32 max = 64;
-
-	s8.WriteIntegerRange(curr, min, max);
-	curr = 0;
-	s8.ReadIntegerRange(curr, min, max);
-	DCHECK(curr == 12);
-
-	s8.Write(uint24);
-	uint24 = 0;
-	s8.Read(uint24);
-	DCHECK(uint24.val == 24);
-
-
-	s8.WriteBits(&particialByte, 7, false);
-	UInt8 v = 0;
-	s8.ReadBits(&v, 7, false);
-	DCHECK(particialByte == v);
-	DCHECK(s8.GetPayLoadBits() == 0);
-
-	for (int i = 1000; i >= 0; i--)
-	{
-		UInt32 looptimes = 100;
-		for (UInt32 i = 1; i <= looptimes; i++)
-		{
-			s8.Write(uint24);
-
-			s8.WriteMini(guid);
-
-			s8.WriteMini(uint24);
-
-			s8.WriteMini(addr);
-
-			s8.WriteMini(uint24);
-
-			s8.Write(uint8);
-			s8.Write(int64);
-			s8.WriteMini(uint8);
-			s8.WriteMini<SignedInteger>(int64);
-
-			s8.Write(uint16);
-			s8.Write(int32);
-			s8.WriteMini(uint16);
-			s8.WriteMini<SignedInteger>(int32);
-
-			s8.WriteBits(&particialByte, 4, true);
-			s8.Write(uint24);
-			s8.WriteNormVector(vector_.x, vector_.y, vector_.z);
-
-			s8.WriteIntegerRange(curr, min, max);
-
-			s8.WriteVector(vector__.x, vector__.y, vector__.z);
-
-			s8.Write(uint32);
-			s8.Write(int16);
-			s8.WriteMini(uint32);
-			s8.WriteMini<SignedInteger>(int16);
-
-			s8.WriteBits(&particialByte, 4, false);
-
-			s8.Write(uint64);
-			s8.Write(int8);
-			s8.WriteMini(uint64);
-			s8.WriteMini<UnSignedInteger>(int8);
-
-			s8.WriteBits(&particialByte, 7, false);
-		}
-
-		JackieBits s9;
-		s9.Write(s8);
-
-		for (UInt32 i = 1; i <= looptimes; i++)
-		{
-			uint24 = 0;
-			s9.Read(uint24);
-			DCHECK(uint24.val == 24);
-
-			JackieGUID guidd;
-			s9.ReadMini(guidd);
-			DCHECK(guid == guidd);
-
-			UInt24 mini_uint24 = 0;
-			s9.ReadMini(mini_uint24);
-			DCHECK(mini_uint24.val == 24);
-
-			JackieAddress addrr;
-			s9.ReadMini(addrr);
-			DCHECK(addr == addrr);
-
-			mini_uint24 = 0;
-			s9.ReadMini(mini_uint24);
-			DCHECK(mini_uint24.val == 24);
-
-			s9.Read(uint8);
-			s9.Read(int64);
-			UInt8 mini_uint8;
-			s9.ReadMini(mini_uint8);
-			DCHECK(mini_uint8 == uint8);
-			Int64 mini_int64;
-			s9.ReadMini<SignedInteger>(mini_int64);
-			DCHECK(mini_int64 == int64);
-
-			s9.Read(uint16);
-			s9.Read(int32);
-			UInt16 mini_uint16;
-			s9.ReadMini(mini_uint16);
-			DCHECK(mini_uint16 == uint16);
-			Int32 mini_int32;
-			s9.ReadMini<SignedInteger>(mini_int32);
-			DCHECK(mini_int32 == int32);
-
-
-			UInt8 v = 0;
-			s9.ReadBits(&v, 4, true);
-			DCHECK(v == 0);
-
-			uint24 = 0;
-			s9.Read(uint24);
-			DCHECK(uint24.val == 24);
-
-			vec vectorr;
-			s9.ReadNormVector(vectorr.x, vectorr.y, vectorr.z);
-			DCHECK(fabs(vectorr.x - vector_.x) <= 0.0001f);
-			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
-			DCHECK(fabs(vectorr.y - vector_.y) <= 0.0001f);
-
-			UInt32 v1;
-			s9.ReadIntegerRange(v1, min, max);
-			DCHECK(v1 == curr);
-
-			vec vectorrr;
-			s9.ReadVector(vectorrr.x, vectorrr.y, vectorrr.z);
-			DCHECK(fabs(vectorrr.x - vector__.x) <= 0.001f);
-			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
-			DCHECK(fabs(vectorrr.y - vector__.y) <= 0.001f);
-
-			s9.Read(uint32);
-			s9.Read(int16);
-			UInt32 mini_uint32;
-			s9.ReadMini(mini_uint32);
-			DCHECK(mini_uint32 == uint32);
-			Int16 mini_int16;
-			s9.ReadMini<SignedInteger>(mini_int16);
-			DCHECK(mini_int16 == int16);
-
-			v = 0;
-			s9.ReadBits(&v, 4, false);
-			DCHECK(particialByte == ((v >> 4) << 4));
-
-			s9.Read(uint64);
-			s9.Read(int8);
-			UInt64 mini_uint64;
-			s9.ReadMini(mini_uint64);
-			DCHECK(mini_uint64 == uint64);
-			Int8 mini_int8;
-			s9.ReadMini<SignedInteger>(mini_int8);
-			DCHECK(mini_int8 == int8);
-
-			v = 0;
-			s9.ReadBits(&v, 7, false);
-			DCHECK(particialByte == ((v >> 1) << 1));
-
-			DCHECK(uint8 == 8);
-			DCHECK(int8 == -8);
-			DCHECK(uint16 == 16);
-			DCHECK(int16 == -16);
-			DCHECK(uint24.val == 24);
-			DCHECK(uint32 == 32);
-			DCHECK(int32 == -32);
-			DCHECK(uint64 == 64);
-			DCHECK(int64 == -64);
-		}
-
-		s8.Reset();
-		s9.Reset();
-	}
-}
-
-#include <gtest/gtest.h>
-#include "JackieString.h"
-static void test_jackie_string()
-{
-	//JINFO << "Test jackie_string";
-	//TIMED_FUNC(test);
-	JackieString str(0, "hello");
+	const int CURR_THREAD_ID_1 = 1;
+	JackieString str(CURR_THREAD_ID_1, "hello");
 	str = "In a previous job, I was asked to look at hashing functions and got into a dispute with my boss about how such functions should be designed. I had advocated the used of LFSRs or";
 
 	JackieBits js;
 	str.Write(&js);
 	UInt32 vv = js.GetWrittenBytesCount();
 	printf("%d\n", js.GetWrittenBytesCount());
+
 	str.WriteMini(&js);
 	printf("%d\n", js.GetWrittenBytesCount() - vv);
-	//JDEBUG << "compresee rate is %" << (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100);
+	printf("compresee rate is % %d\n", (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100));
+
 	str.Write(&js);
 
-	JackieString str2((UInt32)0);
+	JackieString str2(CURR_THREAD_ID_1);
+
+	printf("str2.Read(&js);\n");
 	str2.Read(&js);
 	str2.Printf();
 	printf("\n");
+
+	printf("str2.ReadMini(&js);\n");
 	str2.ReadMini(&js);
 	str2.Printf();
 	printf("\n");
+
+	printf("str2.Read(&js);\n");
 	str2.Read(&js);
 	str2.Printf();
 	printf("\n");
 
-	printf("use jackie bits to read and write\n");
+	printf("reuse jackie bits to read and write\n");
 	js.Reset();
 	js.Write(str);
 	js.WriteMini(str);
 	js.Write((char*)"hello man");
 
-	JackieString str3((UInt32)0);
+	JackieString str3(CURR_THREAD_ID_1);
 	js.Read(str3);
 	str3.Printf();
 	printf("\n");
@@ -769,49 +613,56 @@ static void test_jackie_string()
 	js.Read(str3);
 	str3.Printf();
 	printf("\n");
-
-
-
-
 }
 
 #include "JackieBytesPool.h"
-static void test_JackieBytesPool()
+TEST(JackieBytesPoolTests, test_pool_alloc_and_release)
 {
-	TIMED_BLOCK(JackieBytesPoolTimer, "JackieBytesPool")
+	for (unsigned i = 0; i < 100; i++)
 	{
-		for (unsigned i = 0; i < 100; i++)
+		unsigned char* ptr[8000];
+		for (unsigned i = 0; i < 8000; i++)
 		{
-			unsigned char* ptr[8000];
-			for (unsigned i = 0; i < 8000; i++)
-			{
-				ptr[i] = JackieBytesPool::GetInstance()->Allocate(i + 1, TRACE_FILE_AND_LINE_);
-			}
-			for (unsigned i = 0; i < 8000; i++)
-			{
-				JackieBytesPool::GetInstance()->Release(ptr[i], TRACE_FILE_AND_LINE_);
-			}
+			ptr[i] = JackieBytesPool::GetInstance()->Allocate(i + 1, TRACE_FILE_AND_LINE_);
+		}
+		for (unsigned i = 0; i < 8000; i++)
+		{
+			JackieBytesPool::GetInstance()->Release(ptr[i], TRACE_FILE_AND_LINE_);
 		}
 	}
-
-	TIMED_BLOCK(NewDeleteTimer, "NewDeletePool")
+}
+TEST(JackieBytesPoolTests, test_c_allocator_alloc_and_release)
+{
+	for (unsigned i = 0; i < 100; i++)
 	{
-		for (unsigned i = 0; i < 100; i++)
+		unsigned char* ptr[8000];
+		for (unsigned i = 0; i < 8000; i++)
 		{
-			unsigned char* ptr[8000];
-			for (unsigned i = 0; i < 8000; i++)
-			{
-				ptr[i] = (unsigned char*)jackieMalloc_Ex(i + 1, TRACE_FILE_AND_LINE_);
-			}
-			for (unsigned i = 0; i < 8000; i++)
-			{
-				jackieFree_Ex(ptr[i], TRACE_FILE_AND_LINE_);
-			}
+			ptr[i] = (unsigned char*)jackieMalloc_Ex(i + 1, TRACE_FILE_AND_LINE_);
+		}
+		for (unsigned i = 0; i < 8000; i++)
+		{
+			jackieFree_Ex(ptr[i], TRACE_FILE_AND_LINE_);
+		}
+	}
+}
+TEST(JackieBytesPoolTests, test_cplus_allocator_alloc_and_release)
+{
+	for (unsigned i = 0; i < 100; i++)
+	{
+		unsigned char* ptr[8000];
+		for (unsigned i = 0; i < 8000; i++)
+		{
+			ptr[i] = new unsigned char[i + 1];
+		}
+		for (unsigned i = 0; i < 8000; i++)
+		{
+			delete ptr[i];
 		}
 	}
 }
 
-class TestFMNFindAllFiles : public testing::Test
+class TestFixtureClass : public testing::Test
 {
 public:
 
@@ -839,14 +690,9 @@ private:
 	/**@brief    ²âÊÔ¶ÔÏó */
 	JackieAddress     mTestFindAllFiles;
 };
+TEST_F(TestFixtureClass, test1){}
+TEST_F(TestFixtureClass, test2){}
 
-TEST_F(TestFMNFindAllFiles, test1)
-{
-}
-
-TEST_F(TestFMNFindAllFiles, test2)
-{
-}
 int main(int argc, char** argv)
 {
 	testing::GTEST_FLAG(break_on_failure) = true;
