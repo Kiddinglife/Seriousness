@@ -112,7 +112,7 @@ namespace JACKIE_INET
 		JackieAtomicLong refCount;
 		char smallString[128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2];
 	};
-
+	const UInt32 JackieString_FREE_LIST_SIZE = 32;
 	class JACKIE_EXPORT JackieStringCompressor
 	{
 	private:
@@ -451,7 +451,7 @@ namespace JACKIE_INET
 		/// \internal
 		/// List of free objects to reduce memory reallocations
 		typedef DataStructures::JackieArrayList<SharedString*, 128> StringPool;
-		static DataStructures::JackieArrayList<StringPool*, 32> freeList;
+		static DataStructures::JackieArrayList<StringPool*, JackieString_FREE_LIST_SIZE> freeList;
 		//static DataStructures::JackieArrayList<SharedString*> freeList;
 
 		static int RakStringComp(JackieString const &key, JackieString const &data);

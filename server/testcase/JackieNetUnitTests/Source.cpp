@@ -561,9 +561,22 @@ static void test_ServerApplication_funcs()
 
 }
 
+#include "GlobalFunctions.h"
 TEST(JackieStringTests, test_work_with_JackieBits)
 {
-	const int CURR_THREAD_ID_1 = 1;
+	UInt32 CURR_THREAD_ID_1 = JACKIE_Thread::JackieGetCurrentThreadId();
+	printf_s("before CURR_THREAD_ID_1[%d]\n", CURR_THREAD_ID_1);
+	if (CURR_THREAD_ID_1 > JackieString_FREE_LIST_SIZE)
+		CURR_THREAD_ID_1 = CURR_THREAD_ID_1 % JackieString_FREE_LIST_SIZE;
+	printf_s("after CURR_THREAD_ID_1[%d]\n", CURR_THREAD_ID_1);
+
+
+	CURR_THREAD_ID_1 = JACKIE_Thread::JackieGetCurrentThreadId();
+	printf_s("before CURR_THREAD_ID_1[%d]\n", CURR_THREAD_ID_1);
+	if (CURR_THREAD_ID_1 > JackieString_FREE_LIST_SIZE)
+		CURR_THREAD_ID_1 = CURR_THREAD_ID_1 % JackieString_FREE_LIST_SIZE;
+	printf_s("after CURR_THREAD_ID_1[%d]\n", CURR_THREAD_ID_1);
+
 	JackieString str(CURR_THREAD_ID_1, "hello");
 	str = "In a previous job, I was asked to look at hashing functions and got into a dispute with my boss about how such functions should be designed. I had advocated the used of LFSRs or";
 
@@ -573,8 +586,8 @@ TEST(JackieStringTests, test_work_with_JackieBits)
 	printf("%d\n", js.GetWrittenBytesCount());
 
 	str.WriteMini(&js);
-	printf("%d\n", js.GetWrittenBytesCount() - vv);
-	printf("compresee rate is % %d\n", (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100));
+	printf(" js.GetWrittenBytesCount() - vv '%d'\n", js.GetWrittenBytesCount() - vv);
+	printf("compresee rate is '%d%'\n", (int)(((js.GetWrittenBytesCount() - vv) / (float)vv) * 100));
 
 	str.Write(&js);
 
@@ -698,5 +711,6 @@ int main(int argc, char** argv)
 	testing::GTEST_FLAG(break_on_failure) = true;
 	testing::InitGoogleTest(&argc, argv);;
 	int ret = RUN_ALL_TESTS();
+	JackieString::FreeMemory();
 	return ret;
 }

@@ -64,6 +64,7 @@ namespace JACKIE_INET
 		*/
 		public: 
 			static int Create(ThreadFunc start_address, void *arglist, int priority = 0);
+			static unsigned int JackieGetCurrentThreadId(void);
 	};
 }
 #endif

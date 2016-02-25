@@ -48,4 +48,5 @@ inline JACKIE_EXPORT extern char* JackiePointerAlignBinary(unsigned char const *
 {
 	return JackiePointerAlignBinary(reinterpret_cast<char const *> ( ptr ), alignment);
 }
+
 #endif
