@@ -106,10 +106,11 @@ namespace JACKIE_INET
 	{
 		//JackieSimpleMutex *refCountMutex;
 		//unsigned int refCount;
+		JackieAtomicLong refCount;
 		size_t bytesUsed;
+		//UInt32 threadid;
 		char *bigString;
 		char *c_str;
-		JackieAtomicLong refCount;
 		char smallString[128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2];
 	};
 	const UInt32 JackieString_FREE_LIST_SIZE = 32;
@@ -191,12 +192,25 @@ namespace JACKIE_INET
 
 		// Implicit return of const char*
 		operator const char* () const { return sharedString->c_str; }
-		// Lets you modify the string. Do not make the string longer - 
+
+		// unsafe means to this mtd lets you modify the cloned string. 
+		// Do not make the string longer - 
 		// however, you can make it shorter, or change the contents.
 		// Pointer is only valid in the scope of JackieString itself
-		char *C_StringUnsafe(void) { Clone(); return sharedString->c_str; }
+		// this string is shared with other owners.
+		// we have to clone a copy and do modifications on the copy
+		// to avoid polluting the original sring.
+		// when you make a copy, the ref is 1 pointing to the newly allocated 
+		// sharedString. so the pointer is still under the control of this JackieString object
+		// \code
+		// JackieString str(0, "test");
+		// char* cstr = str.UnsafeCString();
+		// cstr[3] = 'a'; // change the third char 't' in "test" to 'a' new string will be "tesa"
+		// \code
+		char* UnsafeCString(void) { Clone(); return sharedString->c_str; }
+
 		// Same as std::string::c_str
-		const char *C_String(void) const { return sharedString->c_str; }
+		const char *CString(void) const { return sharedString->c_str; }
 
 		/// Assigment operators
 		JackieString& operator = (const JackieString& rhs);
@@ -452,12 +466,15 @@ namespace JACKIE_INET
 		/// List of free objects to reduce memory reallocations
 		typedef DataStructures::JackieArrayList<SharedString*, 128> StringPool;
 		static DataStructures::JackieArrayList<StringPool*, JackieString_FREE_LIST_SIZE> freeList;
+		static bool freeListInited;
 		//static DataStructures::JackieArrayList<SharedString*> freeList;
 
 		static int RakStringComp(JackieString const &key, JackieString const &data);
 
 		static void LockMutex(void);
 		static void UnlockMutex(void);
+
+		static void PrintStringInfos(void);
 
 	protected:
 		static JACKIE_INET::JackieString FormatForPUTOrPost(const char* type, const char* uri, const char* contentType, const char* body, const char* extraHeaders);

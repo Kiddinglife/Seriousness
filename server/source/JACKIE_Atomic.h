@@ -11,23 +11,17 @@
 #include "JACKIE_Simple_Mutex.h"
 #endif
 
-class JACKIE_EXPORT JackieAtomicLong
+struct JACKIE_EXPORT JackieAtomicLong
 {
-	protected:
 #ifdef _WIN32
-	volatile LONG value;
+	 LONG value;
 #elif defined(ANDROID) || defined(__S3E__) || defined(__APPLE__)
 	// __sync_fetch_and_add not supported apparently
 	JackieSimpleMutex mutex;
 	unsigned int value;
 #else
-	volatile unsigned int value;
+	 unsigned int value;
 #endif
-
-	public:
-	JackieAtomicLong();
-	explicit JackieAtomicLong(unsigned int initial);
-	~JackieAtomicLong();
 
 	// Returns variable value after changing it
 	unsigned int Increment(void);

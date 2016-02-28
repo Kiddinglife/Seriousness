@@ -676,7 +676,7 @@ namespace JACKIE_INET
 
 	void JackieStringCompressor::EncodeString(const JackieString *input, int maxCharsToWrite, JackieBits *output, UInt8 languageId)
 	{
-		EncodeString(input->C_String(), maxCharsToWrite, output, languageId);
+		EncodeString(input->CString(), maxCharsToWrite, output, languageId);
 	}
 	bool JackieStringCompressor::DecodeString(JackieString *output, int maxCharsToWrite, JackieBits *input, UInt8 languageId)
 	{
@@ -760,10 +760,10 @@ namespace JACKIE_INET
 	}
 #endif
 
-
 	/// JackieString
-	SharedString JackieString::emptyString = { 0, (char*) "", (char*) "" };
+	SharedString JackieString::emptyString = { { 0 }, 0, "", "" };
 	DataStructures::JackieArrayList<JackieString::StringPool*, 32> JackieString::freeList;
+	bool JackieString::freeListInited = false;
 
 	JackieString::JackieString(UInt32 freeListIndex_)
 	{
@@ -852,12 +852,18 @@ namespace JACKIE_INET
 		for (unsigned int i = 0; i < freeList.Size(); i++)
 		{
 			strPool = freeList[i];
-			assert(strPool->Size() == strPool->AllocationSize()
-				&& "some shared string is still being used somewhere, you have memeoryleak. man, try to call freememory() at the end of program");
+			if (strPool->Size() != strPool->AllocationSize())
+				printf("i '%d', strpool size '%d', allocationsize '%d' ",
+				i,
+				strPool->Size(),
+				strPool->AllocationSize());
+
+			assert(strPool->Size() == strPool->AllocationSize() && "some shared string is still being used somewhere, you have memeoryleak. man, try to call freememory() at the end of program");
+
 			for (unsigned ii = 0; ii < strPool->Size(); ii++)
 			{
 				ss = (*strPool)[ii];
-				JACKIE_INET::OP_DELETE(ss, TRACE_FILE_AND_LINE_);
+				jackieFree_Ex(ss, TRACE_FILE_AND_LINE_);
 			}
 			strPool->Clear();
 			JACKIE_INET::OP_DELETE(strPool, TRACE_FILE_AND_LINE_);
@@ -869,17 +875,16 @@ namespace JACKIE_INET
 	void JackieString::Clone(void)
 	{
 		assert(sharedString != &emptyString);
-		if (sharedString == &emptyString)
-		{
-			return;
-		}
 
-		// Empty or solo then no point to cloning
-		if (sharedString->refCount.GetValue() == 1)
-		{
-			return;
-		}
+		// Empty or solo then no point to clone
+		if (sharedString == &emptyString) return;
+		if (sharedString->refCount.GetValue() == 1) return;
+
+		// dereference with this shared string
 		sharedString->refCount.Decrement();
+
+		// make a copy of this shared string
+		// make shared string points to the newly created string
 		Assign(sharedString->c_str);
 	}
 	void JackieString::Clear()
@@ -901,10 +906,12 @@ namespace JACKIE_INET
 	}
 	void JackieString::Allocate(size_t len)
 	{
-		if (freeList.Size() == 0)
+		if (!freeListInited)
+			//if (freeList.Size() == 0)
 		{
 			LockMutex();
-			if (freeList.Size() == 0)
+			if (!freeListInited)
+				//if (freeList.Size() == 0)
 			{
 				StringPool* strPool;
 				SharedString *ss;
@@ -915,19 +922,23 @@ namespace JACKIE_INET
 					freeList.InsertAtLast(strPool);
 					for (unsigned i = 0; i < 128; i++)
 					{
-						ss = JACKIE_INET::OP_NEW<SharedString>(TRACE_FILE_AND_LINE_);
+						ss = (SharedString*)jackieMalloc_Ex(sizeof(SharedString), TRACE_FILE_AND_LINE_);
+						ss->refCount.value = 0;
 						strPool->InsertAtLast(ss);
 					}
 				}
 			}
+			freeListInited = true;
 			UnlockMutex();
 		}
 
-		sharedString = (*freeList[freeListIndex])[freeList[freeListIndex]->Size() - 1];
-		freeList[freeListIndex]->RemoveAtIndexFast(freeList[freeListIndex]->Size() - 1);
+		UInt32 last_index = freeList[freeListIndex]->Size() - 1;
+		sharedString = (*freeList[freeListIndex])[last_index];
+		freeList[freeListIndex]->RemoveAtIndexFast(last_index);
 		sharedString->refCount.Increment();
+		//sharedString->threadid = freeListIndex;
 
-		const size_t smallStringSize = 128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2;
+		static const size_t smallStringSize = 128 - sizeof(unsigned int) - sizeof(size_t) - sizeof(char*) * 2;
 		if (len <= smallStringSize)
 		{
 			sharedString->bytesUsed = smallStringSize;
@@ -994,10 +1005,10 @@ namespace JACKIE_INET
 			&& strlen(stackBuff) < 511
 #endif
 			)
-			{
-				Assign(stackBuff);
-				return;
-			}
+		{
+			Assign(stackBuff);
+			return;
+		}
 		char *buff = 0, *newBuff;
 		size_t buffSize = 8096;
 		while (1)
@@ -1043,7 +1054,7 @@ namespace JACKIE_INET
 	void JackieString::WriteMini(JackieBits *bs, UInt8 languageId,
 		bool writeLanguageId) const
 	{
-		JackieString::WriteMini(C_String(), bs, languageId, writeLanguageId);
+		JackieString::WriteMini(CString(), bs, languageId, writeLanguageId);
 	}
 	void JackieString::WriteMini(const char *str, JackieBits *bs, UInt8 languageId, bool writeLanguageId)
 	{
@@ -1182,5 +1193,10 @@ namespace JACKIE_INET
 	void JackieString::FPrintf(FILE *fp)
 	{
 		fprintf(fp, "%s", sharedString->c_str);
+	}
+
+	void JackieString::PrintStringInfos(void)
+	{
+
 	}
 }

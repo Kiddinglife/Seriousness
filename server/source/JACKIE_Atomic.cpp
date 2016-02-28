@@ -1,10 +1,5 @@
 ﻿#include "JACKIE_Atomic.h"
 
-
-JackieAtomicLong::JackieAtomicLong() : value(0) { }
-JackieAtomicLong::JackieAtomicLong(unsigned int initial) : value(initial) { }
-JackieAtomicLong::~JackieAtomicLong() { }
-
 unsigned int JackieAtomicLong::Increment(void)
 {
 #ifdef _WIN32
